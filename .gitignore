@@ -1,0 +1,45 @@
+# ── Dependencies ─────────────────────────────────────────────
+node_modules/
+web/node_modules/
+web/.next/
+web/out/
+
+# ── Environment — NEVER commit API keys ──────────────────────
+.env
+.env.local
+.env.production
+web/.env
+web/.env.local
+
+# ── Agent runtime files (auto-generated) ─────────────────────
+logs/
+memory/
+*.log
+
+# ── Hive internal state (regenerates on run) ─────────────────
+.hive/autonomous-state.json
+.hive/queue.json
+.hive/decisions.json
+.hive/idea-index.json
+.hive/discussions/
+
+# Keep config tracked
+!.hive/config.json
+
+# ── Next.js build artifacts ───────────────────────────────────
+web/.next/
+web/out/
+web/build/
+
+# ── OS & editor ───────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── Optional: project outputs ─────────────────────────────────
+# Uncomment to ignore generated agent outputs:
+# projects/*/output/
+# projects/*/status.json
