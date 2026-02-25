@@ -1,6 +1,11 @@
 {
   "name": "hive-mind",
   "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "web",
+    "projects/*"
+  ],
   "description": "Multi-agent AI workspace powered by free OpenRouter models",
   "main": "hive.js",
   "bin": {
@@ -11,7 +16,11 @@
     "dashboard": "node dashboard.js",
     "human":     "node hive.js",
     "status":    "node hive.js status",
-    "review":    "node hive.js review"
+    "review":    "node hive.js review",
+    "web:dev":   "npm --prefix web run dev",
+    "web:build": "npm --prefix web run build",
+    "web:start": "npm --prefix web run start",
+    "web:lint":  "npm --prefix web run lint"
   },
   "dependencies": {
     "commander": "^12.0.0",
