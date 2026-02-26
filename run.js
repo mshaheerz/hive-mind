@@ -29,6 +29,7 @@ const {
 const PROJECTS_DIR = path.join(__dirname, 'projects');
 const QUEUE_FILE   = path.join(__dirname, '.hive', 'queue.json');
 const RUNNER_ARGS = process.argv.slice(2);
+const MAX_ACTIVE_PROJECTS = 2;
 
 function printUsage() {
   console.log(`Usage: node run.js [options]
@@ -108,6 +109,19 @@ function getProjectStatus(name) {
   const sf = path.join(PROJECTS_DIR, name, 'status.json');
   if (!fs.existsSync(sf)) return { stage: 'new' };
   try { return JSON.parse(fs.readFileSync(sf)); } catch { return { stage: 'new' }; }
+}
+
+function getActiveProjectsWithStatus() {
+  return getProjects()
+    .map((name) => ({ name, status: getProjectStatus(name) }))
+    .filter(({ status }) => !['complete', 'failed', 'new'].includes(status.stage));
+}
+
+function projectPriorityTs(status = {}) {
+  const approved = status.approvedAt ? new Date(status.approvedAt).getTime() : 0;
+  const proposed = status.proposedAt ? new Date(status.proposedAt).getTime() : 0;
+  const updated = status.updatedAt ? new Date(status.updatedAt).getTime() : 0;
+  return approved || proposed || updated || 0;
 }
 
 function setProjectStatus(name, updates) {
@@ -245,24 +259,41 @@ class AutonomousRunner {
     }
 
     try {
+      const activeProjects = getActiveProjectsWithStatus();
+      const capacityFull = activeProjects.length >= MAX_ACTIVE_PROJECTS;
+      if (capacityFull) {
+        log('system', `Capacity mode: ${activeProjects.length} active project(s). Holding new intake until fewer than ${MAX_ACTIVE_PROJECTS}.`);
+      }
+
       // 1. Check & enforce deadlines
       await this.checkDeadlines();
 
       // 2. NOVA generates new ideas (if due)
-      if (dueSnapshot.nova) {
+      if (dueSnapshot.nova && !capacityFull) {
         await this.novaGeneratesIdeas();
+        this.state.markAgentRun('nova');
+      } else if (dueSnapshot.nova && capacityFull) {
+        log('nova', `Skipping idea generation: active project limit reached (${activeProjects.length}/${MAX_ACTIVE_PROJECTS}).`);
         this.state.markAgentRun('nova');
       }
 
       // 3. SCOUT validates pending proposals (if due)
-      if (dueSnapshot.scout) {
+      if (dueSnapshot.scout && !capacityFull) {
         await this.scoutValidatesProposals();
+        this.state.markAgentRun('scout');
+      } else if (dueSnapshot.scout && capacityFull) {
+        const pendingScout = loadQueue().filter((p) => p.status === 'pending_scout').length;
+        if (pendingScout) {
+          log('scout', `Holding ${pendingScout} pending proposal(s): capacity gate active.`);
+        } else {
+          log('scout', 'No proposal intake while capacity gate is active.');
+        }
         this.state.markAgentRun('scout');
       }
 
       // 4. APEX reviews validated proposals (if due)
       if (dueSnapshot.apex) {
-        await this.apexReviewsAndDecides();
+        await this.apexReviewsAndDecides({ blockApprovals: capacityFull, activeCount: activeProjects.length });
         this.state.markAgentRun('apex');
       }
 
@@ -384,7 +415,8 @@ Do NOT propose anything similar to these. Think of genuinely new, useful develop
 
   // ─── APEX: Review, discuss, decide ──────────────────────────
 
-  async apexReviewsAndDecides() {
+  async apexReviewsAndDecides(opts = {}) {
+    const { blockApprovals = false, activeCount = 0 } = opts;
     const queue   = loadQueue();
     const pending = queue.filter(p => p.status === 'pending_apex');
 
@@ -392,6 +424,11 @@ Do NOT propose anything similar to these. Think of genuinely new, useful develop
       // Check active projects for any blockers
       log('apex', 'No pending proposals. Checking project health...');
       await this.apexChecksProjectHealth();
+      return;
+    }
+
+    if (blockApprovals) {
+      log('apex', `Capacity gate active (${activeCount}/${MAX_ACTIVE_PROJECTS} active). Holding ${pending.length} pending APEX decision(s).`);
       return;
     }
 
@@ -558,10 +595,16 @@ ${decision.reasoning}
   // ─── Advance projects through the pipeline ──────────────────
 
   async advanceProjects(dueSnapshot = {}) {
-    const projects = getProjects();
+    const all = getActiveProjectsWithStatus()
+      .sort((a, b) => projectPriorityTs(a.status) - projectPriorityTs(b.status));
+    const prioritized = all.slice(0, MAX_ACTIVE_PROJECTS);
+    const deferred = all.slice(MAX_ACTIVE_PROJECTS);
 
-    for (const name of projects) {
-      const status = getProjectStatus(name);
+    if (deferred.length) {
+      log('system', `Project priority active: processing oldest ${MAX_ACTIVE_PROJECTS}, deferring ${deferred.length} newer project(s).`);
+    }
+
+    for (const { name, status } of prioritized) {
 
       // Skip completed, failed, or projects pending approval
       if (['complete', 'failed', 'new'].includes(status.stage)) continue;

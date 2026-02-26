@@ -6,6 +6,7 @@ import MissionLog from '../components/MissionLog';
 import ProjectTracker from '../components/ProjectTracker';
 import ProposalQueue from '../components/ProposalQueue';
 import CommsBus from '../components/commsBus';
+import AgentConversations from '../components/AgentConversations';
 import TopNav from '../components/TopNav';
 
 type HiveState = {
@@ -109,6 +110,7 @@ export default function Home() {
 
         {/* Communication bus */}
         <CommsBus discussions={hive?.discussions || []} />
+        <AgentConversations discussions={hive?.discussions || []} />
       </div>
     </main>
   );
