@@ -1,6 +1,54 @@
+// AgentRoom: typed agent detail view panel component
 'use client';
 
-const AGENT_INFO = {
+type AgentStatus = 'active' | 'due' | 'resting' | 'idle';
+
+type AgentInfo = {
+  color: string;
+  emoji: string;
+  model: string;
+  desc: string;
+};
+
+type Project = {
+  name: string;
+  status?: { stage?: string };
+};
+
+type Discussion = {
+  topic: string;
+  messages?: Array<{ from: string; message: string }>;
+};
+
+type Deadline = {
+  agent: string;
+  status: string;
+  dueAt: string | number | Date;
+  projectName: string;
+  stage: string;
+};
+
+type Hive = {
+  state?: { agentLastRun?: Record<string, string | number | Date> };
+  projects?: Project[];
+  discussions?: Discussion[];
+  deadlines?: Deadline[];
+};
+
+interface AgentRoomProps {
+  agentName: string;
+  hive?: Hive | null;
+  agentStatus: (name: string) => AgentStatus;
+  onClose: () => void;
+}
+
+interface SectionProps {
+  title: string;
+  color?: string;
+  children?: React.ReactNode;
+}
+
+const AGENT_INFO: Record<string, AgentInfo> = {
   apex:  { color: '#f0b429', emoji: '👁',  model: 'Hermes 3 405B',        desc: 'Reviews all proposals. Never biased. Final authority.' },
   nova:  { color: '#a78bfa', emoji: '💡', model: 'Mistral Small 3.1 24B', desc: 'Generates project ideas autonomously every 60 minutes.' },
   scout: { color: '#34d399', emoji: '🔍', model: 'Mistral Small 3.1 24B', desc: 'Researches every proposal before it reaches APEX.' },
@@ -12,34 +60,36 @@ const AGENT_INFO = {
   echo:  { color: '#60a5fa', emoji: '📡', model: 'Mistral Small 3.1 24B', desc: 'Crafts launch content. Twitter threads, Product Hunt, GitHub.' },
 };
 
-const SCHEDULE = {
+const SCHEDULE: Record<string, number> = {
   nova: 60, scout: 45, apex: 30, atlas: 90,
   forge: 120, lens: 60, pulse: 60, sage: 90, echo: 120,
 };
 
-function timeSince(iso) {
+function timeSince(iso?: string | number | Date | null): string {
   if (!iso) return 'never';
-  const m = Math.floor((Date.now() - new Date(iso)) / 60000);
+  const t = typeof iso === 'number' ? iso : new Date(iso).getTime();
+  if (!isFinite(t)) return 'never';
+  const m = Math.floor((Date.now() - t) / 60000);
   if (m < 1)  return 'just now';
   if (m < 60) return `${m}m ago`;
   return `${Math.floor(m / 60)}h ago`;
 }
 
-export default function AgentRoom({ agentName, hive, agentStatus, onClose }) {
+export default function AgentRoom({ agentName, hive, agentStatus, onClose }: AgentRoomProps) {
   const info   = AGENT_INFO[agentName];
   const status = agentStatus(agentName);
   const last   = hive?.state?.agentLastRun?.[agentName];
   const cycle  = SCHEDULE[agentName];
-  const minsSince = last ? (Date.now() - new Date(last)) / 60000 : null;
+  const minsSince = last ? (Date.now() - (typeof last === 'number' ? last : new Date(last).getTime())) / 60000 : null;
   const progress = minsSince !== null ? Math.min(1, minsSince / cycle) : 0;
 
   // Find what this agent is working on
-  const stageAgentMap = {
+  const stageAgentMap: Record<string, string> = {
     approved: 'scout', research: 'atlas', architecture: 'forge',
     implementation: 'lens', review: 'pulse', tests: 'sage', docs: 'echo',
   };
   const activeProjects = (hive?.projects || []).filter(p =>
-    stageAgentMap[p.status?.stage] === agentName
+    stageAgentMap[p.status?.stage!] === agentName
   );
 
   // Recent discussions involving this agent
@@ -52,51 +102,20 @@ export default function AgentRoom({ agentName, hive, agentStatus, onClose }) {
     d.agent === agentName && d.status === 'active'
   );
 
-  const statusColors = {
-    active:  '#34d399', due: '#f0b429', resting: '#60a5fa', idle: '#3d6180',
+  const statusColors: Record<AgentStatus, string> = {
+    active:  '#4ade80', due: '#ffd93d', resting: '#60a5fa', idle: '#7d9ac3',
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      zIndex: 200,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'rgba(2,4,8,0.85)',
-      backdropFilter: 'blur(8px)',
-      animation: 'fadeSlideUp 0.2s ease',
-    }} onClick={onClose}>
-      <div style={{
-        background: `linear-gradient(135deg, #091525 0%, #050d16 100%)`,
-        border: `1px solid ${info.color}40`,
-        borderRadius: '16px',
-        padding: '2rem',
-        width: '100%',
-        maxWidth: 560,
-        boxShadow: `0 0 60px ${info.color}15, 0 20px 60px rgba(0,0,0,0.8)`,
-        position: 'relative',
-        animation: 'fadeSlideUp 0.25s ease',
-      }} onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm animate-[fadeSlideUp_0.2s_ease]" onClick={onClose}>
+      <div className="bg-gradient-to-br from-[#142d45] to-[#0f1725] rounded-2xl p-8 w-full max-w-[560px] border" style={{ borderColor: `${info.color}66`, boxShadow: `0 0 60px ${info.color}25, 0 20px 60px rgba(0,0,0,0.9)` }} onClick={e => e.stopPropagation()}>
 
         {/* Close */}
-        <button onClick={onClose} style={{
-          position: 'absolute', top: 16, right: 16,
-          background: 'none', border: 'none', color: 'var(--text-dim)',
-          cursor: 'pointer', fontSize: '1rem', lineHeight: 1,
-        }}>✕</button>
+        <button onClick={onClose} className="absolute top-4 right-4 bg-none border-none text-[var(--text-dim)] cursor-pointer text-lg leading-none hover:text-[var(--text-primary)] transition-colors">✕</button>
 
         {/* Header */}
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
-          <div style={{
-            width: 64, height: 64, borderRadius: '12px', flexShrink: 0,
-            background: `radial-gradient(circle, ${info.color}25, ${info.color}08)`,
-            border: `1px solid ${info.color}40`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '1.8rem',
-            boxShadow: `0 0 20px ${info.color}30`,
-          }}>{info.emoji}</div>
+        <div className="flex gap-4 items-flex-start mb-6">
+          <div className="w-16 h-16 rounded-xl flex-shrink-0 flex items-center justify-center text-3xl border" style={{ background: `radial-gradient(circle, ${info.color}30, ${info.color}10)`, borderColor: `${info.color}60`, boxShadow: `0 0 20px ${info.color}40` }}>{info.emoji}</div>
           <div>
             <h2 style={{
               fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 800,
@@ -118,32 +137,25 @@ export default function AgentRoom({ agentName, hive, agentStatus, onClose }) {
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <div style={{
-                width: 8, height: 8, borderRadius: '50%',
-                background: statusColors[status],
-                boxShadow: `0 0 6px ${statusColors[status]}`,
-                animation: status === 'active' ? 'blink 1s infinite' : 'none',
-              }} />
+              <div className="w-2 h-2 rounded-full" style={{ background: statusColors[status], boxShadow: `0 0 8px ${statusColors[status]}`, animation: status === 'active' ? 'blink 1s infinite' : 'none' }} />
               <span style={{ fontSize: '0.7rem', color: statusColors[status], letterSpacing: '0.1em', fontWeight: 700 }}>
                 {status.toUpperCase()}
               </span>
             </div>
-            <span style={{ fontSize: '0.65rem', color: 'var(--text-dim)' }}>
+            <span className="text-[0.65rem] text-[var(--text-dim)]">
               Last active: {timeSince(last)} · Cycle: {cycle}min
             </span>
           </div>
 
           {/* Progress bar to next wake */}
-          <div style={{ fontSize: '0.55rem', color: 'var(--text-dim)', marginBottom: '0.3rem', letterSpacing: '0.1em' }}>
+          <div className="text-[0.55rem] text-[var(--text-dim)] mb-0.75 tracking-wide">
             CYCLE PROGRESS — {status === 'active' ? 'WORKING NOW' : status === 'due' ? 'DUE TO WAKE' : `RESTING`}
           </div>
-          <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
-            <div style={{
-              height: '100%', borderRadius: 2,
+          <div className="h-1 bg-white/10 rounded overflow-hidden">
+            <div className="h-full rounded transition-all duration-1000" style={{
               width: `${progress * 100}%`,
               background: `linear-gradient(to right, ${info.color}80, ${info.color})`,
-              transition: 'width 1s ease',
-              boxShadow: `0 0 6px ${info.color}80`,
+              boxShadow: `0 0 8px ${info.color}`,
             }} />
           </div>
         </div>
@@ -170,8 +182,9 @@ export default function AgentRoom({ agentName, hive, agentStatus, onClose }) {
         {myDeadlines.length > 0 && (
           <Section title="DEADLINES" color="#f0b429">
             {myDeadlines.map((d, i) => {
-              const hoursLeft = ((new Date(d.dueAt) - Date.now()) / 3600000).toFixed(1);
-              const overdue   = hoursLeft < 0;
+              const dueTime = typeof d.dueAt === 'number' ? d.dueAt : new Date(d.dueAt).getTime();
+              const hoursLeft = ((dueTime - Date.now()) / 3600000).toFixed(1);
+              const overdue   = parseFloat(hoursLeft) < 0;
               return (
                 <div key={i} style={{
                   display: 'flex', justifyContent: 'space-between',
@@ -181,7 +194,7 @@ export default function AgentRoom({ agentName, hive, agentStatus, onClose }) {
                 }}>
                   <span>{d.projectName} → {d.stage}</span>
                   <span style={{ color: overdue ? '#ef4444' : '#f0b429' }}>
-                    {overdue ? `${Math.abs(hoursLeft)}h OVERDUE` : `${hoursLeft}h left`}
+                    {overdue ? `${Math.abs(parseFloat(hoursLeft))}h OVERDUE` : `${hoursLeft}h left`}
                   </span>
                 </div>
               );
@@ -215,7 +228,7 @@ export default function AgentRoom({ agentName, hive, agentStatus, onClose }) {
   );
 }
 
-function Section({ title, color, children }) {
+function Section({ title, color, children }: SectionProps) {
   return (
     <div style={{ marginBottom: '1rem' }}>
       <div style={{

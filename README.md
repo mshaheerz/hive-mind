@@ -58,10 +58,12 @@ hive-mind/
 
 ### 1. Install
 ```bash
-npm install
+npm install               # installs dependencies including the official OpenRouter SDK
 cp .env.example .env
 # Add your OPENROUTER_API_KEY to .env
 ```
+> **Note:** the client code now leverages the official `@openrouter/sdk` package instead of rolling its own HTTP calls. If you already had an older checkout, run `npm install` to pick up the new dependency.
+
 
 ### 2. Run Hive
 ```bash
@@ -70,6 +72,13 @@ node hive.js --task "build X"       # Give a specific task
 node hive.js --agent apex           # Talk to one agent
 node hive.js --review               # APEX reviews pending proposals
 ```
+
+### AI-only (Autonomous) Mode
+If you want the agents to run fully autonomously (no human interaction), start the autonomous runner:
+```bash
+node run.js                          # Start autonomous mode — agents run on a schedule
+```
+The runner checks agents every 5 minutes by default and will autonomously propose, review, and advance projects.
 
 ### 3. Create a Project (Human)
 ```bash
@@ -151,3 +160,61 @@ Then register it in `skills/index.js`.
 - Agent memory persists in `memory/` between runs  
 - The `.hive/queue.json` tracks all pending APEX decisions
 - Models are free via OpenRouter — no cost
+- Client uses the **official `@openrouter/sdk`** under the hood for all API interactions
+
+## ⚠️ Troubleshooting: OpenRouter / model errors
+If agents fail to call the API you'll see errors in `logs/<date>-autonomous.log`. Common errors and fixes:
+
+- 400 Developer instruction not enabled for model
+    - Cause: some provider models (eg. Google Gemma variants) require a `developer instruction` toggle or different prompt format.
+    - Fix: switch that agent to a model that supports system prompts, or enable developer instructions in the provider settings. Alternatively set a different model in `core/openrouter.js` or provide your own BYOK in OpenRouter settings.
+
+- 429 Rate-limited
+    - Cause: shared free endpoints can be rate-limited upstream.
+    - Fix: add your own provider key at https://openrouter.ai/settings/integrations or use a different model to spread quota; the client already retries on 429 with exponential backoff.
+
+- 404 No endpoints found for model
+    - Cause: the requested model is not currently available through OpenRouter.
+    - Fix: update `AGENT_MODELS` in `core/openrouter.js` to use a currently available model, or add a fallback chain.
+
+If you want help picking stable models for your account, tell me which providers/keys you have and I can update `core/openrouter.js` accordingly.
+
+### Quick model probe & fixes
+If agents are failing (rate-limited / no endpoints), run a quick probe to see which models are reachable from your OpenRouter key. The helper scripts also use the SDK so they mirror the behaviour of the agents exactly:
+
+```bash
+# fast single-attempt probe (recommended)
+npm run test:openrouter:quick
+
+# slower thorough probe with retries (will take longer)
+npm run test:openrouter
+```
+
+If the probe shows failures like `429`, `404`, or `402` you have two options:
+
+- Add your own provider/integration key at https://openrouter.ai/settings/integrations to increase quota and reduce rate limits.
+- Override an agent's model in `.env` to one you know works for your account, e.g.:
+
+```
+OPENROUTER_MODEL_NOVA=stepfun/step-3.5-flash:free
+OPENROUTER_MODEL_LENS=openai/gpt-oss-120b:free
+```
+
+The client will automatically use `OPENROUTER_MODEL_<AGENT>` values when present, so you can tune models without changing code. After editing `.env`, restart the autonomous runner:
+
+```bash
+npm run dev:autonomous   # for development (auto-restarts)
+# or
+node run.js              # start without watcher
+```
+
+## 🛠 Development: automatic reload for autonomous runner
+When developing, edits to `core/` or agent code won't affect a running `node run.js` process — Node doesn't reload code automatically. Use `nodemon` to watch files and restart the runner on change.
+
+Install dev deps and run the watcher:
+```bash
+npm install --save-dev nodemon
+npm run dev:autonomous
+```
+
+`dev:autonomous` will restart the autonomous runner when files under `core/`, `agents/`, `.hive/`, or `run.js` change, giving you realtime feedback while editing.

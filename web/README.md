@@ -20,6 +20,8 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+Tailwind CSS v4 is already installed – global styles are imported via `app/globals.css` which now includes the `@tailwind` directives.  Feel free to start replacing inline styles with utility classes.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

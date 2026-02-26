@@ -1,0 +1,14 @@
+{
+  "watch": ["core/**/*", "agents/**/*", "run.js"],
+  "ext": "js,json",
+  "ignore": [
+    "node_modules/*",
+    "logs/*",
+    "memory/*",
+    ".hive/*",
+    "web/node_modules/*",
+    "web/.next/*"
+  ],
+  "exec": "node run.js",
+  "delay": "250"
+}

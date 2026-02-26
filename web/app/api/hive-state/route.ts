@@ -13,7 +13,7 @@ const HIVE_DIR     = path.join(HIVE_ROOT, '.hive');
 const DISCUSS_DIR  = path.join(HIVE_DIR, 'discussions');
 const LOGS_DIR     = path.join(HIVE_ROOT, 'logs');
 
-function safeRead(file, fallback) {
+function safeRead(file: string, fallback: any): any {
   try {
     if (!fs.existsSync(file)) return fallback;
     return JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -47,7 +47,7 @@ function getDiscussions() {
     .filter(f => f.endsWith('.json'))
     .map(f => safeRead(path.join(DISCUSS_DIR, f), null))
     .filter(Boolean)
-    .sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt))
+    .sort((a: any, b: any) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())
     .slice(0, 10);
 }
 

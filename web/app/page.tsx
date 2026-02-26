@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, Dispatch, SetStateAction } from 'react';
 import SpaceStation from '../components/SpaceStation';
 import AgentRoom from '../components/AgentRoom';
 import MissionLog from '../components/MissionLog';
@@ -7,17 +7,29 @@ import ProjectTracker from '../components/ProjectTracker';
 import ProposalQueue from '../components/ProposalQueue';
 import CommsBus from '../components/commsBus';
 
-const AGENT_SCHEDULE = {
+type HiveState = {
+  running?: boolean;
+  cycleCount?: number;
+  stats?: { approved?: number; completed?: number; duplicatesBlocked?: number };
+  agentLastRun?: Record<string, string | number | Date>;
+  projects?: Array<{ name: string; status?: { stage?: string } }>;
+  queue?: any[];
+  logs?: string[];
+  discussions?: any[];
+  state?: any;
+};
+
+const AGENT_SCHEDULE: Record<string, number> = {
   nova:  60, scout: 45, apex: 30,
   atlas: 90, forge: 120, lens: 60,
   pulse: 60, sage:  90, echo: 120,
 };
 
 export default function Home() {
-  const [hive, setHive]         = useState(null);
-  const [tick, setTick]         = useState(0);
-  const [selected, setSelected] = useState(null);
-  const [loading, setLoading]   = useState(true);
+  const [hive, setHive] = useState<HiveState | null>(null);
+  const [tick, setTick] = useState<number>(0);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
   // Poll hive state every 5 seconds
   useEffect(() => {
@@ -43,11 +55,12 @@ export default function Home() {
     return () => clearInterval(iv);
   }, []);
 
-  const agentStatus = (agentName) => {
+  const agentStatus = (agentName: string): 'active' | 'resting' | 'due' | 'idle' => {
     if (!hive?.state?.agentLastRun) return 'idle';
     const last = hive.state.agentLastRun[agentName];
     if (!last) return 'idle';
-    const mins = (Date.now() - new Date(last)) / 60000;
+    const lastTime = typeof last === 'number' ? last : new Date(last).getTime();
+    const mins = (Date.now() - lastTime) / 60000;
     const cycle = AGENT_SCHEDULE[agentName] || 60;
     if (mins < 2)       return 'active';
     if (mins < cycle)   return 'resting';
@@ -57,40 +70,21 @@ export default function Home() {
   if (loading) return <LoadingScreen />;
 
   return (
-    <main style={{ position: 'relative', zIndex: 1, minHeight: '100vh' }}>
+    <main className="relative z-1 min-h-screen">
       {/* Header */}
-      <header style={{
-        padding: '1.5rem 2rem',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-        background: 'rgba(5,13,22,0.8)',
-        backdropFilter: 'blur(12px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        position: 'sticky', top: 0, zIndex: 100,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ position: 'relative', width: 36, height: 36 }}>
-            <div style={{
-              width: 36, height: 36, borderRadius: '50%',
-              background: 'radial-gradient(circle, #f0b429 0%, #f97316 60%, transparent 100%)',
-              boxShadow: '0 0 20px rgba(240,180,40,0.6)',
-              animation: 'float 3s ease-in-out infinite',
-            }} />
+      <header className="sticky top-0 z-50 flex items-center justify-between px-8 py-8 border-b border-[rgba(255,255,255,0.15)] bg-[rgba(15,23,37,0.9)] backdrop-blur-lg">
+        <div className="flex items-center gap-4">
+          <div className="relative w-12 h-12">
+            <div className="w-12 h-12 rounded-full bg-[radial-gradient(circle,_#ffd93d_0%,_#fb923c_60%,_transparent_100%)] shadow-[0_0_30px_rgba(255,217,61,0.8)] animate-[float_3s_ease-in-out_infinite]" />
           </div>
           <div>
-            <h1 style={{
-              fontFamily: 'var(--font-display)', fontSize: '1.4rem',
-              fontWeight: 800, letterSpacing: '0.08em',
-              background: 'linear-gradient(135deg, #f0b429, #60a5fa, #a78bfa)',
-              backgroundSize: '200% auto',
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-              animation: 'shimmer 4s linear infinite',
-            }}>HIVE MIND</h1>
-            <p style={{ fontSize: '0.6rem', color: 'var(--text-dim)', letterSpacing: '0.2em' }}>
+            <h1 className="font-display text-3xl font-extrabold tracking-[0.08em] bg-gradient-to-r from-[#ffd93d] via-[#60a5fa] to-[#c4b5fd] bg-[length:200%_auto] bg-clip-text text-transparent animate-[shimmer_4s_linear_infinite]">HIVE MIND</h1>
+            <p className="text-[0.75rem] text-[var(--text-secondary)] tracking-[0.2em] font-semibold">
               AUTONOMOUS AI WORKSPACE
             </p>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+        <div className="flex items-center gap-8">
           <StatusPill running={hive?.state?.running} />
           <Stat label="CYCLE" value={`#${hive?.state?.cycleCount || 0}`} />
           <Stat label="APPROVED" value={hive?.state?.stats?.approved || 0} color="var(--scout-color)" />
@@ -100,7 +94,7 @@ export default function Home() {
       </header>
 
       {/* Space Station Visualization */}
-      <div style={{ padding: '2rem', maxWidth: 1600, margin: '0 auto' }}>
+      <div className="px-8 py-8 max-w-[1600px] mx-auto">
         <SpaceStation
           hive={hive}
           agentStatus={agentStatus}
@@ -110,12 +104,7 @@ export default function Home() {
         />
 
         {/* Bottom grid */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr 1fr',
-          gap: '1.5rem',
-          marginTop: '1.5rem',
-        }}>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
           <ProjectTracker projects={hive?.projects || []} />
           <ProposalQueue queue={hive?.queue || []} />
           <MissionLog logs={hive?.logs || []} />
@@ -138,52 +127,33 @@ export default function Home() {
   );
 }
 
-function StatusPill({ running }) {
+function StatusPill({ running }: { running?: boolean }) {
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: '0.5rem',
-      padding: '0.3rem 0.8rem',
-      border: `1px solid ${running ? 'rgba(52,211,153,0.3)' : 'rgba(239,68,68,0.3)'}`,
-      borderRadius: '999px',
-      background: running ? 'rgba(52,211,153,0.05)' : 'rgba(239,68,68,0.05)',
-    }}>
-      <div style={{
-        width: 7, height: 7, borderRadius: '50%',
-        background: running ? 'var(--scout-color)' : 'var(--pulse-color)',
-        animation: running ? 'blink 1.5s ease-in-out infinite' : 'none',
-        boxShadow: running ? '0 0 8px var(--scout-color)' : 'none',
-      }} />
-      <span style={{ fontSize: '0.65rem', letterSpacing: '0.15em', color: running ? 'var(--scout-color)' : 'var(--pulse-color)' }}>
+    <div className={`flex items-center gap-2 px-4 py-2 rounded-full border text-[0.65rem] font-semibold tracking-[0.15em] font-display transition-all ${running ? 'border-[var(--scout-color)]/40 bg-[var(--scout-color)]/10' : 'border-[var(--pulse-color)]/40 bg-[var(--pulse-color)]/10'}`}>
+      <div className={`w-2 h-2 rounded-full ${running ? 'bg-[var(--scout-color)] animate-[blink_1.5s_ease-in-out_infinite] shadow-[0_0_8px_var(--scout-color)]' : 'bg-[var(--pulse-color)]'}`} />
+      <span className={running ? 'text-[var(--scout-color)]' : 'text-[var(--pulse-color)]'}>
         {running ? 'RUNNING' : 'OFFLINE'}
       </span>
     </div>
   );
 }
 
-function Stat({ label, value, color }) {
+function Stat({ label, value, color }: { label: string; value: string | number; color?: string }) {
   return (
-    <div style={{ textAlign: 'center' }}>
-      <div style={{ fontSize: '1.1rem', fontWeight: 700, color: color || 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
+    <div className="text-center">
+      <div className="text-[1.1rem] font-bold font-display" style={{ color: color || 'var(--text-primary)' }}>
         {value}
       </div>
-      <div style={{ fontSize: '0.55rem', color: 'var(--text-dim)', letterSpacing: '0.15em' }}>{label}</div>
+      <div className="text-[0.55rem] text-[var(--text-dim)] tracking-[0.15em]">{label}</div>
     </div>
   );
 }
 
 function LoadingScreen() {
   return (
-    <div style={{
-      display: 'flex', flexDirection: 'column', alignItems: 'center',
-      justifyContent: 'center', minHeight: '100vh', gap: '1.5rem',
-    }}>
-      <div style={{
-        width: 60, height: 60, borderRadius: '50%',
-        background: 'radial-gradient(circle, #f0b429, #f97316)',
-        boxShadow: '0 0 40px rgba(240,180,40,0.6)',
-        animation: 'float 2s ease-in-out infinite',
-      }} />
-      <p style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', letterSpacing: '0.2em', color: 'var(--text-secondary)' }}>
+    <div className="flex flex-col items-center justify-center min-h-screen gap-6">
+      <div className="w-16 h-16 rounded-full shadow-[0_0_40px_rgba(255,217,61,0.6)] animate-[float_2s_ease-in-out_infinite] bg-[radial-gradient(circle,_#ffd93d,_#fb923c)]" />
+      <p className="font-display text-xl font-bold tracking-[0.2em] text-[var(--text-secondary)]">
         INITIALIZING HIVE...
       </p>
     </div>

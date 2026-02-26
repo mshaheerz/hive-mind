@@ -1,6 +1,30 @@
 'use client';
 
-const STATUS_CONFIG = {
+type StatusConfig = {
+  label: string;
+  color: string;
+  icon: string;
+};
+
+type Proposal = {
+  id?: string | number;
+  title: string;
+  status: string;
+  proposedAt?: string | number | Date;
+  complexity?: string;
+  decision?: { overall: number };
+  revisionFeedback?: string;
+};
+
+interface ProposalQueueProps {
+  queue: Proposal[];
+}
+
+interface ProposalCardProps {
+  proposal: Proposal;
+}
+
+const STATUS_CONFIG: Record<string, StatusConfig> = {
   pending_scout:   { label: 'AWAITING SCOUT',  color: '#34d399', icon: '🔍' },
   pending_apex:    { label: 'AWAITING APEX',   color: '#f0b429', icon: '⏳' },
   needs_revision:  { label: 'REVISION NEEDED', color: '#f97316', icon: '🔄' },
@@ -8,16 +32,22 @@ const STATUS_CONFIG = {
   rejected:        { label: 'REJECTED',         color: '#ef4444', icon: '❌' },
 };
 
-function timeAgo(iso) {
+function timeAgo(iso?: string | number | Date | null): string {
   if (!iso) return '';
-  const m = Math.floor((Date.now() - new Date(iso)) / 60000);
+  const t = typeof iso === 'number' ? iso : new Date(iso).getTime();
+  if (!isFinite(t)) return '';
+  const m = Math.floor((Date.now() - t) / 60000);
   if (m < 1)  return 'just now';
   if (m < 60) return `${m}m ago`;
   return `${Math.floor(m / 60)}h ago`;
 }
 
-export default function ProposalQueue({ queue }) {
-  const sorted = [...queue].sort((a, b) => new Date(b.proposedAt) - new Date(a.proposedAt)).slice(0, 20);
+export default function ProposalQueue({ queue }: ProposalQueueProps) {
+  const sorted = [...queue].sort((a, b) => {
+    const aTime = typeof a.proposedAt === 'number' ? a.proposedAt : new Date(a.proposedAt || 0).getTime();
+    const bTime = typeof b.proposedAt === 'number' ? b.proposedAt : new Date(b.proposedAt || 0).getTime();
+    return bTime - aTime;
+  }).slice(0, 20);
 
   const counts = {
     pending: queue.filter(p => p.status?.startsWith('pending')).length,
@@ -26,36 +56,19 @@ export default function ProposalQueue({ queue }) {
   };
 
   return (
-    <div style={{
-      background: 'rgba(5,13,22,0.7)',
-      border: '1px solid var(--border-dim)',
-      borderRadius: '12px',
-      overflow: 'hidden',
-      height: 320,
-      display: 'flex',
-      flexDirection: 'column',
-    }}>
-      <div style={{
-        padding: '0.75rem 1rem',
-        borderBottom: '1px solid var(--border-dim)',
-        fontSize: '0.6rem',
-        letterSpacing: '0.2em',
-        color: 'var(--text-dim)',
-        flexShrink: 0,
-        display: 'flex',
-        justifyContent: 'space-between',
-      }}>
-        <span>◈ PROPOSALS</span>
-        <div style={{ display: 'flex', gap: '0.7rem' }}>
-          <span style={{ color: '#f0b429' }}>{counts.pending} PENDING</span>
-          <span style={{ color: '#a78bfa' }}>{counts.approved} ✓</span>
-          <span style={{ color: '#ef4444' }}>{counts.rejected} ✗</span>
+    <div className="flex flex-col overflow-hidden rounded-lg h-[400px] bg-[rgba(20,45,69,0.8)] border border-[var(--border-dim)]">
+      <div className="px-4 py-4 border-b border-[var(--border-dim)] flex-shrink-0 flex items-center justify-between text-[0.75rem] font-bold tracking-widest text-[var(--text-secondary)]">
+        <span>◆ PROPOSALS</span>
+        <div className="flex gap-3 text-[0.7rem]">
+          <span style={{ color: '#ffd93d' }}>{counts.pending} PENDING</span>
+          <span style={{ color: '#c4b5fd' }}>{counts.approved} ✓</span>
+          <span style={{ color: '#ef5350' }}>{counts.rejected} ✗</span>
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '0.5rem' }}>
+      <div className="flex-1 overflow-y-auto p-3">
         {sorted.length === 0 && (
-          <div style={{ padding: '1rem', color: 'var(--text-dim)', fontSize: '0.65rem', textAlign: 'center' }}>
+          <div className="p-4 text-[0.75rem] text-center text-[var(--text-dim)]">
             Waiting for NOVA's first proposals...
           </div>
         )}
@@ -65,70 +78,34 @@ export default function ProposalQueue({ queue }) {
   );
 }
 
-function ProposalCard({ proposal }) {
-  const cfg = STATUS_CONFIG[proposal.status] || { label: proposal.status, color: '#3d6180', icon: '?' };
+function ProposalCard({ proposal }: ProposalCardProps) {
+  const cfg = STATUS_CONFIG[proposal.status] || { label: proposal.status, color: '#7d9ac3', icon: '?' };
 
   return (
-    <div style={{
-      padding: '0.55rem 0.7rem',
-      marginBottom: '0.35rem',
-      background: 'rgba(0,0,0,0.25)',
-      border: `1px solid ${cfg.color}25`,
-      borderLeft: `2px solid ${cfg.color}`,
-      borderRadius: '6px',
-      animation: 'fadeSlideUp 0.3s ease',
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.2rem' }}>
-        <div style={{
-          fontSize: '0.62rem',
-          color: 'var(--text-primary)',
-          fontFamily: 'var(--font-display)',
-          fontWeight: 600,
-          maxWidth: '75%',
-          lineHeight: 1.3,
-        }}>
+    <div className="p-2 mb-1.5 bg-black/25 border rounded animate-[fadeSlideUp_0.3s_ease]" style={{ borderColor: `${cfg.color}35`, borderLeft: `3px solid ${cfg.color}` }}>
+      <div className="flex items-start justify-between gap-2 mb-1">
+        <div className="font-display font-bold text-[0.75rem] max-w-[75%] leading-normal" style={{ color: 'var(--text-primary)' }}>
           {cfg.icon} {proposal.title}
         </div>
-        <span style={{ fontSize: '0.5rem', color: 'var(--text-dim)', flexShrink: 0 }}>
-          {timeAgo(proposal.proposedAt)}
-        </span>
+        <span className="text-[0.6rem] text-[var(--text-dim)] flex-shrink-0">{timeAgo(proposal.proposedAt)}</span>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{
-          fontSize: '0.5rem',
-          padding: '0.1rem 0.35rem',
-          background: `${cfg.color}12`,
-          border: `1px solid ${cfg.color}30`,
-          borderRadius: '3px',
-          color: cfg.color,
-          letterSpacing: '0.08em',
-        }}>
+      <div className="flex items-center justify-between">
+        <span className="text-[0.6rem] px-1.5 rounded font-semibold border" style={{ background: `${cfg.color}15`, borderColor: `${cfg.color}50`, color: cfg.color }}>
           {cfg.label}
         </span>
-        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+        <div className="flex items-center gap-1.5">
           {proposal.complexity && (
-            <span style={{ fontSize: '0.48rem', color: 'var(--text-dim)' }}>
-              {proposal.complexity}
-            </span>
+            <span className="text-[0.6rem] text-[var(--text-dim)]">{proposal.complexity}</span>
           )}
           {proposal.decision?.overall && (
-            <span style={{ fontSize: '0.52rem', color: '#f0b429' }}>
-              {proposal.decision.overall}/10
-            </span>
+            <span className="text-[0.65rem] font-semibold" style={{ color: '#ffd93d' }}>{proposal.decision.overall}/10</span>
           )}
         </div>
       </div>
 
-      {/* APEX feedback snippet */}
       {proposal.revisionFeedback && (
-        <div style={{
-          marginTop: '0.3rem',
-          fontSize: '0.5rem',
-          color: '#f97316',
-          fontStyle: 'italic',
-          lineHeight: 1.4,
-        }}>
+        <div className="mt-0.75 text-[0.5rem] italic leading-[1.4]" style={{ color: '#f97316' }}>
           APEX: "{proposal.revisionFeedback.slice(0, 80)}..."
         </div>
       )}

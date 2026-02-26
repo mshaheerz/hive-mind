@@ -1,27 +1,31 @@
+/* Tailwind v4 directives - components merged into utilities */
+@tailwind base;
+@tailwind utilities;
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg-void:       #020408;
-  --bg-deep:       #050d16;
-  --bg-station:    #091525;
-  --bg-room:       #0d1f35;
-  --bg-room-hover: #122540;
-  --border-dim:    rgba(255,255,255,0.06);
-  --border-glow:   rgba(80,180,255,0.25);
+  --bg-void:       #0a0f1a;
+  --bg-deep:       #0f1725;
+  --bg-station:    #142d45;
+  --bg-room:       #1a3a52;
+  --bg-room-hover: #1f4560;
+  --border-dim:    rgba(255,255,255,0.15);
+  --border-glow:   rgba(80,180,255,0.4);
 
-  --apex-color:    #f0b429;
-  --nova-color:    #a78bfa;
-  --scout-color:   #34d399;
-  --forge-color:   #f97316;
-  --lens-color:    #ec4899;
-  --pulse-color:   #ef4444;
+  --apex-color:    #ffd93d;
+  --nova-color:    #c4b5fd;
+  --scout-color:   #4ade80;
+  --forge-color:   #fb923c;
+  --lens-color:    #f472b6;
+  --pulse-color:   #ef5350;
   --echo-color:    #60a5fa;
   --atlas-color:   #38bdf8;
-  --sage-color:    #e2e8f0;
+  --sage-color:    #f0f4f8;
 
-  --text-primary:  #e8f4ff;
-  --text-secondary:#7aa5c8;
-  --text-dim:      #3d6180;
+  --text-primary:  #f0f8ff;
+  --text-secondary:#b3d9ff;
+  --text-dim:      #7d9ac3;
 
   --font-display:  'Syne', sans-serif;
   --font-mono:     'Space Mono', monospace;

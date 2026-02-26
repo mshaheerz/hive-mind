@@ -1,67 +1,50 @@
-'use client';
+// MissionLog: typed component with Tailwind utility classes
+ 'use client';
 import { useRef, useEffect } from 'react';
 
-const AGENT_COLORS = {
+type LogEntry = {
+  time: string;
+  agent: string;
+  message: string;
+};
+
+interface MissionLogProps {
+  logs: string[];
+}
+
+const AGENT_COLORS: Record<string, string> = {
   APEX: '#f0b429', NOVA: '#a78bfa', SCOUT: '#34d399', FORGE: '#f97316',
   LENS: '#ec4899', PULSE: '#ef4444', ECHO: '#60a5fa', ATLAS: '#38bdf8',
   SAGE: '#e2e8f0', SYSTEM: '#3d6180',
 };
 
-function parseLogLine(line) {
+function parseLogLine(line: string): LogEntry | null {
   // Format: [2026-01-01T00:00:00.000Z] [AGENT] message
   const match = line.match(/\[([^\]]+)\]\s+\[([^\]]+)\]\s+(.*)/);
   if (!match) return null;
-  return {
-    time: new Date(match[1]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-    agent: match[2],
-    message: match[3],
-  };
+  const time = new Date(match[1]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  return { time, agent: match[2], message: match[3] };
 }
 
-export default function MissionLog({ logs }) {
-  const bottomRef = useRef(null);
+export default function MissionLog({ logs }: MissionLogProps) {
+  const bottomRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [logs.length]);
 
-  const parsed = logs.map(parseLogLine).filter(Boolean);
+  const parsed = logs.map(parseLogLine).filter(Boolean) as LogEntry[];
 
   return (
-    <div style={{
-      background: 'rgba(5,13,22,0.7)',
-      border: '1px solid var(--border-dim)',
-      borderRadius: '12px',
-      overflow: 'hidden',
-      display: 'flex',
-      flexDirection: 'column',
-      height: 320,
-    }}>
-      <div style={{
-        padding: '0.75rem 1rem',
-        borderBottom: '1px solid var(--border-dim)',
-        fontSize: '0.6rem',
-        letterSpacing: '0.2em',
-        color: 'var(--text-dim)',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.5rem',
-        flexShrink: 0,
-      }}>
-        <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#34d399', animation: 'blink 1.5s infinite' }} />
+    <div className="flex flex-col overflow-hidden rounded-lg h-[400px] bg-[rgba(20,45,69,0.8)] border border-[var(--border-dim)]">
+      <div className="px-4 py-4 border-b border-[var(--border-dim)] flex items-center gap-3 text-[0.75rem] font-bold tracking-widest text-[var(--text-secondary)]">
+        <div className="w-2 h-2 rounded-full bg-green-400 animate-[blink_1.5s_infinite]" />
         MISSION LOG
       </div>
 
-      <div style={{
-        flex: 1,
-        overflowY: 'auto',
-        padding: '0.5rem',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '0.15rem',
-      }}>
+      <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-[0.25rem]">
         {parsed.length === 0 ? (
-          <div style={{ padding: '1rem', color: 'var(--text-dim)', fontSize: '0.65rem', textAlign: 'center' }}>
+          <div className="p-4 text-[0.75rem] text-center text-[var(--text-dim)]">
             Waiting for agent activity...
           </div>
         ) : (
@@ -75,29 +58,22 @@ export default function MissionLog({ logs }) {
   );
 }
 
-function LogLine({ entry, isNew }) {
-  const color = AGENT_COLORS[entry.agent] || '#7aa5c8';
+interface LogLineProps {
+  entry: LogEntry;
+  isNew?: boolean;
+}
+
+function LogLine({ entry, isNew }: LogLineProps) {
+  const color = AGENT_COLORS[entry.agent] || '#b3d9ff';
   return (
-    <div style={{
-      display: 'flex',
-      gap: '0.5rem',
-      padding: '0.25rem 0.4rem',
-      borderRadius: '4px',
-      background: isNew ? 'rgba(255,255,255,0.03)' : 'transparent',
-      animation: isNew ? 'fadeSlideUp 0.3s ease' : 'none',
-      fontSize: '0.58rem',
-      lineHeight: 1.5,
-    }}>
-      <span style={{ color: 'var(--text-dim)', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
+    <div className={`flex gap-3 px-1.5 py-1 rounded text-[0.7rem] leading-[1.6] ${isNew ? 'bg-[rgba(255,255,255,0.1)] animate-[fadeSlideUp_0.3s_ease]' : ''}`}>
+      <span className="flex-shrink-0 tabular-nums text-[var(--text-dim)] text-[0.65rem]">
         {entry.time}
       </span>
-      <span style={{
-        color, fontWeight: 700, flexShrink: 0,
-        minWidth: '3.5rem',
-      }}>
+      <span className="flex-shrink-0 font-bold min-w-[3.5rem] text-[0.7rem]" style={{ color }}>
         [{entry.agent}]
       </span>
-      <span style={{ color: 'var(--text-secondary)', wordBreak: 'break-word' }}>
+      <span className="break-words text-[var(--text-secondary)]">
         {entry.message}
       </span>
     </div>

@@ -1,7 +1,48 @@
+// SpaceStation: typed agent network visualization component
 'use client';
-import { useRef, useEffect } from 'react';
+import React, { useRef, Dispatch, SetStateAction } from 'react';
 
-const AGENTS = [
+type Agent = {
+  key: string;
+  label: string;
+  role: string;
+  emoji: string;
+  color: string;
+  x: number;
+  y: number;
+  size: number;
+  isHead?: boolean;
+};
+
+type CommLink = [string, string];
+
+type AgentStatus = 'active' | 'due' | 'resting' | 'idle';
+
+type Hive = {
+  projects?: Array<{
+    name: string;
+    status?: { stage?: string };
+  }>;
+};
+
+interface SpaceStationProps {
+  hive?: Hive | null;
+  agentStatus: (key: string) => AgentStatus;
+  selected: string | null;
+  setSelected: Dispatch<SetStateAction<string | null>>;
+  tick: number;
+}
+
+interface RoomProps {
+  agent: Agent;
+  status: AgentStatus;
+  styleInfo: { glow: number; ring: boolean; opacity: number };
+  isSelected: boolean;
+  tick: number;
+  hive?: Hive | null;
+}
+
+const AGENTS: Agent[] = [
   { key: 'apex',  label: 'APEX',  role: 'Operations Head', emoji: '👁',  color: '#f0b429', x: 50,  y: 50,  size: 90, isHead: true },
   { key: 'nova',  label: 'NOVA',  role: 'Innovation Scout', emoji: '💡', color: '#a78bfa', x: 20,  y: 20,  size: 70 },
   { key: 'scout', label: 'SCOUT', role: 'Researcher',        emoji: '🔍', color: '#34d399', x: 75,  y: 18,  size: 70 },
@@ -14,17 +55,17 @@ const AGENTS = [
 ];
 
 // Which agents communicate with APEX
-const COMM_LINKS = [
+const COMM_LINKS: CommLink[] = [
   ['nova', 'apex'], ['scout', 'apex'], ['apex', 'atlas'],
   ['atlas', 'forge'], ['forge', 'lens'], ['lens', 'apex'],
   ['lens', 'pulse'], ['pulse', 'sage'], ['sage', 'echo'],
   ['nova', 'scout'],
 ];
 
-export default function SpaceStation({ hive, agentStatus, selected, setSelected, tick }) {
-  const svgRef = useRef(null);
+export default function SpaceStation({ hive, agentStatus, selected, setSelected, tick }: SpaceStationProps) {
+  const svgRef = useRef<SVGSVGElement>(null);
 
-  const getStatusStyle = (key) => {
+  const getStatusStyle = (key: string): { glow: number; ring: boolean; opacity: number } => {
     const s = agentStatus(key);
     return {
       active:  { glow: 1.0,  ring: true,  opacity: 1.0 },
@@ -36,8 +77,8 @@ export default function SpaceStation({ hive, agentStatus, selected, setSelected,
 
   // Particle packets travelling along comm links
   const packets = COMM_LINKS.map(([from, to], i) => {
-    const f = AGENTS.find(a => a.key === from);
-    const t = AGENTS.find(a => a.key === to);
+    const f = AGENTS.find(a => a.key === from)!;
+    const t = AGENTS.find(a => a.key === to)!;
     const phase = ((tick + i * 7) % 20) / 20; // 0..1 travelling
     const px = f.x + (t.x - f.x) * phase;
     const py = f.y + (t.y - f.y) * phase;
@@ -47,23 +88,9 @@ export default function SpaceStation({ hive, agentStatus, selected, setSelected,
   });
 
   return (
-    <div style={{
-      position: 'relative',
-      width: '100%',
-      background: 'rgba(5,13,22,0.6)',
-      border: '1px solid var(--border-dim)',
-      borderRadius: '16px',
-      overflow: 'hidden',
-      backdropFilter: 'blur(8px)',
-    }}>
+    <div className="relative w-full bg-[rgba(5,13,22,0.6)] border border-[var(--border-dim)] rounded-2xl overflow-hidden backdrop-blur-lg">
       {/* Section label */}
-      <div style={{
-        padding: '1rem 1.5rem 0',
-        fontFamily: 'var(--font-display)',
-        fontSize: '0.7rem',
-        letterSpacing: '0.2em',
-        color: 'var(--text-dim)',
-      }}>
+      <div className="px-8 py-6 pb-4 font-display text-base tracking-[0.15em] text-[var(--text-primary)] font-bold bg-gradient-to-r from-[rgba(100,150,255,0.1)] to-transparent border-b-2 border-[var(--echo-color)]">
         ◈ STATION OVERVIEW — CLICK AN AGENT TO INSPECT
       </div>
 
@@ -72,7 +99,7 @@ export default function SpaceStation({ hive, agentStatus, selected, setSelected,
         ref={svgRef}
         viewBox="0 0 100 100"
         preserveAspectRatio="xMidYMid meet"
-        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}
+        className="absolute inset-0 w-full h-full pointer-events-none"
       >
         <defs>
           {AGENTS.map(a => (
@@ -87,6 +114,7 @@ export default function SpaceStation({ hive, agentStatus, selected, setSelected,
         {COMM_LINKS.map(([from, to], i) => {
           const f = AGENTS.find(a => a.key === from);
           const t = AGENTS.find(a => a.key === to);
+          if (!f || !t) return null;
           const fromActive = agentStatus(from) === 'active';
           return (
             <line
@@ -95,7 +123,7 @@ export default function SpaceStation({ hive, agentStatus, selected, setSelected,
               stroke={fromActive ? f.color : 'rgba(255,255,255,0.04)'}
               strokeWidth={fromActive ? '0.3' : '0.15'}
               strokeDasharray={fromActive ? '1 1.5' : '0.5 2'}
-              style={{ transition: 'stroke 0.5s, stroke-width 0.5s' }}
+              className="transition-all duration-500"
             />
           );
         })}
@@ -116,7 +144,7 @@ export default function SpaceStation({ hive, agentStatus, selected, setSelected,
       </svg>
 
       {/* Agent rooms - positioned absolutely using % coordinates */}
-      <div style={{ position: 'relative', width: '100%', paddingBottom: '56%' }}>
+      <div className="relative w-full" style={{ paddingBottom: '56%' }}>
         {AGENTS.map(agent => {
           const status = agentStatus(agent.key);
           const style  = getStatusStyle(agent.key);
@@ -126,16 +154,12 @@ export default function SpaceStation({ hive, agentStatus, selected, setSelected,
             <button
               key={agent.key}
               onClick={() => setSelected(isSelected ? null : agent.key)}
+              className="absolute bg-none border-none cursor-pointer p-0"
               style={{
-                position: 'absolute',
                 left: `${agent.x}%`,
                 top:  `${agent.y}%`,
                 transform: 'translate(-50%, -50%)',
                 width: agent.size,
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                padding: 0,
                 zIndex: agent.isHead ? 10 : 5,
               }}
             >
@@ -155,44 +179,41 @@ export default function SpaceStation({ hive, agentStatus, selected, setSelected,
   );
 }
 
-function Room({ agent, status, styleInfo, isSelected, tick, hive }) {
+function Room({ agent, status, styleInfo, isSelected, tick, hive }: RoomProps) {
   const size = agent.size;
   const isActive = status === 'active';
   const isDue    = status === 'due';
 
   // Current project this agent is working on
   const activeProject = hive?.projects?.find(p => {
+    if (!p.status?.stage) return false;
     const stageAgentMap = {
       approved: 'scout', research: 'atlas', architecture: 'forge',
       implementation: 'lens', review: 'pulse', tests: 'sage', docs: 'echo',
     };
-    return stageAgentMap[p.status?.stage] === agent.key;
+    return stageAgentMap[p.status.stage as keyof typeof stageAgentMap] === agent.key;
   });
 
   return (
-    <div style={{ position: 'relative', width: size, textAlign: 'center' }}>
+    <div className="relative text-center" style={{ width: size }}>
       {/* Pulse rings when active */}
       {(isActive || isDue) && (
         <>
-          <div style={{
-            position: 'absolute',
+          <div className="absolute border rounded-full" style={{
             inset: '50%',
             transform: 'translate(-50%, -50%)',
             width: size * 0.9,
             height: size * 0.9,
-            borderRadius: '50%',
-            border: `1px solid ${agent.color}`,
+            borderColor: agent.color,
             animation: 'pulse-ring 2s ease-out infinite',
             opacity: 0.5,
           }} />
-          <div style={{
-            position: 'absolute',
+          <div className="absolute border rounded-full" style={{
             inset: '50%',
             transform: 'translate(-50%, -50%)',
             width: size * 0.9,
             height: size * 0.9,
-            borderRadius: '50%',
-            border: `1px solid ${agent.color}`,
+            borderColor: agent.color,
             animation: 'pulse-ring 2s ease-out infinite 0.7s',
             opacity: 0.3,
           }} />
@@ -200,35 +221,25 @@ function Room({ agent, status, styleInfo, isSelected, tick, hive }) {
       )}
 
       {/* Room body */}
-      <div style={{
-        position: 'relative',
+      <div className="relative flex flex-col items-center justify-center gap-1 transition-all duration-250 backdrop-blur cursor-pointer overflow-hidden" style={{
         width: size,
         height: size,
-        borderRadius: agent.isHead ? '50%' : '12px',
+        borderRadius: agent.isHead ? '50%' : '14px',
         background: isSelected
-          ? `radial-gradient(circle, ${agent.color}22 0%, ${agent.color}08 100%)`
-          : `radial-gradient(circle, ${agent.color}${isActive ? '18' : '08'} 0%, rgba(9,21,37,0.9) 100%)`,
-        border: `1px solid ${isSelected ? agent.color : isActive ? `${agent.color}55` : 'rgba(255,255,255,0.06)'}`,
-        boxShadow: isActive
-          ? `0 0 ${agent.isHead ? 40 : 20}px ${agent.color}${agent.isHead ? '55' : '30'}, inset 0 0 20px ${agent.color}10`
-          : isSelected ? `0 0 20px ${agent.color}40` : 'none',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '0.25rem',
-        transition: 'all 0.4s ease',
-        opacity: styleInfo.opacity,
-        backdropFilter: 'blur(4px)',
+          ? `radial-gradient(circle, ${agent.color}28 0%, ${agent.color}12 100%)`
+          : `radial-gradient(circle, ${agent.color}${isActive ? '22' : '12'} 0%, rgba(9,21,37,0.8) 100%)`,
+        border: `2px solid ${isSelected ? agent.color : isActive ? `${agent.color}70` : `${agent.color}40`}`,
+        boxShadow: isSelected
+          ? `0 0 30px ${agent.color}60, inset 0 0 15px ${agent.color}20, 0 8px 20px rgba(0,0,0,0.5)`
+          : isActive
+          ? `0 0 ${agent.isHead ? 50 : 30}px ${agent.color}50, inset 0 0 15px ${agent.color}15, 0 6px 15px rgba(0,0,0,0.4)`
+          : `0 0 12px ${agent.color}35, 0 2px 8px rgba(0,0,0,0.3)`,
         animation: isActive ? 'float 3s ease-in-out infinite' : 'none',
-        cursor: 'pointer',
-        overflow: 'hidden',
+        transform: isSelected ? 'scale(1.1)' : 'scale(1)',
       }}>
         {/* Scan line when active */}
         {isActive && (
-          <div style={{
-            position: 'absolute',
-            top: 0, left: 0, right: 0,
+          <div className="absolute top-0 left-0 right-0" style={{
             height: '30%',
             background: `linear-gradient(to bottom, ${agent.color}20, transparent)`,
             animation: 'scan 2.5s linear infinite',
@@ -237,8 +248,7 @@ function Room({ agent, status, styleInfo, isSelected, tick, hive }) {
 
         {/* Corner brackets for selected */}
         {isSelected && ['tl','tr','bl','br'].map(pos => (
-          <div key={pos} style={{
-            position: 'absolute',
+          <div key={pos} className="absolute" style={{
             width: 8, height: 8,
             [pos.includes('t') ? 'top' : 'bottom']: 4,
             [pos.includes('l') ? 'left' : 'right']: 4,
@@ -251,45 +261,38 @@ function Room({ agent, status, styleInfo, isSelected, tick, hive }) {
 
         {/* Emoji */}
         <div style={{
-          fontSize: agent.isHead ? '1.6rem' : '1.1rem',
+          fontSize: agent.isHead ? '1.9rem' : '1.3rem',
           lineHeight: 1,
-          filter: isActive ? `drop-shadow(0 0 6px ${agent.color})` : 'none',
-        }}>{agent.emoji}</div>
+          filter: `drop-shadow(0 0 8px ${agent.color}${isSelected || isActive ? 'ff' : '80'})`,
+          opacity: isSelected ? 1 : isActive ? 1 : 0.9,
+        }} className="leading-none">{agent.emoji}</div>
 
         {/* Name */}
-        <div style={{
-          fontFamily: 'var(--font-display)',
-          fontSize: agent.isHead ? '0.75rem' : '0.6rem',
-          fontWeight: 700,
+        <div className="font-display font-bold tracking-[0.15em]" style={{
+          fontSize: agent.isHead ? '0.85rem' : '0.7rem',
           color: agent.color,
-          letterSpacing: '0.12em',
+          textShadow: `0 0 4px ${agent.color}40`,
         }}>{agent.label}</div>
 
         {/* Status dot */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-          <div style={{
-            width: 4, height: 4, borderRadius: '50%',
-            background: isActive ? agent.color : isDue ? '#f0b429' : 'rgba(255,255,255,0.2)',
-            boxShadow: isActive ? `0 0 4px ${agent.color}` : 'none',
+        <div className="flex items-center gap-1">
+          <div className="rounded-full" style={{
+            width: 5, height: 5,
+            background: isActive ? agent.color : isDue ? '#ffd93d' : 'rgba(255,255,255,0.4)',
+            boxShadow: (isActive || isDue) ? `0 0 6px ${isActive ? agent.color : '#ffd93d'}` : 'none',
             animation: isActive ? 'blink 1s ease-in-out infinite' : 'none',
           }} />
-          <span style={{ fontSize: '0.45rem', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.1em' }}>
+          <span className="font-semibold tracking-[0.1em]" style={{ fontSize: '0.5rem', color: isActive ? agent.color : isDue ? '#ffd93d' : 'var(--text-secondary)' }}>
             {status.toUpperCase()}
           </span>
         </div>
 
         {/* Active project tag */}
         {activeProject && (
-          <div style={{
-            position: 'absolute', bottom: 4,
+          <div className="absolute bottom-1 max-w-[80%] overflow-hidden text-ellipsis whitespace-nowrap tracking-[0.05em]" style={{
             fontSize: '0.4rem',
             color: agent.color,
             opacity: 0.7,
-            maxWidth: '80%',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-            letterSpacing: '0.05em',
           }}>
             ▶ {activeProject.name}
           </div>
@@ -297,13 +300,10 @@ function Room({ agent, status, styleInfo, isSelected, tick, hive }) {
       </div>
 
       {/* Role label below */}
-      <div style={{
-        marginTop: '0.3rem',
-        fontSize: '0.5rem',
-        color: isActive ? agent.color : 'var(--text-dim)',
-        letterSpacing: '0.1em',
-        opacity: 0.8,
-        transition: 'color 0.4s',
+      <div className="mt-1.5 font-medium tracking-[0.15em] transition-colors duration-300" style={{
+        fontSize: '0.55rem',
+        color: isSelected ? agent.color : isDue ? '#ffd93d' : isActive ? agent.color : 'var(--text-secondary)',
+        opacity: isSelected ? 1 : 0.9,
       }}>
         {agent.role.toUpperCase()}
       </div>
