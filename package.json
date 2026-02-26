@@ -23,7 +23,8 @@
     "web:lint": "npm --prefix web run lint",
     "dev:autonomous": "nodemon",
     "test:openrouter": "node scripts/test-openrouter.js",
-    "test:openrouter:quick": "node scripts/test-openrouter-quick.js"
+    "test:openrouter:quick": "node scripts/test-openrouter-quick.js --provider openrouter",
+    "test:groq:quick": "node scripts/test-openrouter-quick.js --provider groq"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
@@ -32,7 +33,8 @@
     "@openrouter/sdk": "^0.9.11",
     "chalk": "^4.1.2",
     "commander": "^12.0.0",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "groq-sdk": "^0.37.0"
   },
   "engines": {
     "node": ">=18.0.0"

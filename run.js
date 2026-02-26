@@ -28,6 +28,41 @@ const {
 
 const PROJECTS_DIR = path.join(__dirname, 'projects');
 const QUEUE_FILE   = path.join(__dirname, '.hive', 'queue.json');
+const RUNNER_ARGS = process.argv.slice(2);
+
+function printUsage() {
+  console.log(`Usage: node run.js [options]
+
+Starts the autonomous Hive runner.
+
+Options:
+  --provider <provider>  LLM provider (openrouter|groq)
+  -h, --help             display help for command`);
+}
+
+function resolveProviderArg(argv) {
+  const args = argv || [];
+  const direct = args.find((a) => a.startsWith('--provider='));
+  if (direct) return direct.split('=')[1];
+  const idx = args.indexOf('--provider');
+  if (idx >= 0 && args[idx + 1]) return args[idx + 1];
+  return '';
+}
+
+if (RUNNER_ARGS.includes('-h') || RUNNER_ARGS.includes('--help')) {
+  printUsage();
+  process.exit(0);
+}
+
+if (RUNNER_ARGS.includes('--provider') && !resolveProviderArg(RUNNER_ARGS)) {
+  console.error('Missing value for --provider');
+  printUsage();
+  process.exit(1);
+}
+
+process.env.LLM_PROVIDER = String(
+  resolveProviderArg(RUNNER_ARGS) || process.env.LLM_PROVIDER || 'openrouter'
+).toLowerCase();
 
 // ─── Check interval: every 5 minutes ──────────────────────────
 const CHECK_INTERVAL_MS = 5 * 60 * 1000;
@@ -115,6 +150,22 @@ class AutonomousRunner {
       sage:  new SageAgent(),
       nova:  new NovaAgent(),
     };
+
+    this._syncProviderState();
+  }
+
+  _syncProviderState() {
+    const current = String(process.env.LLM_PROVIDER || 'openrouter').toLowerCase();
+    const previous = String(this.state.state.llmProvider || '').toLowerCase();
+
+    // If provider changed between restarts, wake agents immediately on the new backend.
+    if (previous && previous !== current) {
+      this.state.state.agentLastRun = {};
+      log('system', `Provider changed (${previous} -> ${current}). Resetting agent schedules for immediate cycle activity.`);
+    }
+
+    this.state.state.llmProvider = current;
+    this.state.save();
   }
 
   // ─── Entry point ────────────────────────────────────────────
@@ -125,6 +176,7 @@ class AutonomousRunner {
     console.log(chalk.cyan('╚══════════════════════════════════════╝\n'));
 
     log('system', 'Autonomous runner started. Agents will work on their schedules.');
+    log('system', `LLM provider: ${process.env.LLM_PROVIDER}`);
     log('system', `Check interval: every ${CHECK_INTERVAL_MS / 60000} minutes`);
     log('system', 'Press Ctrl+C to stop. Human commands still work in another terminal.\n');
 
@@ -182,31 +234,40 @@ class AutonomousRunner {
     this.state.save();
 
     log('system', `\n── Cycle #${this.state.state.cycleCount} ─────────────────────────`);
+    const dueSnapshot = Object.fromEntries(
+      Object.keys(AGENT_SCHEDULE).map((name) => [name, this.state.isAgentDue(name)])
+    );
+    const dueAgents = Object.keys(dueSnapshot).filter((name) => dueSnapshot[name]);
+    if (dueAgents.length) {
+      log('system', `Due agents this cycle: ${dueAgents.map((a) => a.toUpperCase()).join(', ')}`);
+    } else {
+      log('system', 'No agents due this cycle (waiting for schedules).');
+    }
 
     try {
       // 1. Check & enforce deadlines
       await this.checkDeadlines();
 
       // 2. NOVA generates new ideas (if due)
-      if (this.state.isAgentDue('nova')) {
+      if (dueSnapshot.nova) {
         await this.novaGeneratesIdeas();
         this.state.markAgentRun('nova');
       }
 
       // 3. SCOUT validates pending proposals (if due)
-      if (this.state.isAgentDue('scout')) {
+      if (dueSnapshot.scout) {
         await this.scoutValidatesProposals();
         this.state.markAgentRun('scout');
       }
 
       // 4. APEX reviews validated proposals (if due)
-      if (this.state.isAgentDue('apex')) {
+      if (dueSnapshot.apex) {
         await this.apexReviewsAndDecides();
         this.state.markAgentRun('apex');
       }
 
       // 5. Advance active projects through pipeline
-      await this.advanceProjects();
+      await this.advanceProjects(dueSnapshot);
 
     } catch (err) {
       log('system', `Cycle error: ${err.message}`);
@@ -496,7 +557,7 @@ ${decision.reasoning}
 
   // ─── Advance projects through the pipeline ──────────────────
 
-  async advanceProjects() {
+  async advanceProjects(dueSnapshot = {}) {
     const projects = getProjects();
 
     for (const name of projects) {
@@ -507,7 +568,7 @@ ${decision.reasoning}
 
       // Map stages to agents
       const stageMap = {
-        approved:       { agent: 'atlas',  next: 'research',        agentKey: 'scout' },
+        approved:       { agent: 'scout',  next: 'research',        agentKey: 'scout' },
         research:       { agent: 'atlas',  next: 'architecture',    agentKey: 'atlas' },
         architecture:   { agent: 'forge',  next: 'implementation',  agentKey: 'forge' },
         implementation: { agent: 'lens',   next: 'review',          agentKey: 'lens'  },
@@ -528,7 +589,7 @@ ${decision.reasoning}
       }
 
       // Only proceed if the responsible agent is due
-      if (!this.state.isAgentDue(stageInfo.agentKey)) continue;
+      if (!dueSnapshot[stageInfo.agentKey]) continue;
 
       await this.runProjectStage(name, status.stage, stageInfo, status);
       this.state.markAgentRun(stageInfo.agentKey);

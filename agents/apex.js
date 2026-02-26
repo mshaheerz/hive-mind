@@ -21,7 +21,8 @@ You are the FINAL AUTHORITY on all decisions. You approve or reject:
 3. **Transparent reasoning** — Every decision includes full written reasoning. No black boxes.
 4. **Structured evaluation** — Every proposal gets: Feasibility, Scope, Risk, Value scores (1-10).
 5. **Three outcomes only**: APPROVED, REJECTED, or REVISION_REQUESTED (with specific feedback).
-6. **Revision is not failure** — You prefer to guide improvements over outright rejection.
+6. **High bar by default** — If uncertain, do NOT approve.
+7. **Execution discipline** — You assign clear next steps and enforce accountability.
 
 ## Evaluation Criteria
 When evaluating any proposal, assess:
@@ -29,14 +30,17 @@ When evaluating any proposal, assess:
 - **Scope** (1-10, 10=small/clear): Is the scope well-defined and manageable?
 - **Risk** (1-10, 10=low risk): What could go wrong?
 - **Value** (1-10): What's the actual benefit?
-- **Overall Score**: Weighted average — reject below 5, request revision 5-6, approve 7+
+- **Overall Score**: Weighted average.
+- **Strict decision policy**:
+  - APPROVED only when overall >= 8 and no category is below 6.
+  - REVISION_REQUESTED when overall is 6-7.9 or any category is below 6.
+  - REJECTED when overall < 6.
 
 ## Communication Style
-- Firm but fair
-- Never dismissive
-- Give actionable feedback on rejections
-- Celebrate good ideas without being sycophantic
-- Keep decisions under 300 words
+- Strict, concise, and operational
+- Never vague
+- Give actionable, testable feedback
+- Keep decisions under 220 words
 
 ## What You Cannot Do
 - Approve your own proposals (you don't make them)
@@ -75,9 +79,50 @@ Review this proposal and respond with a JSON object in this exact format:
 }`;
 
     this.print(`Reviewing proposal: "${proposal.title}"`);
-    const decision = await this.thinkJSON(prompt);
+    const rawDecision = await this.thinkJSON(prompt);
+    const decision = this._normalizeDecision(rawDecision);
     this._logDecision(proposal, decision);
     return decision;
+  }
+
+  _normalizeDecision(rawDecision = {}) {
+    const toScore = (v) => {
+      const n = Number(v);
+      if (!Number.isFinite(n)) return 0;
+      return Math.max(0, Math.min(10, Math.round(n * 100) / 100));
+    };
+
+    const feasibility = toScore(rawDecision.feasibility);
+    const scope = toScore(rawDecision.scope);
+    const risk = toScore(rawDecision.risk);
+    const value = toScore(rawDecision.value);
+    const computedOverall = Math.round(((feasibility + scope + risk + value) / 4) * 100) / 100;
+    const overall = toScore(rawDecision.overall || computedOverall);
+    const hasWeakCategory = [feasibility, scope, risk, value].some((s) => s < 6);
+
+    let decision;
+    if (overall >= 8 && !hasWeakCategory) decision = 'APPROVED';
+    else if (overall < 6) decision = 'REJECTED';
+    else decision = 'REVISION_REQUESTED';
+
+    const feedback =
+      decision === 'APPROVED'
+        ? null
+        : (rawDecision.feedback || 'Raise feasibility, tighten scope, reduce risk, and provide measurable delivery milestones.');
+
+    const nextAgent = decision === 'APPROVED' ? 'scout' : 'nova';
+
+    return {
+      decision,
+      feasibility,
+      scope,
+      risk,
+      value,
+      overall,
+      reasoning: String(rawDecision.reasoning || 'Decision normalized by strict APEX policy.'),
+      feedback,
+      nextAgent,
+    };
   }
 
   /**

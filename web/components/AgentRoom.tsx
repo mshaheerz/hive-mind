@@ -61,7 +61,7 @@ const AGENT_INFO: Record<string, AgentInfo> = {
 };
 
 const SCHEDULE: Record<string, number> = {
-  nova: 60, scout: 45, apex: 30, atlas: 90,
+  nova: 60, scout: 45, apex: 15, atlas: 90,
   forge: 120, lens: 60, pulse: 60, sage: 90, echo: 120,
 };
 

@@ -5,7 +5,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { OpenRouterClient } = require('./openrouter');
+const { OpenRouterClient } = require('./llm-client');
 
 const MEMORY_DIR = path.join(__dirname, '..', 'memory');
 const LOGS_DIR   = path.join(__dirname, '..', 'logs');

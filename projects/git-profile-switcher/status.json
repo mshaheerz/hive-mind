@@ -1,8 +1,9 @@
 {
-  "stage": "approved",
+  "stage": "architecture",
   "proposedBy": "nova",
   "approvedBy": "apex",
-  "approvalScore": 8,
-  "approvedAt": "2026-02-26T11:34:37.529Z",
-  "updatedAt": "2026-02-26T11:34:37.529Z"
+  "approvalScore": 8.5,
+  "approvedAt": "2026-02-26T15:03:56.242Z",
+  "updatedAt": "2026-02-26T15:23:01.727Z",
+  "lensRejected": true
 }

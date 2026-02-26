@@ -12,6 +12,7 @@ const PROJECTS_DIR = path.join(HIVE_ROOT, 'projects');
 const HIVE_DIR     = path.join(HIVE_ROOT, '.hive');
 const DISCUSS_DIR  = path.join(HIVE_DIR, 'discussions');
 const LOGS_DIR     = path.join(HIVE_ROOT, 'logs');
+const SUPPORTED_PROVIDERS = ['openrouter', 'groq'];
 
 function safeRead(file: string, fallback: any): any {
   try {
@@ -62,6 +63,20 @@ function getRecentLogs() {
   } catch { return []; }
 }
 
+function normalizeProvider(value: string): string {
+  const provider = String(value || '').trim().toLowerCase();
+  return SUPPORTED_PROVIDERS.includes(provider) ? provider : 'openrouter';
+}
+
+function inferProviderFromLogs(logs: string[]): string | null {
+  for (let i = logs.length - 1; i >= 0; i--) {
+    const line = logs[i];
+    const match = line.match(/LLM provider:\s*([a-zA-Z0-9_-]+)/i);
+    if (match?.[1]) return normalizeProvider(match[1]);
+  }
+  return null;
+}
+
 export async function GET() {
   const state     = safeRead(path.join(HIVE_DIR, 'autonomous-state.json'), {
     running: false, cycleCount: 0, agentLastRun: {}, stats: {}
@@ -72,9 +87,16 @@ export async function GET() {
   const projects  = getProjects();
   const discussions = getDiscussions();
   const logs      = getRecentLogs();
+  const providerFromLogs = inferProviderFromLogs(logs);
+  const provider = normalizeProvider(
+    providerFromLogs ||
+    process.env.LLM_PROVIDER ||
+    'openrouter'
+  );
 
   return NextResponse.json({
     state,
+    provider,
     queue,
     deadlines,
     ideaIndex,

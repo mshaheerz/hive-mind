@@ -8,11 +8,14 @@ interface HiveStats {
 
 interface TopNavProps {
   running?: boolean;
+  provider?: string;
   cycleCount?: number;
   stats?: HiveStats;
 }
 
-export default function TopNav({ running, cycleCount, stats }: TopNavProps) {
+export default function TopNav({ running, provider, cycleCount, stats }: TopNavProps) {
+  const providerLabel = (provider || 'openrouter').toUpperCase();
+
   return (
     <header className="sticky top-0 z-50 border-b border-(--border-dim) bg-[rgba(15,23,37,0.9)] backdrop-blur-lg">
       <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between px-8 py-6">
@@ -32,6 +35,7 @@ export default function TopNav({ running, cycleCount, stats }: TopNavProps) {
 
         <div className="flex items-center gap-8">
           <StatusPill running={running} />
+          <Stat label="PROVIDER" value={providerLabel} color="var(--nova-color)" />
           <Stat label="CYCLE" value={`#${cycleCount || 0}`} />
           <Stat label="APPROVED" value={stats?.approved || 0} color="var(--scout-color)" />
           <Stat label="COMPLETED" value={stats?.completed || 0} color="var(--atlas-color)" />

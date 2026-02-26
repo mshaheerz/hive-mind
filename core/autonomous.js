@@ -27,7 +27,7 @@ const DEADLINES_FILE= path.join(__dirname, '..', '.hive', 'deadlines.json');
 const AGENT_SCHEDULE = {
   nova:  { cycleMinutes: 60,  role: 'proposes new ideas' },
   scout: { cycleMinutes: 45,  role: 'researches & validates' },
-  apex:  { cycleMinutes: 30,  role: 'reviews & decides' },
+  apex:  { cycleMinutes: 15,  role: 'reviews & decides' },
   atlas: { cycleMinutes: 90,  role: 'designs approved projects' },
   forge: { cycleMinutes: 120, role: 'implements designs' },
   lens:  { cycleMinutes: 60,  role: 'reviews code' },

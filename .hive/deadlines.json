@@ -1,0 +1,242 @@
+[
+  {
+    "id": "dependency-ghostbuster::research",
+    "projectName": "dependency-ghostbuster",
+    "stage": "research",
+    "agent": "scout",
+    "dueAt": "2026-02-26T17:09:21.204Z",
+    "setAt": "2026-02-26T15:09:21.204Z",
+    "status": "complete",
+    "completedAt": "2026-02-26T15:09:23.117Z"
+  },
+  {
+    "id": "envsync-cli::research",
+    "projectName": "envsync-cli",
+    "stage": "research",
+    "agent": "scout",
+    "dueAt": "2026-02-26T17:09:23.120Z",
+    "setAt": "2026-02-26T15:09:23.120Z",
+    "status": "complete",
+    "completedAt": "2026-02-26T15:09:25.151Z"
+  },
+  {
+    "id": "git-profile-switcher::research",
+    "projectName": "git-profile-switcher",
+    "stage": "research",
+    "agent": "scout",
+    "dueAt": "2026-02-26T17:09:25.153Z",
+    "setAt": "2026-02-26T15:09:25.153Z",
+    "status": "complete",
+    "completedAt": "2026-02-26T15:09:26.870Z"
+  },
+  {
+    "id": "pixel-pulse::research",
+    "projectName": "pixel-pulse",
+    "stage": "research",
+    "agent": "scout",
+    "dueAt": "2026-02-26T17:09:26.872Z",
+    "setAt": "2026-02-26T15:09:26.872Z",
+    "status": "complete",
+    "completedAt": "2026-02-26T15:09:29.185Z"
+  },
+  {
+    "id": "postman-to-sdk::research",
+    "projectName": "postman-to-sdk",
+    "stage": "research",
+    "agent": "scout",
+    "dueAt": "2026-02-26T17:09:29.187Z",
+    "setAt": "2026-02-26T15:09:29.187Z",
+    "status": "complete",
+    "completedAt": "2026-02-26T15:09:31.229Z"
+  },
+  {
+    "id": "secret-scout::research",
+    "projectName": "secret-scout",
+    "stage": "research",
+    "agent": "scout",
+    "dueAt": "2026-02-26T17:09:31.232Z",
+    "setAt": "2026-02-26T15:09:31.232Z",
+    "status": "complete",
+    "completedAt": "2026-02-26T15:09:33.507Z"
+  },
+  {
+    "id": "dependency-ghostbuster::architecture",
+    "projectName": "dependency-ghostbuster",
+    "stage": "architecture",
+    "agent": "atlas",
+    "dueAt": "2026-02-26T18:14:21.300Z",
+    "setAt": "2026-02-26T15:14:21.300Z",
+    "status": "complete",
+    "completedAt": "2026-02-26T15:14:23.175Z"
+  },
+  {
+    "id": "envsync-cli::architecture",
+    "projectName": "envsync-cli",
+    "stage": "architecture",
+    "agent": "atlas",
+    "dueAt": "2026-02-26T18:14:23.176Z",
+    "setAt": "2026-02-26T15:14:23.176Z",
+    "status": "complete",
+    "completedAt": "2026-02-26T15:14:25.278Z"
+  },
+  {
+    "id": "git-profile-switcher::architecture",
+    "projectName": "git-profile-switcher",
+    "stage": "architecture",
+    "agent": "atlas",
+    "dueAt": "2026-02-26T18:14:25.279Z",
+    "setAt": "2026-02-26T15:14:25.279Z",
+    "status": "complete",
+    "completedAt": "2026-02-26T15:14:27.124Z"
+  },
+  {
+    "id": "pixel-pulse::architecture",
+    "projectName": "pixel-pulse",
+    "stage": "architecture",
+    "agent": "atlas",
+    "dueAt": "2026-02-26T18:14:27.126Z",
+    "setAt": "2026-02-26T15:14:27.126Z",
+    "status": "complete",
+    "completedAt": "2026-02-26T15:14:29.216Z"
+  },
+  {
+    "id": "postman-to-sdk::architecture",
+    "projectName": "postman-to-sdk",
+    "stage": "architecture",
+    "agent": "atlas",
+    "dueAt": "2026-02-26T18:14:29.218Z",
+    "setAt": "2026-02-26T15:14:29.218Z",
+    "status": "complete",
+    "completedAt": "2026-02-26T15:14:30.991Z"
+  },
+  {
+    "id": "secret-scout::architecture",
+    "projectName": "secret-scout",
+    "stage": "architecture",
+    "agent": "atlas",
+    "dueAt": "2026-02-26T18:14:30.993Z",
+    "setAt": "2026-02-26T15:14:30.993Z",
+    "status": "complete",
+    "completedAt": "2026-02-26T15:14:33.001Z"
+  },
+  {
+    "id": "dependency-ghostbuster::implementation",
+    "projectName": "dependency-ghostbuster",
+    "stage": "implementation",
+    "agent": "forge",
+    "dueAt": "2026-02-26T21:19:21.320Z",
+    "setAt": "2026-02-26T15:19:21.320Z",
+    "status": "complete",
+    "completedAt": "2026-02-26T15:19:25.866Z"
+  },
+  {
+    "id": "envsync-cli::implementation",
+    "projectName": "envsync-cli",
+    "stage": "implementation",
+    "agent": "forge",
+    "dueAt": "2026-02-26T21:19:25.867Z",
+    "setAt": "2026-02-26T15:19:25.867Z",
+    "status": "complete",
+    "completedAt": "2026-02-26T15:19:30.679Z"
+  },
+  {
+    "id": "git-profile-switcher::implementation",
+    "projectName": "git-profile-switcher",
+    "stage": "implementation",
+    "agent": "forge",
+    "dueAt": "2026-02-26T21:19:30.680Z",
+    "setAt": "2026-02-26T15:19:30.680Z",
+    "status": "complete",
+    "completedAt": "2026-02-26T15:19:40.817Z"
+  },
+  {
+    "id": "pixel-pulse::implementation",
+    "projectName": "pixel-pulse",
+    "stage": "implementation",
+    "agent": "forge",
+    "dueAt": "2026-02-26T21:19:40.819Z",
+    "setAt": "2026-02-26T15:19:40.819Z",
+    "status": "complete",
+    "completedAt": "2026-02-26T15:20:00.784Z"
+  },
+  {
+    "id": "postman-to-sdk::implementation",
+    "projectName": "postman-to-sdk",
+    "stage": "implementation",
+    "agent": "forge",
+    "dueAt": "2026-02-26T21:20:00.786Z",
+    "setAt": "2026-02-26T15:20:00.786Z",
+    "status": "complete",
+    "completedAt": "2026-02-26T15:20:20.657Z"
+  },
+  {
+    "id": "secret-scout::implementation",
+    "projectName": "secret-scout",
+    "stage": "implementation",
+    "agent": "forge",
+    "dueAt": "2026-02-26T21:20:20.658Z",
+    "setAt": "2026-02-26T15:20:20.658Z",
+    "status": "complete",
+    "completedAt": "2026-02-26T15:20:41.441Z"
+  },
+  {
+    "id": "dependency-ghostbuster::review",
+    "projectName": "dependency-ghostbuster",
+    "stage": "review",
+    "agent": "lens",
+    "dueAt": "2026-02-26T17:22:36.755Z",
+    "setAt": "2026-02-26T15:22:36.755Z",
+    "status": "complete",
+    "completedAt": "2026-02-26T15:22:41.402Z"
+  },
+  {
+    "id": "envsync-cli::review",
+    "projectName": "envsync-cli",
+    "stage": "review",
+    "agent": "lens",
+    "dueAt": "2026-02-26T17:22:41.403Z",
+    "setAt": "2026-02-26T15:22:41.403Z",
+    "status": "complete",
+    "completedAt": "2026-02-26T15:22:45.969Z"
+  },
+  {
+    "id": "git-profile-switcher::review",
+    "projectName": "git-profile-switcher",
+    "stage": "review",
+    "agent": "lens",
+    "dueAt": "2026-02-26T17:22:45.970Z",
+    "setAt": "2026-02-26T15:22:45.970Z",
+    "status": "complete",
+    "completedAt": "2026-02-26T15:23:01.727Z"
+  },
+  {
+    "id": "pixel-pulse::review",
+    "projectName": "pixel-pulse",
+    "stage": "review",
+    "agent": "lens",
+    "dueAt": "2026-02-26T17:23:01.728Z",
+    "setAt": "2026-02-26T15:23:01.728Z",
+    "status": "complete",
+    "completedAt": "2026-02-26T15:23:23.743Z"
+  },
+  {
+    "id": "postman-to-sdk::review",
+    "projectName": "postman-to-sdk",
+    "stage": "review",
+    "agent": "lens",
+    "dueAt": "2026-02-26T17:23:23.744Z",
+    "setAt": "2026-02-26T15:23:23.744Z",
+    "status": "complete",
+    "completedAt": "2026-02-26T15:23:46.889Z"
+  },
+  {
+    "id": "secret-scout::review",
+    "projectName": "secret-scout",
+    "stage": "review",
+    "agent": "lens",
+    "dueAt": "2026-02-26T17:23:46.890Z",
+    "setAt": "2026-02-26T15:23:46.890Z",
+    "status": "complete",
+    "completedAt": "2026-02-26T15:24:06.546Z"
+  }
+]

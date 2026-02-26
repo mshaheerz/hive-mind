@@ -66,7 +66,7 @@ function render() {
   const agents = [
     { key: 'nova',  name: 'NOVA',  role: 'Innovation Scout',  cycle: 60  },
     { key: 'scout', name: 'SCOUT', role: 'Researcher',         cycle: 45  },
-    { key: 'apex',  name: 'APEX',  role: 'Operations Head',    cycle: 30  },
+    { key: 'apex',  name: 'APEX',  role: 'Operations Head',    cycle: 15  },
     { key: 'atlas', name: 'ATLAS', role: 'Architect',           cycle: 90  },
     { key: 'forge', name: 'FORGE', role: 'Developer',           cycle: 120 },
     { key: 'lens',  name: 'LENS',  role: 'Code Reviewer',       cycle: 60  },

@@ -60,7 +60,10 @@ hive-mind/
 ```bash
 npm install               # installs dependencies including the official OpenRouter SDK
 cp .env.example .env
-# Add your OPENROUTER_API_KEY to .env
+# Configure provider in `.env`:
+# LLM_PROVIDER=openrouter   # or groq
+# OPENROUTER_API_KEY=...
+# GROQ_API_KEY=...
 ```
 > **Note:** the client code now leverages the official `@openrouter/sdk` package instead of rolling its own HTTP calls. If you already had an older checkout, run `npm install` to pick up the new dependency.
 
@@ -68,6 +71,7 @@ cp .env.example .env
 ### 2. Run Hive
 ```bash
 node hive.js                        # Start the agent loop
+node hive.js --provider groq run    # Force Groq provider for this run
 node hive.js --task "build X"       # Give a specific task
 node hive.js --agent apex           # Talk to one agent
 node hive.js --review               # APEX reviews pending proposals
@@ -77,6 +81,7 @@ node hive.js --review               # APEX reviews pending proposals
 If you want the agents to run fully autonomously (no human interaction), start the autonomous runner:
 ```bash
 node run.js                          # Start autonomous mode — agents run on a schedule
+node run.js --provider groq          # Start autonomous mode on Groq
 ```
 The runner checks agents every 5 minutes by default and will autonomously propose, review, and advance projects.
 
@@ -167,7 +172,7 @@ If agents fail to call the API you'll see errors in `logs/<date>-autonomous.log`
 
 - 400 Developer instruction not enabled for model
     - Cause: some provider models (eg. Google Gemma variants) require a `developer instruction` toggle or different prompt format.
-    - Fix: switch that agent to a model that supports system prompts, or enable developer instructions in the provider settings. Alternatively set a different model in `core/openrouter.js` or provide your own BYOK in OpenRouter settings.
+    - Fix: switch that agent to a model that supports system prompts, or enable developer instructions in the provider settings. Alternatively set a different model in `core/llm-client.js` or provide your own BYOK in OpenRouter settings.
 
 - 429 Rate-limited
     - Cause: shared free endpoints can be rate-limited upstream.
@@ -175,9 +180,9 @@ If agents fail to call the API you'll see errors in `logs/<date>-autonomous.log`
 
 - 404 No endpoints found for model
     - Cause: the requested model is not currently available through OpenRouter.
-    - Fix: update `AGENT_MODELS` in `core/openrouter.js` to use a currently available model, or add a fallback chain.
+    - Fix: update `AGENT_MODELS` in `core/llm-client.js` to use a currently available model, or add a fallback chain.
 
-If you want help picking stable models for your account, tell me which providers/keys you have and I can update `core/openrouter.js` accordingly.
+If you want help picking stable models for your account, tell me which providers/keys you have and I can update `core/llm-client.js` accordingly.
 
 ### Quick model probe & fixes
 If agents are failing (rate-limited / no endpoints), run a quick probe to see which models are reachable from your OpenRouter key. The helper scripts also use the SDK so they mirror the behaviour of the agents exactly:
@@ -206,6 +211,14 @@ The client will automatically use `OPENROUTER_MODEL_<AGENT>` values when present
 npm run dev:autonomous   # for development (auto-restarts)
 # or
 node run.js              # start without watcher
+```
+
+Provider-aware model overrides:
+
+```
+LLM_PROVIDER=groq
+GROQ_MODEL_NOVA=groq/compound-mini
+MODEL_LENS=openai/gpt-oss-120b        # works across providers
 ```
 
 ## 🛠 Development: automatic reload for autonomous runner

@@ -9,6 +9,7 @@ import CommsBus from '../components/commsBus';
 import TopNav from '../components/TopNav';
 
 type HiveState = {
+  provider?: string;
   running?: boolean;
   cycleCount?: number;
   stats?: { approved?: number; completed?: number; duplicatesBlocked?: number };
@@ -21,7 +22,7 @@ type HiveState = {
 };
 
 const AGENT_SCHEDULE: Record<string, number> = {
-  nova:  60, scout: 45, apex: 30,
+  nova:  60, scout: 45, apex: 15,
   atlas: 90, forge: 120, lens: 60,
   pulse: 60, sage:  90, echo: 120,
 };
@@ -74,6 +75,7 @@ export default function Home() {
     <main className="relative z-1 min-h-screen">
       <TopNav
         running={hive?.state?.running}
+        provider={hive?.provider}
         cycleCount={hive?.state?.cycleCount}
         stats={hive?.state?.stats}
       />

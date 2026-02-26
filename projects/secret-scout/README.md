@@ -28,7 +28,7 @@ As security breaches due to leaked secrets increase, an easy-to-use, multi-langu
 
 ## APEX Reasoning
 
-SecretScout addresses a critical security need with clear value. The concept is well-defined and builds on existing patterns while focusing on simplicity and integration.
+Secret Scout addresses a critical security need by detecting hard‑coded secrets across codebases and integrates smoothly with CI/CD pipelines. The proposal is feasible with existing static analysis techniques, has a clear and manageable scope, and presents low operational risk. Its high value in preventing credential leaks justifies moving forward.
 
 ## Definition of Done
 

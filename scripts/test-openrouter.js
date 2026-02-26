@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 require('dotenv').config();
-const { OpenRouterClient, AGENT_MODELS } = require('../core/openrouter');
+const { OpenRouterClient, AGENT_MODELS } = require('../core/llm-client');
 
 (async function run() {
   console.log('OPENROUTER_API_KEY present?', Boolean(process.env.OPENROUTER_API_KEY));

@@ -1,0 +1,244 @@
+**File: `package.json`**
+```json
+{
+  "name": "pixel-pulse",
+  "version": "1.0.0",
+  "description": "A lightweight visual‑regression service that captures screenshots, compares them with baselines and alerts on differences.",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "author": "FORGE – Hive Mind",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "mongoose": "^8.5.0",
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^6.9.13",
+    "puppeteer": "^22.12.1",
+    "resemblejs": "^4.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}
+```
+
+---
+
+**File: `src/config.js`**
+```js
+/**
+ * @fileoverview Centralised configuration and constants for the Pixel Pulse service.
+ * All environment variables are loaded via dotenv and exposed as immutable constants.
+ */
+
+require('dotenv').config();
+
+/**
+ * Application level constants.
+ * @type {Object}
+ */
+const CONFIG = Object.freeze({
+  /** Port the Express server listens on */
+  PORT: parseInt(process.env.PORT, 10) || 3000,
+
+  /** MongoDB connection URI */
+  MONGODB_URI: process.env.MONGODB_URI || 'mongodb://localhost:27017/pixel-pulse',
+
+  /** Directory where screenshots and baselines are stored */
+  STORAGE_PATH: process.env.STORAGE_PATH || 'storage',
+
+  /** Email settings for alerting */
+  EMAIL_FROM: process.env.EMAIL_FROM || 'pixel-pulse@example.com',
+  EMAIL_SMTP_HOST: process.env.EMAIL_SMTP_HOST || '',
+  EMAIL_SMTP_PORT: parseInt(process.env.EMAIL_SMTP_PORT, 10) || 587,
+  EMAIL_SMTP_USER: process.env.EMAIL_SMTP_USER || '',
+  EMAIL_SMTP_PASS: process.env.EMAIL_SMTP_PASS || '',
+  /** Threshold (percentage) above which a diff is considered a regression */
+  DIFF_THRESHOLD: parseFloat(process.env.DIFF_THRESHOLD) || 0.1
+});
+
+module.exports = CONFIG;
+```
+
+---
+
+**File: `src/storage/local.js`**
+```js
+/**
+ * @fileoverview Simple local‑filesystem storage implementation.
+ * All images are stored under a configurable root directory.
+ */
+
+const fs = require('fs');
+const path = require('path');
+const { STORAGE_PATH } = require('../config');
+
+/**
+ * Ensures that the storage root exists.
+ */
+function ensureRoot() {
+  if (!fs.existsSync(STORAGE_PATH)) {
+    fs.mkdirSync(STORAGE_PATH, { recursive: true });
+  }
+}
+
+/**
+ * Returns the absolute path for a given relative sub‑path.
+ * @param {string} subPath Relative path inside the storage root.
+ * @returns {string}
+ */
+function getAbsolutePath(subPath) {
+  ensureRoot();
+  return path.join(STORAGE_PATH, subPath);
+}
+
+/**
+ * Writes a Buffer to the storage.
+ * @param {string} subPath Relative path where the file will be written.
+ * @param {Buffer} data Buffer containing image data.
+ * @returns {Promise<string>} Full path of the written file.
+ */
+async function writeFile(subPath, data) {
+  const fullPath = getAbsolutePath(subPath);
+  await fs.promises.mkdir(path.dirname(fullPath), { recursive: true });
+  await fs.promises.writeFile(fullPath, data);
+  return fullPath;
+}
+
+/**
+ * Reads a file from storage.
+ * @param {string} subPath Relative path to the file.
+ * @returns {Promise<Buffer>}
+ */
+async function readFile(subPath) {
+  const fullPath = getAbsolutePath(subPath);
+  return await fs.promises.readFile(fullPath);
+}
+
+/**
+ * Returns the public URL for a stored file when served via Express static middleware.
+ * @param {string} subPath Relative path inside storage.
+ * @returns {string}
+ */
+function getPublicUrl(subPath) {
+  // Express will expose `/storage` as a static folder.
+  return `/storage/${subPath}`;
+}
+
+module.exports = {
+  writeFile,
+  readFile,
+  getPublicUrl,
+  getAbsolutePath
+};
+```
+
+---
+
+**File: `src/models/baseline.js`**
+```js
+/**
+ * @fileoverview Mongoose schema for baseline screenshots.
+ * A baseline is a reference image against which future captures are compared.
+ */
+
+const mongoose = require('mongoose');
+
+const BaselineSchema = new mongoose.Schema(
+  {
+    /** Human readable name (e.g., "homepage‑desktop") */
+    name: { type: String, required: true, unique: true },
+
+    /** Relative path inside the storage folder */
+    imagePath: { type: String, required: true },
+
+    /** Creation timestamp */
+    createdAt: { type: Date, default: Date.now }
+  },
+  { collection: 'baselines' }
+);
+
+module.exports = mongoose.model('Baseline', BaselineSchema);
+```
+
+---
+
+**File: `src/models/comparison.js`**
+```js
+/**
+ * @fileoverview Mongoose schema for a screenshot comparison result.
+ */
+
+const mongoose = require('mongoose');
+
+const ComparisonSchema = new mongoose.Schema(
+  {
+    /** Reference to the baseline used */
+    baseline: { type: mongoose.Schema.Types.ObjectId, ref: 'Baseline', required: true },
+
+    /** URL (relative to storage) of the newly captured screenshot */
+    screenshotPath: { type: String, required: true },
+
+    /** URL (relative to storage) of the diff image generated by Resemble.js */
+    diffPath: { type: String, required: true },
+
+    /** Percentage of mismatched pixels (0‑100) */
+    mismatchPercentage: { type: Number, required: true },
+
+    /** Whether the mismatch exceeds the configured threshold */
+    isRegression: { type: Boolean, required: true },
+
+    /** When the comparison was performed */
+    comparedAt: { type: Date, default: Date.now },
+
+    /** Optional list of email addresses that should be notified */
+    alertRecipients: [{ type: String }]
+  },
+  { collection: 'comparisons' }
+);
+
+module.exports = mongoose.model('Comparison', ComparisonSchema);
+```
+
+---
+
+**File: `src/services/screenshot.js`**
+```js
+/**
+ * @fileoverview Service that captures a screenshot of a given URL using Puppeteer.
+ */
+
+const puppeteer = require('puppeteer');
+const { writeFile } = require('../storage/local');
+
+/**
+ * Captures a full‑page screenshot.
+ *
+ * @param {string} url The page to capture.
+ * @param {string} filename Desired filename (relative to storage) for the screenshot.
+ * @returns {Promise<string>} Absolute path of the saved screenshot.
+ * @throws {Error} If navigation or screenshot fails.
+ */
+async function captureScreenshot(url, filename) {
+  let browser;
+  try {
+    browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+    const page = await browser.newPage();
+
+    // Timeout and error handling are delegated to Puppeteer defaults.
+    await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+    const buffer = await page.screenshot({ fullPage: true });
+
+    // Persist the image.
+    const savedPath = await writeFile(filename, buffer);
+    return savedPath;
+  } catch (err) {
+    throw new Error(`Screenshot capture failed for ${url}: ${err.message}`);
+  } finally {
+    if (browser) {
+      await
