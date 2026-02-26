@@ -111,7 +111,7 @@ export default function AgentRoom({ agentName, hive, agentStatus, onClose }: Age
       <div className="bg-gradient-to-br from-[#142d45] to-[#0f1725] rounded-2xl p-8 w-full max-w-[560px] border" style={{ borderColor: `${info.color}66`, boxShadow: `0 0 60px ${info.color}25, 0 20px 60px rgba(0,0,0,0.9)` }} onClick={e => e.stopPropagation()}>
 
         {/* Close */}
-        <button onClick={onClose} className="absolute top-4 right-4 bg-none border-none text-[var(--text-dim)] cursor-pointer text-lg leading-none hover:text-[var(--text-primary)] transition-colors">✕</button>
+        <button onClick={onClose} className="absolute top-4 right-4 bg-none border-none text-(--text-dim) cursor-pointer text-lg leading-none hover:text-(--text-primary) transition-colors">✕</button>
 
         {/* Header */}
         <div className="flex gap-4 items-flex-start mb-6">
@@ -142,13 +142,13 @@ export default function AgentRoom({ agentName, hive, agentStatus, onClose }: Age
                 {status.toUpperCase()}
               </span>
             </div>
-            <span className="text-[0.65rem] text-[var(--text-dim)]">
+            <span className="text-[0.65rem] text-(--text-dim)">
               Last active: {timeSince(last)} · Cycle: {cycle}min
             </span>
           </div>
 
           {/* Progress bar to next wake */}
-          <div className="text-[0.55rem] text-[var(--text-dim)] mb-0.75 tracking-wide">
+          <div className="text-[0.55rem] text-(--text-dim) mb-0.75 tracking-wide">
             CYCLE PROGRESS — {status === 'active' ? 'WORKING NOW' : status === 'due' ? 'DUE TO WAKE' : `RESTING`}
           </div>
           <div className="h-1 bg-white/10 rounded overflow-hidden">

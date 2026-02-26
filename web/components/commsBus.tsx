@@ -44,18 +44,18 @@ export default function CommsBus({ discussions }: CommsBusProps) {
   const thread = discussions[active];
 
   return (
-    <div className="mt-6 overflow-hidden rounded-lg border border-[var(--border-dim)] bg-[rgba(15,23,37,0.85)]">
+    <div className="mt-6 overflow-hidden rounded-lg border border-(--border-dim) bg-[rgba(15,23,37,0.85)]">
       {/* Header */}
-      <div className="px-4 py-4 flex items-center justify-between text-[0.75rem] font-bold tracking-widest border-b border-[var(--border-dim)] text-[var(--text-secondary)]">
+      <div className="px-4 py-4 flex items-center justify-between text-[0.75rem] font-bold tracking-widest border-b border-(--border-dim) text-(--text-secondary)">
         <span>◈ AGENT COMMUNICATIONS — DISCUSSION THREADS</span>
-        <span className="text-[var(--text-dim)]">{discussions.length} THREADS</span>
+        <span className="text-(--text-dim)">{discussions.length} THREADS</span>
       </div>
 
       <div className="grid" style={{ gridTemplateColumns: '300px 1fr' }}>
         {/* Thread list */}
         <div style={{ borderRight: '1px solid var(--border-dim)', maxHeight: 350, overflowY: 'auto' }}>
           {discussions.map((d, i) => (
-            <button key={d.id || i} onClick={() => setActive(i)} className={`block w-full text-left transition-all px-4 py-2.5 border-b border-[var(--border-dim)] ${active === i ? 'bg-[var(--echo-color)]/15 border-l-4 border-l-echo font-bold shadow-[inset_4px_0_0_var(--echo-color)]' : 'border-l-4 border-l-transparent hover:bg-white/08 active:bg-white/12'}`}>
+            <button key={d.id || i} onClick={() => setActive(i)} className={`block w-full text-left transition-all px-4 py-2.5 border-b border-(--border-dim) ${active === i ? 'bg-(--echo-color)/15 border-l-4 border-l-echo font-bold shadow-[inset_4px_0_0_var(--echo-color)]' : 'border-l-4 border-l-transparent hover:bg-white/08 active:bg-white/12'}`}>
               <div className="mb-1 overflow-hidden text-ellipsis whitespace-nowrap text-[0.75rem] font-display font-semibold transition-colors" style={{ color: active === i ? 'var(--text-primary)' : 'var(--text-dim)' }}>
                 {d.topic}
               </div>
@@ -68,8 +68,8 @@ export default function CommsBus({ discussions }: CommsBusProps) {
                   ))}
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[0.6rem] text-[var(--text-dim)]">{d.messages?.length || 0} msg</span>
-                  <span className={`text-[0.55rem] px-1.5 rounded border font-semibold ${d.status === 'open' ? 'bg-green-500/15 border-green-500/50 text-green-400' : 'bg-gray-500/15 border-gray-500/30 text-[var(--text-dim)]'}`}>{d.status?.toUpperCase()}</span>
+                  <span className="text-[0.6rem] text-(--text-dim)">{d.messages?.length || 0} msg</span>
+                  <span className={`text-[0.55rem] px-1.5 rounded border font-semibold ${d.status === 'open' ? 'bg-green-500/15 border-green-500/50 text-green-400' : 'bg-gray-500/15 border-gray-500/30 text-(--text-dim)'}`}>{d.status?.toUpperCase()}</span>
                 </div>
               </div>
             </button>
@@ -80,9 +80,9 @@ export default function CommsBus({ discussions }: CommsBusProps) {
         <div className="h-[350px] overflow-y-auto px-5 py-4 bg-[rgba(0,0,0,0.2)]">
           {thread ? (
             <>
-              <div className="mb-4 pb-3 text-[0.7rem] font-semibold tracking-wide border-b-2 border-[var(--echo-color)]/40 text-[var(--text-primary)]">
+              <div className="mb-4 pb-3 text-[0.7rem] font-semibold tracking-wide border-b-2 border-(--echo-color)/40 text-(--text-primary)">
                 🧵 {thread.topic}
-                <div className="text-[0.65rem] text-[var(--text-dim)] font-normal mt-1">
+                <div className="text-[0.65rem] text-(--text-dim) font-normal mt-1">
                   Started {timeAgo(thread.startedAt)} ago
                   {thread.resolution && (
                     <span className="block mt-1 text-nova">✓ RESOLVED: {thread.resolution.slice(0, 50)}</span>
@@ -99,9 +99,9 @@ export default function CommsBus({ discussions }: CommsBusProps) {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-0.75">
                           <span className="text-[0.7rem] font-display font-bold" style={{ color: bg || '#b3d9ff' }}>{msg.from}</span>
-                          <span className="text-[0.6rem] text-[var(--text-dim)]">{timeAgo(msg.at)} ago</span>
+                          <span className="text-[0.6rem] text-(--text-dim)">{timeAgo(msg.at)} ago</span>
                         </div>
-                        <div className="text-[0.7rem] text-[var(--text-secondary)] leading-[1.7] bg-black/40 px-3 py-2.5 rounded border border-[var(--border-dim)]/60" style={{ borderLeft: `3px solid ${borderLeft}`, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{msg.message}</div>
+                        <div className="text-[0.7rem] text-(--text-secondary) leading-[1.7] bg-black/40 px-3 py-2.5 rounded border border-(--border-dim)/60" style={{ borderLeft: `3px solid ${borderLeft}`, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{msg.message}</div>
                       </div>
                     </div>
                   );
@@ -109,7 +109,7 @@ export default function CommsBus({ discussions }: CommsBusProps) {
               </div>
             </>
           ) : (
-            <div className="text-[0.65rem] text-[var(--text-dim)] p-4">Select a thread to view messages</div>
+            <div className="text-[0.65rem] text-(--text-dim) p-4">Select a thread to view messages</div>
           )}
         </div>
       </div>

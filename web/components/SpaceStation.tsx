@@ -36,9 +36,7 @@ interface SpaceStationProps {
 interface RoomProps {
   agent: Agent;
   status: AgentStatus;
-  styleInfo: { glow: number; ring: boolean; opacity: number };
   isSelected: boolean;
-  tick: number;
   hive?: Hive | null;
 }
 
@@ -65,16 +63,6 @@ const COMM_LINKS: CommLink[] = [
 export default function SpaceStation({ hive, agentStatus, selected, setSelected, tick }: SpaceStationProps) {
   const svgRef = useRef<SVGSVGElement>(null);
 
-  const getStatusStyle = (key: string): { glow: number; ring: boolean; opacity: number } => {
-    const s = agentStatus(key);
-    return {
-      active:  { glow: 1.0,  ring: true,  opacity: 1.0 },
-      due:     { glow: 0.6,  ring: true,  opacity: 0.9 },
-      resting: { glow: 0.15, ring: false, opacity: 0.65 },
-      idle:    { glow: 0.05, ring: false, opacity: 0.4 },
-    }[s] || { glow: 0.05, ring: false, opacity: 0.4 };
-  };
-
   // Particle packets travelling along comm links
   const packets = COMM_LINKS.map(([from, to], i) => {
     const f = AGENTS.find(a => a.key === from)!;
@@ -88,9 +76,9 @@ export default function SpaceStation({ hive, agentStatus, selected, setSelected,
   });
 
   return (
-    <div className="relative w-full bg-[rgba(5,13,22,0.6)] border border-[var(--border-dim)] rounded-2xl overflow-hidden backdrop-blur-lg">
+    <div className="relative w-full bg-[rgba(5,13,22,0.6)] border border-(--border-dim) rounded-2xl overflow-hidden backdrop-blur-lg">
       {/* Section label */}
-      <div className="px-8 py-6 pb-4 font-display text-base tracking-[0.15em] text-[var(--text-primary)] font-bold bg-gradient-to-r from-[rgba(100,150,255,0.1)] to-transparent border-b-2 border-[var(--echo-color)]">
+      <div className="px-8 py-6 pb-4 font-display text-base tracking-[0.15em] text-(--text-primary) font-bold bg-gradient-to-r from-[rgba(100,150,255,0.1)] to-transparent border-b-2 border-(--echo-color)">
         ◈ STATION OVERVIEW — CLICK AN AGENT TO INSPECT
       </div>
 
@@ -144,21 +132,19 @@ export default function SpaceStation({ hive, agentStatus, selected, setSelected,
       </svg>
 
       {/* Agent rooms - positioned absolutely using % coordinates */}
-      <div className="relative w-full" style={{ paddingBottom: '56%' }}>
+      <div className="relative w-full pb-[56%]">
         {AGENTS.map(agent => {
           const status = agentStatus(agent.key);
-          const style  = getStatusStyle(agent.key);
           const isSelected = selected === agent.key;
 
           return (
             <button
               key={agent.key}
               onClick={() => setSelected(isSelected ? null : agent.key)}
-              className="absolute bg-none border-none cursor-pointer p-0"
+              className="absolute border-0 bg-transparent cursor-pointer p-0 -translate-x-1/2 -translate-y-1/2"
               style={{
                 left: `${agent.x}%`,
                 top:  `${agent.y}%`,
-                transform: 'translate(-50%, -50%)',
                 width: agent.size,
                 zIndex: agent.isHead ? 10 : 5,
               }}
@@ -166,9 +152,7 @@ export default function SpaceStation({ hive, agentStatus, selected, setSelected,
               <Room
                 agent={agent}
                 status={status}
-                styleInfo={style}
                 isSelected={isSelected}
-                tick={tick}
                 hive={hive}
               />
             </button>
@@ -179,7 +163,7 @@ export default function SpaceStation({ hive, agentStatus, selected, setSelected,
   );
 }
 
-function Room({ agent, status, styleInfo, isSelected, tick, hive }: RoomProps) {
+function Room({ agent, status, isSelected, hive }: RoomProps) {
   const size = agent.size;
   const isActive = status === 'active';
   const isDue    = status === 'due';
@@ -199,23 +183,15 @@ function Room({ agent, status, styleInfo, isSelected, tick, hive }: RoomProps) {
       {/* Pulse rings when active */}
       {(isActive || isDue) && (
         <>
-          <div className="absolute border rounded-full" style={{
-            inset: '50%',
-            transform: 'translate(-50%, -50%)',
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 border rounded-full opacity-50 animate-[pulse-ring_2s_ease-out_infinite]" style={{
             width: size * 0.9,
             height: size * 0.9,
             borderColor: agent.color,
-            animation: 'pulse-ring 2s ease-out infinite',
-            opacity: 0.5,
           }} />
-          <div className="absolute border rounded-full" style={{
-            inset: '50%',
-            transform: 'translate(-50%, -50%)',
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 border rounded-full opacity-30 animate-[pulse-ring_2s_ease-out_infinite] [animation-delay:0.7s]" style={{
             width: size * 0.9,
             height: size * 0.9,
             borderColor: agent.color,
-            animation: 'pulse-ring 2s ease-out infinite 0.7s',
-            opacity: 0.3,
           }} />
         </>
       )}
@@ -239,60 +215,51 @@ function Room({ agent, status, styleInfo, isSelected, tick, hive }: RoomProps) {
       }}>
         {/* Scan line when active */}
         {isActive && (
-          <div className="absolute top-0 left-0 right-0" style={{
-            height: '30%',
+          <div className="absolute top-0 left-0 right-0 h-[30%] animate-[scan_2.5s_linear_infinite]" style={{
             background: `linear-gradient(to bottom, ${agent.color}20, transparent)`,
-            animation: 'scan 2.5s linear infinite',
           }} />
         )}
 
         {/* Corner brackets for selected */}
         {isSelected && ['tl','tr','bl','br'].map(pos => (
-          <div key={pos} className="absolute" style={{
-            width: 8, height: 8,
-            [pos.includes('t') ? 'top' : 'bottom']: 4,
-            [pos.includes('l') ? 'left' : 'right']: 4,
-            borderTop:    pos.includes('t') ? `1.5px solid ${agent.color}` : 'none',
-            borderBottom: pos.includes('b') ? `1.5px solid ${agent.color}` : 'none',
-            borderLeft:   pos.includes('l') ? `1.5px solid ${agent.color}` : 'none',
-            borderRight:  pos.includes('r') ? `1.5px solid ${agent.color}` : 'none',
-          }} />
+          <div
+            key={pos}
+            className={`absolute w-2 h-2 ${pos.includes('t') ? 'top-1' : 'bottom-1'} ${pos.includes('l') ? 'left-1' : 'right-1'}`}
+            style={{
+              borderTop:    pos.includes('t') ? `1.5px solid ${agent.color}` : 'none',
+              borderBottom: pos.includes('b') ? `1.5px solid ${agent.color}` : 'none',
+              borderLeft:   pos.includes('l') ? `1.5px solid ${agent.color}` : 'none',
+              borderRight:  pos.includes('r') ? `1.5px solid ${agent.color}` : 'none',
+            }}
+          />
         ))}
 
         {/* Emoji */}
-        <div style={{
-          fontSize: agent.isHead ? '1.9rem' : '1.3rem',
-          lineHeight: 1,
+        <div className={`leading-none ${agent.isHead ? 'text-[1.9rem]' : 'text-[1.3rem]'} ${isSelected || isActive ? 'opacity-100' : 'opacity-90'}`} style={{
           filter: `drop-shadow(0 0 8px ${agent.color}${isSelected || isActive ? 'ff' : '80'})`,
-          opacity: isSelected ? 1 : isActive ? 1 : 0.9,
-        }} className="leading-none">{agent.emoji}</div>
+        }}>{agent.emoji}</div>
 
         {/* Name */}
-        <div className="font-display font-bold tracking-[0.15em]" style={{
-          fontSize: agent.isHead ? '0.85rem' : '0.7rem',
+        <div className={`font-display font-bold tracking-[0.15em] ${agent.isHead ? 'text-[0.85rem]' : 'text-[0.7rem]'}`} style={{
           color: agent.color,
           textShadow: `0 0 4px ${agent.color}40`,
         }}>{agent.label}</div>
 
         {/* Status dot */}
         <div className="flex items-center gap-1">
-          <div className="rounded-full" style={{
-            width: 5, height: 5,
+          <div className={`w-[5px] h-[5px] rounded-full ${isActive ? 'animate-[blink_1s_ease-in-out_infinite]' : ''}`} style={{
             background: isActive ? agent.color : isDue ? '#ffd93d' : 'rgba(255,255,255,0.4)',
             boxShadow: (isActive || isDue) ? `0 0 6px ${isActive ? agent.color : '#ffd93d'}` : 'none',
-            animation: isActive ? 'blink 1s ease-in-out infinite' : 'none',
           }} />
-          <span className="font-semibold tracking-[0.1em]" style={{ fontSize: '0.5rem', color: isActive ? agent.color : isDue ? '#ffd93d' : 'var(--text-secondary)' }}>
+          <span className="text-[0.5rem] font-semibold tracking-[0.1em]" style={{ color: isActive ? agent.color : isDue ? '#ffd93d' : 'var(--text-secondary)' }}>
             {status.toUpperCase()}
           </span>
         </div>
 
         {/* Active project tag */}
         {activeProject && (
-          <div className="absolute bottom-1 max-w-[80%] overflow-hidden text-ellipsis whitespace-nowrap tracking-[0.05em]" style={{
-            fontSize: '0.4rem',
+          <div className="absolute bottom-1 max-w-[80%] overflow-hidden text-ellipsis whitespace-nowrap text-[0.4rem] tracking-[0.05em] opacity-70" style={{
             color: agent.color,
-            opacity: 0.7,
           }}>
             ▶ {activeProject.name}
           </div>
@@ -300,8 +267,7 @@ function Room({ agent, status, styleInfo, isSelected, tick, hive }: RoomProps) {
       </div>
 
       {/* Role label below */}
-      <div className="mt-1.5 font-medium tracking-[0.15em] transition-colors duration-300" style={{
-        fontSize: '0.55rem',
+      <div className="mt-1.5 text-[0.55rem] font-medium tracking-[0.15em] transition-colors duration-300" style={{
         color: isSelected ? agent.color : isDue ? '#ffd93d' : isActive ? agent.color : 'var(--text-secondary)',
         opacity: isSelected ? 1 : 0.9,
       }}>

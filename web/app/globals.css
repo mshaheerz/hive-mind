@@ -39,6 +39,15 @@ html, body {
   overflow-x: hidden;
 }
 
+html {
+  background-color: var(--bg-void);
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--bg-void);
+}
+
 /* Starfield */
 body::before {
   content: '';

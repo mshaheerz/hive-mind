@@ -37,15 +37,15 @@ export default function ProjectTracker({ projects }: ProjectTrackerProps) {
   const complete = projects.filter(p => p.status?.stage === 'complete');
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-lg h-[400px] bg-[rgba(20,45,69,0.8)] border border-[var(--border-dim)]">
-      <div className="px-4 py-4 border-b border-[var(--border-dim)] flex items-center justify-between text-[0.75rem] font-bold tracking-widest flex-shrink-0 text-[var(--text-secondary)]">
+    <div className="flex flex-col overflow-hidden rounded-lg h-[400px] bg-[rgba(20,45,69,0.8)] border border-(--border-dim)">
+      <div className="px-4 py-4 border-b border-(--border-dim) flex items-center justify-between text-[0.75rem] font-bold tracking-widest flex-shrink-0 text-(--text-secondary)">
         <span>◈ PROJECTS</span>
         <span className="text-nova">{complete.length} COMPLETE</span>
       </div>
 
       <div className="flex-1 overflow-y-auto p-3">
         {projects.length === 0 && (
-          <div className="p-4 text-[0.75rem] text-center text-[var(--text-dim)]">
+          <div className="p-4 text-[0.75rem] text-center text-(--text-dim)">
             NOVA will propose projects soon...
           </div>
         )}
@@ -90,7 +90,7 @@ function ProjectCard({ project }: ProjectCardProps) {
             boxShadow: i === stageIdx ? `0 0 8px ${color}` : 'none',
           }} />
         ))}
-        <span className="text-[0.55rem] text-[var(--text-dim)] ml-1 font-semibold">{STAGE_AGENT[stage]}</span>
+        <span className="text-[0.55rem] text-(--text-dim) ml-1 font-semibold">{STAGE_AGENT[stage]}</span>
       </div>
     </div>
   );

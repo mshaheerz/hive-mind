@@ -56,8 +56,8 @@ export default function ProposalQueue({ queue }: ProposalQueueProps) {
   };
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-lg h-[400px] bg-[rgba(20,45,69,0.8)] border border-[var(--border-dim)]">
-      <div className="px-4 py-4 border-b border-[var(--border-dim)] flex-shrink-0 flex items-center justify-between text-[0.75rem] font-bold tracking-widest text-[var(--text-secondary)]">
+    <div className="flex flex-col overflow-hidden rounded-lg h-[400px] bg-[rgba(20,45,69,0.8)] border border-(--border-dim)">
+      <div className="px-4 py-4 border-b border-(--border-dim) flex-shrink-0 flex items-center justify-between text-[0.75rem] font-bold tracking-widest text-(--text-secondary)">
         <span>◆ PROPOSALS</span>
         <div className="flex gap-3 text-[0.7rem]">
           <span style={{ color: '#ffd93d' }}>{counts.pending} PENDING</span>
@@ -68,7 +68,7 @@ export default function ProposalQueue({ queue }: ProposalQueueProps) {
 
       <div className="flex-1 overflow-y-auto p-3">
         {sorted.length === 0 && (
-          <div className="p-4 text-[0.75rem] text-center text-[var(--text-dim)]">
+          <div className="p-4 text-[0.75rem] text-center text-(--text-dim)">
             Waiting for NOVA's first proposals...
           </div>
         )}
@@ -87,7 +87,7 @@ function ProposalCard({ proposal }: ProposalCardProps) {
         <div className="font-display font-bold text-[0.75rem] max-w-[75%] leading-normal" style={{ color: 'var(--text-primary)' }}>
           {cfg.icon} {proposal.title}
         </div>
-        <span className="text-[0.6rem] text-[var(--text-dim)] flex-shrink-0">{timeAgo(proposal.proposedAt)}</span>
+        <span className="text-[0.6rem] text-(--text-dim) flex-shrink-0">{timeAgo(proposal.proposedAt)}</span>
       </div>
 
       <div className="flex items-center justify-between">
@@ -96,7 +96,7 @@ function ProposalCard({ proposal }: ProposalCardProps) {
         </span>
         <div className="flex items-center gap-1.5">
           {proposal.complexity && (
-            <span className="text-[0.6rem] text-[var(--text-dim)]">{proposal.complexity}</span>
+            <span className="text-[0.6rem] text-(--text-dim)">{proposal.complexity}</span>
           )}
           {proposal.decision?.overall && (
             <span className="text-[0.65rem] font-semibold" style={{ color: '#ffd93d' }}>{proposal.decision.overall}/10</span>
