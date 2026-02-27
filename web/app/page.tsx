@@ -77,7 +77,7 @@ export default function Home() {
   return (
     <main className="relative z-1 min-h-screen">
       <TopNav
-        running={hive?.state?.running}
+        running={hive?.running ?? hive?.state?.running}
         provider={hive?.provider}
         cycleCount={hive?.state?.cycleCount}
         stats={hive?.stats || hive?.state?.stats}

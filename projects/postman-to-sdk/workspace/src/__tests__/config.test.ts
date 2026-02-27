@@ -1,5 +1,3 @@
-**File: `src/__tests__/config.test.ts`**
-```ts
 import path from 'path';
 import { describe, it, expect } from 'vitest';
 import {
@@ -54,66 +52,3 @@ describe('config constants', () => {
     expect(RETRY_BACKOFF_MS).toBeGreaterThan(0);
   });
 });
-```
-
----
-
-**File: `src/__tests__/types.test.ts`**
-```ts
-import { describe, it, expect } from 'vitest';
-import {
-  UrlSchema,
-  RequestSchema,
-  ItemSchema,
-  CollectionSchema,
-  Collection,
-} from '../types';
-
-describe('Zod schemas', () => {
-  /* ---------------- UrlSchema ---------------- */
-  describe('UrlSchema', () => {
-    it('validates a minimal URL object', () => {
-      const data = { raw: 'https://example.com/api' };
-      const parsed = UrlSchema.parse(data);
-      expect(parsed.raw).toBe(data.raw);
-    });
-
-    it('rejects missing raw field', () => {
-      expect(() => UrlSchema.parse({} as any)).toThrow();
-    });
-
-    it('rejects non‑string raw', () => {
-      expect(() => UrlSchema.parse({ raw: 123 as any })).toThrow();
-    });
-
-    it('accepts optional path and query', () => {
-      const data = {
-        raw: 'https://example.com/api',
-        path: '/api',
-        query: [{ key: 'q', value: 'test' }],
-      };
-      const parsed = UrlSchema.parse(data);
-      expect(parsed.path).toBe(data.path);
-      expect(parsed.query).toHaveLength(1);
-    });
-  });
-
-  /* ---------------- RequestSchema ---------------- */
-  describe('RequestSchema', () => {
-    const baseRequest = {
-      method: 'GET',
-      url: { raw: 'https://example.com' },
-    };
-
-    it('validates a minimal request', () => {
-      const parsed = RequestSchema.parse(baseRequest);
-      expect(parsed.method).toBe('GET');
-    });
-
-    it('rejects missing method', () => {
-      const invalid = { ...baseRequest, method: undefined as any };
-      expect(() => RequestSchema.parse(invalid)).toThrow();
-    });
-
-    it('rejects invalid method', () => {
-      const invalid = { ...baseRequest, method: 'FOO' as

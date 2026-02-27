@@ -39,8 +39,8 @@ export default function ProjectTracker({ projects }: ProjectTrackerProps) {
   return (
     <div className="flex flex-col overflow-hidden rounded-lg h-[400px] bg-[rgba(20,45,69,0.8)] border border-(--border-dim)">
       <div className="px-4 py-4 border-b border-(--border-dim) flex items-center justify-between text-[0.75rem] font-bold tracking-widest text-[14px] shrink-0 text-(--text-secondary)">
-        <span>◈ PROJECTS</span>
-        <span className="text-[14px]">{complete.length} COMPLETE</span>
+        <span className="tracking-[0.12em]">◈ PROJECTS</span>
+        <span className="text-[13px] rounded-md border border-(--border-dim) bg-black/20 px-2 py-0.5 tracking-[0.08em]">{complete.length} COMPLETE</span>
       </div>
 
       <div className="flex-1 overflow-y-auto p-3">
@@ -67,7 +67,7 @@ function ProjectCard({ project }: ProjectCardProps) {
     <div className="p-1.5 mb-1 bg-black/25 border rounded-lg animate-[fadeSlideUp_0.3s_ease]" style={{ borderColor: isComplete ? `${color}40` : 'var(--border-dim)' }}>
       {/* Name row */}
       <div className="flex items-center justify-between mb-2 text-[14px]">
-        <div className="text-[14px]] font-bold max-w-[65%] overflow-hidden text-ellipsis whitespace-nowrap font-display" style={{ color: isComplete ? '#c4b5fd' : 'var(--text-primary)' }}>
+        <div className="text-[14px] font-bold max-w-[65%] overflow-hidden text-ellipsis whitespace-nowrap font-display" style={{ color: isComplete ? '#c4b5fd' : 'var(--text-primary)' }}>
           {isComplete ? '✓ ' : ''}{project.name}
         </div>
         <div className="text-[12px] px-1.5 rounded border font-semibold" style={{ background: `${color}25`, borderColor: `${color}70`, color }}>

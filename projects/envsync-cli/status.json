@@ -1,10 +1,10 @@
 {
-  "stage": "review",
+  "stage": "architecture",
   "proposedBy": "nova",
   "approvedBy": "apex",
   "approvalScore": 7.75,
   "approvedAt": "2026-02-26T09:54:03.179Z",
-  "updatedAt": "2026-02-27T11:04:21.592Z",
+  "updatedAt": "2026-02-27T11:41:40.388Z",
   "lensRejected": false,
   "lensReviewSummary": null,
   "lensReviewedAt": "2026-02-27T11:04:21.592Z",
@@ -33,5 +33,13 @@
     "passed": 4,
     "failed": 0,
     "ranAt": "2026-02-27T11:02:17.062Z"
-  }
+  },
+  "pulseRejected": true,
+  "pulseSummary": "No runnable test command detected (expected package.json or pytest tests).",
+  "pulseActionItems": [
+    "Create runnable tests and declare how to run them (npm test or pytest)."
+  ],
+  "pulseReviewedAt": "2026-02-27T11:41:40.387Z",
+  "pulseApproved": false,
+  "generatedTestFiles": []
 }

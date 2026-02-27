@@ -1,62 +1,35 @@
-**1. Twitter/X thread (3-5 tweets)**
+**Twitter/X Thread**
 
-Tweet 1:
- Introducing postman-to-sdk! 
-A CLI that converts Postman collections to production-ready SDKs in seconds. 
-Say goodbye to manual conversion and hello to faster dev workflows! #postman-to-sdk #APIdev
+1. **Tweet 1:** 🚀 API development just got a whole lot easier! Introducing #postman-to-sdk, a CLI that generates fully-typed, ready-to-use API client SDKs from Postman collections. Say goodbye to manual conversion! #postman #apidev
+Visual: A simple, animated GIF of a Postman collection being converted to code.
 
-[Visual: Postman-to-SDK logo]
+2. **Tweet 2:** Did you know that exporting Postman collections to usable code is a tedious process? 😩 Our new CLI solves this problem by handling authentication flows and example payloads for you! #postman #devlife
+Visual: An image of a developer struggling with manual conversion, contrasted with a happy developer using the new CLI.
 
-Tweet 2:
- What's the problem it solves? 
- Postman is the industry standard for API exploration, but exporting collections to usable code is a manual pain. Our CLI automates this process, handling complex auth and nested examples!
+3. **Tweet 3:** Ready to supercharge your API development workflow? 🚀 Join the #postman-to-sdk community and try out our beta release! Your feedback is crucial to making this project a success! #postman #apidev
+Visual: A screenshot of the GitHub repo, with a "Join the conversation" call-to-action.
 
-[Visual: Postman-to-SDK workflow diagram]
+**Twitter/X Hashtags:** #postman #apidev #devlife #javascript #typescript #python #golang #sdk
 
-Tweet 3:
- Who benefits? 
- Frontend and backend devs who use Postman for API design and testing but need production-ready client code. Get ready to supercharge your dev workflows with postman-to-sdk! #postman-to-sdk #devtools
+**LinkedIn Post**
 
-[Visual: Postman-to-SDK screenshot]
+Breaking down barriers in API development: postman-to-sdk is here!
 
-Tweet 4:
- Ready to give it a try? 
- postman-to-sdk is now live on GitHub! Help us shape the future of API development by contributing to the project and sharing your feedback! #postman-to-sdk #opensource
+As a developer, you know how tedious it can be to convert Postman collections to usable code. That's why we're excited to announce the launch of #postman-to-sdk, a CLI that generates fully-typed, ready-to-use API client SDKs in seconds!
 
-[Visual: GitHub logo]
+This game-changing tool handles authentication flows and example payloads, making it easier to integrate APIs into your applications. Join the #postman-to-sdk community and try out our beta release. Your feedback is crucial to making this project a success!
 
-Tweet 5:
- Join the conversation! 
- Share your experiences with Postman and postman-to-sdk in the comments below! Let's build a community around API development and make it easier for everyone! #postman-to-sdk #APIdev
+**LinkedIn Hashtags:** #postman #apidev #devlife #javascript #typescript #python #golang #sdk #productivity
 
-[Visual: Postman-to-SDK logo]
+**Product Hunt Tagline:** Generate fully-typed API client SDKs from Postman collections in seconds!
 
-**Posting schedule:** Tweet 1 (launch day), Tweet 2 (next day), Tweet 3 (2 days after), Tweet 4 (3 days after), Tweet 5 (4 days after)
+**Product Hunt Description:** Say goodbye to manual conversion and hello to a streamlined API development workflow with #postman-to-sdk. This CLI generates ready-to-use API client SDKs in TypeScript, Python, and Go, handling authentication flows and example payloads for you. Join the beta release and help shape the future of API development!
 
-**Hashtags:** #postman-to-sdk, #APIdev, #devtools, #opensource
+**GitHub Repo Description:** A CLI that generates fully-typed, ready-to-use API client SDKs from Postman collections.
 
-**2. LinkedIn post**
+**Posting Schedule:**
 
-Title: Revolutionizing API Development with postman-to-sdk
-
-Are you tired of manually converting Postman collections to usable code? Introducing postman-to-sdk, a CLI that automates this process, handling complex auth and nested examples. Say goodbye to tedious workflows and hello to faster dev productivity!
-
-postman-to-sdk is designed for frontend and backend developers who use Postman for API design and testing but need production-ready client code. With our CLI, you can supercharge your dev workflows and focus on building innovative applications.
-
-Join the conversation and share your experiences with Postman and postman-to-sdk! Let's build a community around API development and make it easier for everyone.
-
-**Visual:** Postman-to-SDK workflow diagram
-
-**Posting schedule:** Launch day
-
-**3. Product Hunt tagline + description**
-
-Tagline: Convert Postman collections to production-ready SDKs in seconds
-
-Description: Introducing postman-to-sdk, a CLI that automates the process of converting Postman collections to usable code, handling complex auth and nested examples. Join a community of developers who are revolutionizing API development and make it easier for everyone!
-
-**Visual:** Postman-to-SDK logo
-
-**4. GitHub repo description (one line)**
-
-Convert Postman collections to production-ready SDKs in seconds with our CLI!
+- Twitter/X Thread: Posting 1 tweet every 2 hours, with a final tweet linking to the GitHub repo.
+- LinkedIn Post: Posting once a week, with a focus on engaging with the community.
+- Product Hunt: Launching on Product Hunt within the next 2 weeks, with a focus on community engagement and feedback.
+- GitHub Repo: Maintaining an active README with updates on the project's progress and requirements.

@@ -58,8 +58,8 @@ export default function ProposalQueue({ queue }: ProposalQueueProps) {
   return (
     <div className="flex flex-col overflow-hidden rounded-lg h-[400px] bg-[rgba(20,45,69,0.8)] border border-(--border-dim)">
       <div className="px-4 py-4 border-b border-(--border-dim) text-[14px] shrink-0 flex items-center justify-between font-bold tracking-widest text-(--text-secondary)">
-        <span>◆ PROPOSALS</span>
-        <div className="flex gap-3 text-[14px]">
+        <span className="tracking-[0.12em]">◆ PROPOSALS</span>
+        <div className="flex items-center gap-2 text-[13px]">
           <span style={{ color: '#ffd93d' }}>{counts.pending} PENDING</span>
           <span style={{ color: '#c4b5fd' }}>{counts.approved} ✓</span>
           <span style={{ color: '#ef5350' }}>{counts.rejected} ✗</span>

@@ -98,15 +98,20 @@ function resolveRunningFlag(stateRunning: boolean): boolean {
   }
 }
 
-function deriveStats(queue: any[], projects: any[]) {
-  const approved = queue.filter((p) => p?.status === 'approved').length;
-  const rejected = queue.filter((p) => p?.status === 'rejected').length;
-  const completed = projects.filter((p) => p?.status?.stage === 'complete').length;
+function deriveStats(queue: any[], projects: any[], stateStats: any = {}) {
+  const approvedNow = queue.filter((p) => p?.status === 'approved').length;
+  const rejectedNow = queue.filter((p) => p?.status === 'rejected').length;
+  const completedNow = projects.filter((p) => p?.status?.stage === 'complete').length;
   const active = projects.filter((p) => {
     const s = p?.status?.stage;
     return s && s !== 'new' && s !== 'failed' && s !== 'complete';
   }).length;
-  return { approved, rejected, completed, active };
+  // Keep dashboard counts stable even if a project is later reopened.
+  const approved = Math.max(Number(stateStats?.approved) || 0, approvedNow);
+  const rejected = Math.max(Number(stateStats?.rejected) || 0, rejectedNow);
+  const completed = Math.max(Number(stateStats?.completed) || 0, completedNow);
+  const duplicatesBlocked = Math.max(Number(stateStats?.duplicatesBlocked) || 0, 0);
+  return { approved, rejected, completed, active, completedNow, duplicatesBlocked };
 }
 
 export async function GET() {
@@ -121,7 +126,7 @@ export async function GET() {
   const projects  = getProjects();
   const discussions = getDiscussions();
   const logs      = getRecentLogs();
-  const stats = deriveStats(queue, projects);
+  const stats = deriveStats(queue, projects, state.stats || {});
   const providerFromLogs = inferProviderFromLogs(logs);
   const provider = normalizeProvider(
     state.llmProvider ||
@@ -131,6 +136,7 @@ export async function GET() {
   );
 
   return NextResponse.json({
+    running,
     state: stateWithRuntime,
     stats,
     provider,
