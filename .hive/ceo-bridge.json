@@ -164,7 +164,22 @@
       "message": "Strict order accepted. Forced wake: SCOUT.",
       "at": "2026-02-27T19:14:05.188Z",
       "inReplyTo": "ceo_1772219640927_dwybl"
+    },
+    {
+      "id": "ceo_1772220581881_9kg2f",
+      "from": "ceo",
+      "message": "strict wake all agents",
+      "at": "2026-02-27T19:29:41.881Z",
+      "handledAt": "2026-02-27T19:29:47.098Z",
+      "handledBy": "apex"
+    },
+    {
+      "id": "apex_1772220587098_hm6o5",
+      "from": "apex",
+      "message": "Strict order accepted. Forced wake: NOVA, SCOUT, APEX, ATLAS, FORGE, LENS, PULSE, SAGE, ECHO.",
+      "at": "2026-02-27T19:29:47.098Z",
+      "inReplyTo": "ceo_1772220581881_9kg2f"
     }
   ],
-  "updatedAt": "2026-02-27T19:14:05.189Z"
+  "updatedAt": "2026-02-27T19:29:47.099Z"
 }

@@ -1,0 +1,18 @@
+{
+  "fromAgent": "scout",
+  "toAgent": "atlas",
+  "project": "devops-pipeline-automation",
+  "stage": "approved",
+  "runId": "1772221091379-scout-hehz3",
+  "summary": "devops-pipeline-automation: approved -> research",
+  "artifacts": [
+    "output/approved.md",
+    "output/research.md"
+  ],
+  "requiredActions": [],
+  "acceptanceChecks": [],
+  "modelInfo": {
+    "provider": "local",
+    "model": "qwen2.5:1.5b-instruct"
+  }
+}

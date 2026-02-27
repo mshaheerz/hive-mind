@@ -1,0 +1,18 @@
+{
+  "fromAgent": "lens",
+  "toAgent": "pulse",
+  "project": "web-app-for-real-time-stream-analysis",
+  "stage": "implementation",
+  "runId": "1772220980701-lens-7wsyt",
+  "summary": "web-app-for-real-time-stream-analysis: implementation -> review",
+  "artifacts": [
+    "output/implementation.md",
+    "output/review.md"
+  ],
+  "requiredActions": [],
+  "acceptanceChecks": [],
+  "modelInfo": {
+    "provider": "local",
+    "model": "qwen2.5:1.5b-instruct"
+  }
+}

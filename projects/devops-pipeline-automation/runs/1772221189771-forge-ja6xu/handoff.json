@@ -1,0 +1,20 @@
+{
+  "fromAgent": "forge",
+  "toAgent": "lens",
+  "project": "devops-pipeline-automation",
+  "stage": "architecture",
+  "runId": "1772221189771-forge-ja6xu",
+  "summary": "devops-pipeline-automation: architecture -> implementation",
+  "artifacts": [
+    "output/architecture.md",
+    "output/implementation.md"
+  ],
+  "requiredActions": [],
+  "acceptanceChecks": [
+    "Workspace files materialized"
+  ],
+  "modelInfo": {
+    "provider": "local",
+    "model": "qwen2.5:1.5b-instruct"
+  }
+}

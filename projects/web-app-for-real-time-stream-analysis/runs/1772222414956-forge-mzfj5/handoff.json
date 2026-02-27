@@ -1,0 +1,20 @@
+{
+  "fromAgent": "forge",
+  "toAgent": "lens",
+  "project": "web-app-for-real-time-stream-analysis",
+  "stage": "architecture",
+  "runId": "1772222414956-forge-mzfj5",
+  "summary": "web-app-for-real-time-stream-analysis: architecture -> implementation",
+  "artifacts": [
+    "output/architecture.md",
+    "output/implementation.md"
+  ],
+  "requiredActions": [],
+  "acceptanceChecks": [
+    "Workspace files materialized"
+  ],
+  "modelInfo": {
+    "provider": "local",
+    "model": "qwen2.5:1.5b-instruct"
+  }
+}

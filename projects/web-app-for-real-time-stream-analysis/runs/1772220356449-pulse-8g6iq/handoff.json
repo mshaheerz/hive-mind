@@ -1,0 +1,17 @@
+{
+  "fromAgent": "pulse",
+  "toAgent": "forge",
+  "project": "web-app-for-real-time-stream-analysis",
+  "stage": "review",
+  "runId": "1772220356449-pulse-8g6iq",
+  "summary": "No runnable test command detected (expected package.json or pytest tests).",
+  "artifacts": [],
+  "requiredActions": [
+    "Create runnable tests and declare how to run them (npm test or pytest)."
+  ],
+  "acceptanceChecks": [],
+  "modelInfo": {
+    "provider": "local",
+    "model": "qwen2.5:1.5b-instruct"
+  }
+}

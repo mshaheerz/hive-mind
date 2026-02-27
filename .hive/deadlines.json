@@ -24,9 +24,59 @@
     "projectName": "web-app-for-real-time-stream-analysis",
     "stage": "implementation",
     "agent": "forge",
-    "dueAt": "2026-02-28T01:19:20.109Z",
-    "setAt": "2026-02-27T19:19:20.109Z",
+    "dueAt": "2026-02-28T02:00:14.957Z",
+    "setAt": "2026-02-27T20:00:14.957Z",
     "status": "complete",
-    "completedAt": "2026-02-27T19:21:30.295Z"
+    "completedAt": "2026-02-27T20:01:42.651Z"
+  },
+  {
+    "id": "web-app-for-real-time-stream-analysis::review",
+    "projectName": "web-app-for-real-time-stream-analysis",
+    "stage": "review",
+    "agent": "lens",
+    "dueAt": "2026-02-27T21:36:20.702Z",
+    "setAt": "2026-02-27T19:36:20.702Z",
+    "status": "complete",
+    "completedAt": "2026-02-27T19:36:57.269Z"
+  },
+  {
+    "id": "web-app-for-real-time-stream-analysis::tests",
+    "projectName": "web-app-for-real-time-stream-analysis",
+    "stage": "tests",
+    "agent": "pulse",
+    "dueAt": "2026-02-27T21:36:57.271Z",
+    "setAt": "2026-02-27T19:36:57.271Z",
+    "status": "complete",
+    "completedAt": "2026-02-27T19:38:11.362Z"
+  },
+  {
+    "id": "devops-pipeline-automation::research",
+    "projectName": "devops-pipeline-automation",
+    "stage": "research",
+    "agent": "scout",
+    "dueAt": "2026-02-27T21:38:11.380Z",
+    "setAt": "2026-02-27T19:38:11.380Z",
+    "status": "complete",
+    "completedAt": "2026-02-27T19:38:48.872Z"
+  },
+  {
+    "id": "devops-pipeline-automation::architecture",
+    "projectName": "devops-pipeline-automation",
+    "stage": "architecture",
+    "agent": "atlas",
+    "dueAt": "2026-02-27T22:38:48.874Z",
+    "setAt": "2026-02-27T19:38:48.874Z",
+    "status": "complete",
+    "completedAt": "2026-02-27T19:39:49.770Z"
+  },
+  {
+    "id": "devops-pipeline-automation::implementation",
+    "projectName": "devops-pipeline-automation",
+    "stage": "implementation",
+    "agent": "forge",
+    "dueAt": "2026-02-28T01:39:49.772Z",
+    "setAt": "2026-02-27T19:39:49.772Z",
+    "status": "complete",
+    "completedAt": "2026-02-27T19:41:43.900Z"
   }
 ]
