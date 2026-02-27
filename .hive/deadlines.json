@@ -33,39 +33,99 @@
     "projectName": "envsync-cli",
     "stage": "implementation",
     "agent": "forge",
-    "dueAt": "2026-02-27T16:14:45.876Z",
-    "setAt": "2026-02-27T10:14:45.876Z",
+    "dueAt": "2026-02-27T16:38:44.096Z",
+    "setAt": "2026-02-27T10:38:44.096Z",
     "status": "complete",
-    "completedAt": "2026-02-27T10:14:51.468Z"
+    "completedAt": "2026-02-27T10:41:19.216Z"
   },
   {
     "id": "postman-to-sdk::implementation",
     "projectName": "postman-to-sdk",
     "stage": "implementation",
     "agent": "forge",
-    "dueAt": "2026-02-27T16:15:05.471Z",
-    "setAt": "2026-02-27T10:15:05.471Z",
+    "dueAt": "2026-02-27T16:43:33.951Z",
+    "setAt": "2026-02-27T10:43:33.951Z",
     "status": "complete",
-    "completedAt": "2026-02-27T10:15:26.087Z"
+    "completedAt": "2026-02-27T10:45:37.458Z"
   },
   {
     "id": "envsync-cli::review",
     "projectName": "envsync-cli",
     "stage": "review",
     "agent": "lens",
-    "dueAt": "2026-02-27T12:14:51.471Z",
-    "setAt": "2026-02-27T10:14:51.471Z",
+    "dueAt": "2026-02-27T12:41:19.220Z",
+    "setAt": "2026-02-27T10:41:19.220Z",
     "status": "complete",
-    "completedAt": "2026-02-27T10:14:56.767Z"
+    "completedAt": "2026-02-27T10:43:33.950Z"
   },
   {
     "id": "postman-to-sdk::review",
     "projectName": "postman-to-sdk",
     "stage": "review",
     "agent": "lens",
-    "dueAt": "2026-02-27T12:14:56.768Z",
-    "setAt": "2026-02-27T10:14:56.768Z",
+    "dueAt": "2026-02-27T12:45:37.461Z",
+    "setAt": "2026-02-27T10:45:37.461Z",
     "status": "complete",
-    "completedAt": "2026-02-27T10:15:05.470Z"
+    "completedAt": "2026-02-27T10:47:39.951Z"
+  },
+  {
+    "id": "envsync-cli::tests",
+    "projectName": "envsync-cli",
+    "stage": "tests",
+    "agent": "pulse",
+    "dueAt": "2026-02-27T12:51:52.641Z",
+    "setAt": "2026-02-27T10:51:52.641Z",
+    "status": "complete",
+    "completedAt": "2026-02-27T10:51:55.462Z"
+  },
+  {
+    "id": "envsync-cli::docs",
+    "projectName": "envsync-cli",
+    "stage": "docs",
+    "agent": "sage",
+    "dueAt": "2026-02-27T12:51:55.463Z",
+    "setAt": "2026-02-27T10:51:55.463Z",
+    "status": "complete",
+    "completedAt": "2026-02-27T10:52:05.342Z"
+  },
+  {
+    "id": "envsync-cli::launch",
+    "projectName": "envsync-cli",
+    "stage": "launch",
+    "agent": "echo",
+    "dueAt": "2026-02-27T11:52:05.343Z",
+    "setAt": "2026-02-27T10:52:05.343Z",
+    "status": "complete",
+    "completedAt": "2026-02-27T10:52:06.775Z"
+  },
+  {
+    "id": "postman-to-sdk::tests",
+    "projectName": "postman-to-sdk",
+    "stage": "tests",
+    "agent": "pulse",
+    "dueAt": "2026-02-27T12:52:06.776Z",
+    "setAt": "2026-02-27T10:52:06.776Z",
+    "status": "complete",
+    "completedAt": "2026-02-27T10:52:09.411Z"
+  },
+  {
+    "id": "postman-to-sdk::docs",
+    "projectName": "postman-to-sdk",
+    "stage": "docs",
+    "agent": "sage",
+    "dueAt": "2026-02-27T12:52:09.413Z",
+    "setAt": "2026-02-27T10:52:09.413Z",
+    "status": "complete",
+    "completedAt": "2026-02-27T10:52:17.878Z"
+  },
+  {
+    "id": "postman-to-sdk::launch",
+    "projectName": "postman-to-sdk",
+    "stage": "launch",
+    "agent": "echo",
+    "dueAt": "2026-02-27T11:52:17.880Z",
+    "setAt": "2026-02-27T10:52:17.880Z",
+    "status": "complete",
+    "completedAt": "2026-02-27T10:52:18.974Z"
   }
 ]

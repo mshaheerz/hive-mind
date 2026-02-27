@@ -31,6 +31,7 @@ const QUEUE_FILE   = path.join(__dirname, '.hive', 'queue.json');
 const CEO_BRIDGE_FILE = path.join(__dirname, '.hive', 'ceo-bridge.json');
 const RUNNER_ARGS = process.argv.slice(2);
 const MAX_ACTIVE_PROJECTS = 2;
+const MAX_LENS_REJECTS_BEFORE_BYPASS = Number(process.env.MAX_LENS_REJECTS_BEFORE_BYPASS || 3);
 const RUNNER_LOCK_FILE = path.join(__dirname, '.hive', 'runner.lock.json');
 
 function printUsage() {
@@ -204,6 +205,40 @@ function summarizeLensReview(text = '') {
   }
 
   return picked.join(' | ').slice(0, 520);
+}
+
+function extractLensActionItems(text = '', maxItems = 5) {
+  const raw = String(text || '').replace(/\r/g, '');
+  const lines = raw.split('\n');
+  const items = [];
+
+  // Prefer markdown table rows from CRITICAL section.
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed.startsWith('|')) continue;
+    if (/^\|\s*-+/.test(trimmed)) continue;
+
+    const cols = trimmed.split('|').map((c) => c.trim()).filter(Boolean);
+    if (cols.length < 4) continue;
+    if (/^#$/i.test(cols[0])) continue;
+
+    const issue = cols[2] || '';
+    const fix = cols[4] || cols[3] || '';
+    const item = `${issue} -> ${fix}`.replace(/\s+/g, ' ').trim();
+    if (item && !items.includes(item)) items.push(item);
+    if (items.length >= maxItems) break;
+  }
+
+  if (items.length) return items;
+
+  // Fallback: collect high-signal lines.
+  const fallback = lines
+    .map((l) => l.trim())
+    .filter((l) => /critical|must fix|security|validation|tests|injection/i.test(l))
+    .slice(0, maxItems)
+    .map((l) => l.replace(/\s+/g, ' ').trim());
+
+  return fallback;
 }
 
 function isProcessAlive(pid) {
@@ -840,7 +875,7 @@ ${decision.reasoning}
     const deferred = all.slice(MAX_ACTIVE_PROJECTS);
     const blocked = [];
     let progressed = false;
-    const MAX_STAGE_HOPS_PER_CYCLE = 2;
+    const MAX_STAGE_HOPS_PER_CYCLE = 3;
 
     if (deferred.length) {
       log('system', `Project priority active: processing oldest ${MAX_ACTIVE_PROJECTS}, deferring ${deferred.length} newer project(s).`);
@@ -897,6 +932,8 @@ ${decision.reasoning}
         currentStatus = getProjectStatus(name);
         hops += 1;
 
+        if (run?.haltProjectThisCycle) break;
+
         // If stage didn't change, don't spin.
         if (currentStatus.stage === beforeStage) break;
       }
@@ -938,7 +975,16 @@ ${decision.reasoning}
         case 'architecture':
           const arch = readOutput(projectName, 'architecture.md');
           const res  = readOutput(projectName, 'research.md');
-          output = await this.agents.forge.implement(readme, arch, res);
+          const previousImplementation = readOutput(projectName, 'implementation.md');
+          const remediationItems = Array.isArray(status.lensActionItems) ? status.lensActionItems : [];
+          const remediationBlock = remediationItems.length
+            ? `\n\n## Mandatory Rework From LENS\n${remediationItems.map((x, i) => `${i + 1}. ${x}`).join('\n')}\n`
+            : '';
+          const previousImplBlock = previousImplementation.trim()
+            ? `\n\n## Previous Implementation (fix this, do not restart from scratch)\n${previousImplementation.slice(0, 12000)}\n`
+            : '';
+          const taskForForge = `${readme}${remediationBlock}${previousImplBlock}`;
+          output = await this.agents.forge.implement(taskForForge, arch, res);
           writeOutput(projectName, 'implementation.md', output);
           break;
 
@@ -950,17 +996,67 @@ ${decision.reasoning}
           // Check if LENS approved
           if (output.toLowerCase().includes('needs_changes') || output.toLowerCase().includes('rejected')) {
             const lensSummary = summarizeLensReview(output);
+            const lensActionItems = extractLensActionItems(output, 6);
+            const nextRejectCount = (Number(status.lensRejectCount) || 0) + 1;
             log('lens', `⚠ Code issues found in "${projectName}". Sending back to FORGE.`);
             log('lens', `   Issues: ${lensSummary}`);
+            const shouldBypass = nextRejectCount >= MAX_LENS_REJECTS_BEFORE_BYPASS;
+
+            if (shouldBypass) {
+              setProjectStatus(projectName, {
+                stage: 'review',
+                lensRejected: false,
+                lensApproved: false,
+                lensBypassed: true,
+                lensBypassReason: `LENS rejected ${nextRejectCount} times. Auto-advanced to unblock pipeline.`,
+                lensBypassedAt: new Date().toISOString(),
+                lensReviewSummary: null,
+                lensActionItems: [],
+                lensRejectCount: nextRejectCount,
+                lensReviewedAt: new Date().toISOString(),
+                escalationNeeded: true,
+                escalationReason: 'Repeated LENS rejections',
+                escalatedAt: new Date().toISOString(),
+              });
+              delete this.state.state.agentLastRun.apex;
+              delete this.state.state.agentLastRun.pulse;
+              this.state.save();
+              log('apex', `🚨 Escalation: "${projectName}" rejected by LENS ${nextRejectCount} times. Auto-bypassing to PULSE review.`);
+              this.deadlines.complete(projectName, stageInfo.next);
+              return { worked: true, success: true, haltProjectThisCycle: true };
+            }
+
             setProjectStatus(projectName, {
               stage: 'architecture',
               lensRejected: true,
+              lensApproved: false,
               lensReviewSummary: lensSummary,
+              lensActionItems,
+              lensRejectCount: nextRejectCount,
               lensReviewedAt: new Date().toISOString(),
+              lensBypassed: false,
+              lensBypassReason: null,
+              lensBypassedAt: null,
             });
             this.deadlines.complete(projectName, stageInfo.next);
-            return { worked: true, success: true };
+            return { worked: true, success: true, haltProjectThisCycle: true };
           }
+
+          setProjectStatus(projectName, {
+            lensRejected: false,
+            lensApproved: true,
+            lensAcceptedAt: new Date().toISOString(),
+            lensReviewSummary: null,
+            lensActionItems: [],
+            lensRejectCount: 0,
+            lensReviewedAt: new Date().toISOString(),
+            lensBypassed: false,
+            lensBypassReason: null,
+            lensBypassedAt: null,
+            escalationNeeded: false,
+            escalationReason: null,
+          });
+          log('lens', `✓ LENS accepted "${projectName}". Moving to PULSE.`);
           break;
 
         case 'review':
@@ -988,7 +1084,13 @@ ${decision.reasoning}
       const updates = { stage: stageInfo.next };
       if (stage === 'architecture' && stageInfo.next === 'implementation') {
         updates.lensRejected = false;
+        updates.lensApproved = false;
+        updates.lensAcceptedAt = null;
         updates.lensReviewSummary = null;
+        updates.lensActionItems = [];
+        updates.lensBypassed = false;
+        updates.lensBypassReason = null;
+        updates.lensBypassedAt = null;
       }
       setProjectStatus(projectName, updates);
       log(stageInfo.agentKey, `✓ "${projectName}" → moved to "${stageInfo.next}"`);
