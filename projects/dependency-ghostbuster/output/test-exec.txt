@@ -1,7 +1,108 @@
-Summary: npm install failed: npm error code ETARGET | npm error notarget No matching version found for @tailwindcss/aspect-ratio@^2.0.5. | npm error notarget In most cases you or one of your dependencies are requesting | npm error notarget a package version that doesn't exist. | npm error A complete log of this run can be found in: /home/zaigopc/.npm/_logs/2026-02-27T15_31_56_011Z-debug-0.log
+Summary: npm test failed: > dependency-ghostbuster@1.0.0 test | > jest --watch=false | FAIL src/analyzer/analyzeDependencies.integration.test.ts | ● Test suite failed to run | Jest encountered an unexpected token | Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
 
-npm error code ETARGET
-npm error notarget No matching version found for @tailwindcss/aspect-ratio@^2.0.5.
-npm error notarget In most cases you or one of your dependencies are requesting
-npm error notarget a package version that doesn't exist.
-npm error A complete log of this run can be found in: /home/zaigopc/.npm/_logs/2026-02-27T15_31_56_011Z-debug-0.log
+> dependency-ghostbuster@1.0.0 test
+> jest --watch=false
+
+
+FAIL src/analyzer/analyzeDependencies.integration.test.ts
+  ● Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     • If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     • If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     • To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     • If you need a custom transformation specify a "transform" option in your config.
+     • If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    /home/zaigopc/Desktop/my/hive-mind/projects/dependency-ghostbuster/workspace/src/analyzer/analyzeDependencies.integration.test.ts:1
+    ({"Object.<anonymous>":function(module,exports,require,__dirname,__filename,jest){import { AnalyzeDependencies } from './analyzeDependencies';
+                                                                                      ^^^^^^
+
+    SyntaxError: Cannot use import statement outside a module
+
+      at Runtime.createScriptFromCode (node_modules/jest-runtime/build/index.js:1728:14)
+
+FAIL src/analyzer/analyzeDependencies.test.ts
+  ● Test suite failed to run
+
+    SyntaxError: /home/zaigopc/Desktop/my/hive-mind/projects/dependency-ghostbuster/workspace/src/analyzer/analyzeDependencies.test.ts: Unexpected token, expected "," (5:62)
+
+      3 | it('should handle null input correctly', async () => {
+      4 |   expect.assertions(1);
+    > 5 |   const result = await new AnalyzeDependencies().analyze(null as any);
+        |                                                               ^
+      6 |   expect(result).toBeNull();
+      7 | });
+      8 |
+
+      at toParseError (node_modules/@babel/parser/src/parse-error.ts:95:45)
+      at Parser.raise (node_modules/@babel/parser/src/tokenizer/index.ts:1504:19)
+      at Parser.unexpected (node_modules/@babel/parser/src/tokenizer/index.ts:1544:16)
+      at Parser.expect (node_modules/@babel/parser/src/parser/util.ts:157:12)
+      at Parser.parseCallExpressionArguments (node_modules/@babel/parser/src/parser/expression.ts:1031:14)
+      at Parser.parseCoverCallAndAsyncArrowHead (node_modules/@babel/parser/src/parser/expression.ts:922:29)
+      at Parser.parseSubscript (node_modules/@babel/parser/src/parser/expression.ts:804:19)
+      at Parser.parseSubscripts (node_modules/@babel/parser/src/parser/expression.ts:763:19)
+      at Parser.parseExprSubscripts (node_modules/@babel/parser/src/parser/expression.ts:748:17)
+      at Parser.parseUpdate (node_modules/@babel/parser/src/parser/expression.ts:721:21)
+      at Parser.parseMaybeUnary (node_modules/@babel/parser/src/parser/expression.ts:683:23)
+      at Parser.parseAwait (node_modules/@babel/parser/src/parser/expression.ts:2955:28)
+      at Parser.parseMaybeUnary (node_modules/@babel/parser/src/parser/expression.ts:645:25)
+      at Parser.parseMaybeUnaryOrPrivate (node_modules/@babel/parser/src/parser/expression.ts:417:14)
+      at Parser.parseExprOps (node_modules/@babel/parser/src/parser/expression.ts:429:23)
+      at Parser.parseMaybeConditional (node_modules/@babel/parser/src/parser/expression.ts:384:23)
+      at Parser.parseMaybeAssign (node_modules/@babel/parser/src/parser/expression.ts:301:21)
+      at callback (node_modules/@babel/parser/src/parser/expression.ts:257:12)
+      at Parser.allowInAnd (node_modules/@babel/parser/src/parser/expression.ts:3189:16)
+      at Parser.parseMaybeAssignAllowIn (node_modules/@babel/parser/src/parser/expression.ts:256:17)
+      at Parser.parseVar (node_modules/@babel/parser/src/parser/statement.ts:1587:18)
+      at Parser.parseVarStatement (node_modules/@babel/parser/src/parser/statement.ts:1251:10)
+      at Parser.parseStatementContent (node_modules/@babel/parser/src/parser/statement.ts:612:21)
+      at Parser.parseStatementLike (node_modules/@babel/parser/src/parser/statement.ts:482:17)
+      at Parser.parseStatementListItem (node_modules/@babel/parser/src/parser/statement.ts:431:17)
+      at Parser.parseBlockOrModuleBlockBody (node_modules/@babel/parser/src/parser/statement.ts:1444:16)
+      at Parser.parseBlockBody (node_modules/@babel/parser/src/parser/statement.ts:1417:10)
+      at Parser.parseBlock (node_modules/@babel/parser/src/parser/statement.ts:1385:10)
+      at Parser.parseFunctionBody (node_modules/@babel/parser/src/parser/expression.ts:2618:24)
+      at Parser.parseArrowExpression (node_modules/@babel/parser/src/parser/expression.ts:2559:10)
+      at Parser.parseAsyncArrowFromCallExpression (node_modules/@babel/parser/src/parser/expression.ts:1067:10)
+      at Parser.parseCoverCallAndAsyncArrowHead (node_modules/@babel/parser/src/parser/expression.ts:942:27)
+      at Parser.parseSubscript (node_modules/@babel/parser/src/parser/expression.ts:804:19)
+      at Parser.parseSubscripts (node_modules/@babel/parser/src/parser/expression.ts:763:19)
+      at Parser.parseExprSubscripts (node_modules/@babel/parser/src/parser/expression.ts:748:17)
+      at Parser.parseUpdate (node_modules/@babel/parser/src/parser/expression.ts:721:21)
+      at Parser.parseMaybeUnary (node_modules/@babel/parser/src/parser/expression.ts:683:23)
+      at Parser.parseMaybeUnaryOrPrivate (node_modules/@babel/parser/src/parser/expression.ts:417:14)
+      at Parser.parseExprOps (node_modules/@babel/parser/src/parser/expression.ts:429:23)
+      at Parser.parseMaybeConditional (node_modules/@babel/parser/src/parser/expression.ts:384:23)
+      at Parser.parseMaybeAssign (node_modules/@babel/parser/src/parser/expression.ts:301:21)
+      at callback (node_modules/@babel/parser/src/parser/expression.ts:257:12)
+      at Parser.allowInAnd (node_modules/@babel/parser/src/parser/expression.ts:3194:12)
+      at Parser.parseMaybeAssignAllowIn (node_modules/@babel/parser/src/parser/expression.ts:256:17)
+      at Parser.parseMaybeAssignAllowInOrVoidPattern (node_modules/@babel/parser/src/parser/expression.ts:3308:17)
+      at Parser.parseExprListItem (node_modules/@babel/parser/src/parser/expression.ts:2790:18)
+      at Parser.parseCallExpressionArguments (node_modules/@babel/parser/src/parser/expression.ts:1042:14)
+      at Parser.parseCoverCallAndAsyncArrowHead (node_modules/@babel/parser/src/parser/expression.ts:922:29)
+      at Parser.parseSubscript (node_modules/@babel/parser/src/parser/expression.ts:804:19)
+      at Parser.parseSubscripts (node_modules/@babel/parser/src/parser/expression.ts:763:19)
+
+Test Suites: 2 failed, 2 total
+Tests:       0 total
+Snapshots:   0 total
+Time:        0.717 s
+Ran all test suites.

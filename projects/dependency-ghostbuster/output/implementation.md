@@ -1,267 +1,300 @@
-### 1. File: `.gitignore`
-```
-node_modules/
-dist/
-*.log
-.DS_Store
-.env*
+### File: `dependency-ghostbuster/src/scanner/index.ts`
+```typescript
+import * as parser from './parser';
+import { Dependency } from 'dep-graph';
+
+/**
+ * Identifier for the scanner module.
+ */
+const SCANNER_MODULE_KEY = '@dependency_ghostbuster/scan';
+
+/**
+ * The main entry point of the dependency ghostbuster tool. This function reads the source code of a monorepo and performs static analysis.
+ *
+ * @param context - The current environment where the tool is running (e.g., node.js, jest).
+ */
+export async function scan(context: Context) {
+    // Parse the source code into an AST
+    const ast = parser.parseCode(context.sourceCode);
+
+    // Analyze the dependencies in the static analysis module
+    const analyzedDependencies = await analyzeDependencies(ast);
+    console.log(`Static Analysis Complete: ${analyzedDependencies.length} dependencies identified.`);
+
+    // Generate a dependency graph for visualization and further processing
+    const depGraph = new Dependency();
+    depGraph.addNodes(analyzedDependencies.map(node => node.id));
+    await depGraph.buildEdges(analyzedDependencies, context.sourceCode);
+
+    return {
+        dependentPackages: analyzedDependencies,
+        dependencyGraph: depGraph,
+    };
+}
+
+/**
+ * Static analysis function to identify and track unused dependencies.
+ *
+ * @param ast - The parsed source code as an abstract syntax tree (AST).
+ */
+async function analyzeDependencies(ast: any) {
+    const result = [];
+    for (const node of ast.body) {
+        if (isDependencyNode(node)) {
+            await checkDependencyUsage(result, node);
+            // Add dynamic import detection here
+            handleDynamicImports(ast, node.id, context); // Placeholder function to simulate dynamic imports
+
+            break;
+        }
+    }
+
+    return result;
+}
+
+/**
+ * Check the usage of a dependency in the source code.
+ *
+ * @param result - The current state of analyzed dependencies.
+ * @param node - The AST node representing the dependency being analyzed.
+ */
+async function checkDependencyUsage(result: any[], node: any) {
+    const id = getId(node);
+    // Placeholder implementation to identify test-only usage
+    if (isTestOnly(id)) {
+        result.push({ id, type: 'test' });
+    } else if (node.kind === 'import') {
+        await checkImportDependencies(result, ast, node, context);
+    }
+}
+
+/**
+ * Check the dependencies of a dynamic import.
+ *
+ * @param result - The current state of analyzed dependencies.
+ * @param ast - The abstract syntax tree containing the source code.
+ * @param node - The AST node representing the dynamic import being analyzed.
+ */
+async function checkImportDependencies(result: any[], ast: any, node: any, context: Context) {
+    const id = getId(node);
+    if (result.some(r => r.id === id)) return;
+
+    // Placeholder implementation to simulate test-only usage
+    if (isTestOnly(id)) {
+        result.push({ id, type: 'test' });
+        return;
+    }
+
+    for await (const statement of ast.body) {
+        const statementType = getType(statement);
+        if (statementType === 'expressionStatement') {
+            let importedId = getId(node.parent);
+            // Placeholder implementation to simulate test-only usage
+            if (isTestOnly(importedId)) {
+                result.push({ id, type: 'test' });
+                return;
+            }
+
+            handleDynamicImport(result, importedId, context);
+        }
+    }
+}
+
+/**
+ * Get the ID of a dependency node.
+ *
+ * @param node - The AST node representing the dependency being analyzed.
+ */
+function getId(node: any) {
+    if (node.id != null) return node.id;
+    return getId(node.parent);
+}
+
+/**
+ * Check if an import statement is dynamic or test-only.
+ *
+ * @param id - The ID of the imported package.
+ * @returns true if it's a dynamically imported module, false for other cases.
+ */
+function isDynamicImported(id: string, ast: any) {
+    // Placeholder implementation to simulate dynamic imports
+    const packages = resolveDependencyGraph(ast, [id]);
+    return !!packages.some(p => p.type === 'dynamic-import' || p.id === id);
+}
+
+/**
+ * Check if an import statement is test-only.
+ *
+ * @param id - The ID of the imported package.
+ * @returns true if it's an imported module that was only used as a test, false for other cases.
+ */
+function isTestOnly(id: string) {
+    // Placeholder implementation to simulate test-only imports
+    return ast.body.some(b => b.kind === 'import' && getId(b.parent).id === id);
+}
+
+/**
+ * Resolve dependencies in the AST based on import paths.
+ *
+ * @param ast - The abstract syntax tree containing all source code.
+ * @param ids - An array of package IDs to resolve from.
+ */
+function resolveDependencyGraph(ast: any, ids: string[]) {
+    // Placeholder implementation to simulate dependency graph resolution
+    const resolved = new Map();
+    for (const id of ids) {
+        const packagePath = getSourceFilePath(id);
+        const packageId = getId(ast.body.find(b => b.kind === 'import' && b.id === id));
+        if (packageId !== undefined) {
+            // Resolve the path and add to the map
+            resolved.set(packagePath, { type: 'dynamic-import', id });
+        }
+    }
+
+    return Array.from(resolved.entries()).map(([id, packageId]) => ({
+        ...packageId,
+        id,
+    }));
+}
 ```
 
-### 2. File: `.env.example`
-```
-# Example .env file
-GITHUB_TOKEN=
+### File: `dependency-ghostbuster/src/scanner/parser.ts`
+```typescript
+import { parseCode } from 'typescript';
+
+export function parseCode(code: string): any {
+    return parseCode(code);
+}
+
+function isDependencyNode(node: any) {
+    // Placeholder implementation to identify dependency nodes
+    return node.kind === 'identifier' && node.type === 'variable';
+}
+
+function checkImportDependencies(result: any[], ast: any, importNode: any, context: Context) {
+    const id = getId(importNode);
+    if (result.some(r => r.id === id)) return;
+
+    // Placeholder implementation to simulate test-only usage
+    if (isTestOnly(id)) {
+        result.push({ id, type: 'test' });
+        return;
+    }
+
+    for await (const statement of ast.body) {
+        const statementType = getType(statement);
+        if (statementType === 'expressionStatement') {
+            let importedId = getId(node.parent);
+            // Placeholder implementation to simulate test-only usage
+            if (isTestOnly(importedId)) {
+                result.push({ id, type: 'test' });
+                return;
+            }
+
+            handleDynamicImport(result, importedId, context);
+        }
+    }
+}
+
+function isDynamicImported(id: string, ast: any) {
+    // Placeholder implementation to simulate dynamic imports
+    const packages = resolveDependencyGraph(ast, [id]);
+    return !!packages.some(p => p.type === 'dynamic-import' || p.id === id);
+}
+
+function handleDynamicImport(result: any[], importedId: string, context: Context) {
+    // Placeholder implementation to simulate test-only usage
+    if (isTestOnly(importedId)) {
+        result.push({ id, type: 'test' });
+        return;
+    }
+
+    for await (const statement of ast.body) {
+        const statementType = getType(statement);
+        if (statementType === 'expressionStatement') {
+            let importedId = getId(node.parent);
+            // Placeholder implementation to simulate test-only usage
+            if (isTestOnly(importedId)) {
+                result.push({ id, type: 'test' });
+                return;
+            }
+
+            handleDynamicImport(result, importedId, context);
+        }
+    }
+}
+
+function resolveDependencyGraph(ast: any, ids: string[]) {
+    // Placeholder implementation to simulate dependency graph resolution
+    const resolved = new Map();
+    for (const id of ids) {
+        const packagePath = getSourceFilePath(id);
+        const packageId = getId(ast.body.find(b => b.kind === 'import' && b.id === id));
+        if (packageId !== undefined) {
+            // Resolve the path and add to the map
+            resolved.set(packagePath, { type: 'dynamic-import', id });
+        }
+    }
+
+    return Array.from(resolved.entries()).map(([id, packageId]) => ({
+        ...packageId,
+        id,
+    }));
+}
+
+function getId(node: any) {
+    if (node.id != null) return node.id;
+    return getId(node.parent);
+}
+
+function getSourceFilePath(id: string) {
+    // Placeholder implementation to simulate the source file path for dynamic imports
+    const importFiles = ['./imports/file1', './imports/file2'];
+    const filePaths = importFiles.map(path => `file://${path}/module.js`);
+    return filePaths.some(filePath => id.startsWith(filePath)) ? 'localhost' : undefined;
+}
+
+function getType(statement: any) {
+    // Placeholder implementation to determine the type of a statement
+    if (statement.kind === 'expressionStatement') {
+        const expression = statement.expression;
+        if (expression.kind === 'simpleAssignmentExpression' && isIdentifier(expression.id)) {
+            return 'variable';
+        }
+    }
+}
+
+function isIdentifier(node: any) {
+    // Placeholder implementation to identify identifier nodes
+    return node !== undefined && typeof node.kind === 'string';
+}
 ```
 
-### 3. File: `package.json`
-```json
-{
-  "name": "dependency-ghostbuster",
-  "version": "1.0.0",
-  "description": "A static analysis tool to identify and remove unused dependencies in monorepos.",
-  "main": "dist/main.js",
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "test": "jest"
-  },
-  "keywords": [
-    "dependency management",
-    "monorepo",
-    "static analysis",
-    "dynamic imports"
-  ],
-  "dependencies": {
-    "@tailwindcss/aspect-ratio": "^2.0.5",
-    "@tailwindcss/forms": "^0.5.3",
-    "@tailwindcss/line-clamp": "^0.1.5",
-    "@tailwindcss/typography": "^0.5.4",
-    "next": "^14.0.12",
-    "react": "^18.2.0",
-    "typescript": "^4.9.3",
-    "eslint": "^8.19.0",
-    "jest": "^27.4.3",
-    "babel-core": "^6.26.3",
-    "dep-graph": "^5.0.0"
-  },
-  "devDependencies": {
-    "@types/next": "^14.0.11",
-    "@types/react": "^18.0.17",
-    "@typescript-eslint/parser": "^5.29.0",
-    "@typescript-eslint/eslint-plugin": "^5.30.0"
-  },
-  "private": true
+### File: `dependency-ghostbuster/src/scanner/analyzer.js`
+```javascript
+import fs from 'fs';
+
+const dependencies = [
+    // List of paths to your dependency files here
+];
+
+export function analyzeDependencies(path) {
+    if (fs.existsSync(path)) {
+        const moduleCode = fs.readFileSync(path, 'utf8');
+        return [moduleCode];
+    }
+    throw new Error('No file found at the provided path.');
 }
 ```
 
 ### Dependencies
 
-- `next`: For building and serving the Next.js app.
-- `eslint`: For linting JavaScript/TypeScript code.
-- `jest`: For end-to-end testing with Jest.
-- `babel-core`: For parsing and analyzing dynamic imports.
-
-### 4. File: `README.md`
-```markdown
-# Dependency Ghostbuster
-
-A static analysis tool designed to identify and remove unused dependencies in large JavaScript/TypeScript monorepos, addressing a significant pain point in dependency management. This project integrates with popular monorepo tools like Turborepo, NX, or Rush.
-
-## Target Audience
-
-- Engineering teams maintaining large JavaScript/TypeScript monorepos
-- Using tools like Turborepo, NX, or Rush
-
-## Key Features
-
-- Scans the source code for dependencies and dynamic imports.
-- Constructs a dependency graph to identify unused dependencies.
-- Generates removal recommendations based on identified gaps.
-
-## System Architecture
-
-A component diagram (Mermaid) provides insight into the tool's architecture:
-
-```
-graph LR
-    A[Monorepo] -->| Source Code | B[Scanner]
-    B -->| Abstract Syntax Tree (AST) | C[Static Analysis]
-    C -->| Dependency Graph | D[Dynamic Import Detection]
-    D -->| Resolved Dependencies | E[Unused Dependency Identification]
-    E -->| Removal Recommendations | F[Reporter]
-    F -->| Report | G[User Interface]
-```
-
-## Key Libraries
-
-- **Programming Language**: TypeScript or JavaScript
-- **Static Analysis Library**: ESLint, `dep-graph`, or TSLint
-- **Dependency Graph Library**: `dep-graph` or `dependency-graph`
-- **Dynamic Import Detection**: `babel` or `swc`
-
-## Testing Strategy
-
-- Unit tests and integration tests for each component.
-- Mocking libraries to ensure accurate dependency detection.
-
-## Optional: Web Project Setup (for Next.js)
-
-To set up a minimal web project:
-
-1. Create the necessary files/folders:
-    - `package.json`
-    - `src/index.ts` (entry point)
-    - `public/` directory for static assets
-
-2. Ensure that your monorepo has built and served using `next dev`.
-
-3. Use Tailwind CSS for styling if needed.
-
-## Conclusion
-
-The Dependency Ghostbuster is a valuable tool for reducing technical debt and security vulnerabilities in large JavaScript/TypeScript monorepos. Proper implementation, testing, and maintenance will ensure its effectiveness over time.
-```
-
-### 5. File: `README.md` (continued)
-- **Dependencies**
-
 ```json
-dependencies = {
-    "next": "^14.0.12",
-    "eslint": "^8.19.0",
-    "jest": "^27.4.3",
-    "babel-core": "^6.26.3",
-    "dep-graph": "^5.0.0"
-}
+"dependencies": {
+    "@dependency_ghostbuster/scan": "1.0.0"
+},
 ```
 
-### Dependencies
+### Runnables
 
-- `next`: For building and serving the Next.js app.
-- `eslint`: For linting JavaScript/TypeScript code.
-- `jest`: For end-to-end testing with Jest.
-- `babel-core`: For parsing and analyzing dynamic imports.
-
-### 6. File: `.gitignore` (continued)
-```
-node_modules/
-dist/
-*.log
-.DS_Store
-.env*
-```
-
-### Dependencies
-
-- `next`: For building and serving the Next.js app.
-- `eslint`: For linting JavaScript/TypeScript code.
-- `jest`: For end-to-end testing with Jest.
-- `babel-core`: For parsing and analyzing dynamic imports.
-
-### 7. File: `.env.example` (continued)
-```
-# Example .env file
-GITHUB_TOKEN=
-```
-
-## Dependencies
-
-- **Next.js**: This is a popular framework for building server-side rendered applications using React, which integrates seamlessly with the monorepos.
-- **Eslint**: A linting tool that helps maintain consistent formatting and syntax in your codebase.
-- **Jest**: An end-to-end testing framework that supports Jest-based tests and is great for writing unit and integration tests.
-
-### 8. File: `src/index.ts` (continued)
-```ts
-// file content
-
-```
-
-### Dependencies
-
-- **Next.js**: This is a popular framework for building server-side rendered applications using React, which integrates seamlessly with the monorepos.
-- **Eslint**: A linting tool that helps maintain consistent formatting and syntax in your codebase.
-- **Jest**: An end-to-end testing framework that supports Jest-based tests and is great for writing unit and integration tests.
-
-### 9. File: `src/scanner/index.ts` (continued)
-```ts
-// file content
-
-```
-
-### Dependencies
-
-- **Next.js**: This is a popular framework for building server-side rendered applications using React, which integrates seamlessly with the monorepos.
-- **Eslint**: A linting tool that helps maintain consistent formatting and syntax in your codebase.
-- **Jest**: An end-to-end testing framework that supports Jest-based tests and is great for writing unit and integration tests.
-
-### 10. File: `src/scanner/parser.ts` (continued)
-```ts
-// file content
-
-```
-
-### Dependencies
-
-- **Next.js**: This is a popular framework for building server-side rendered applications using React, which integrates seamlessly with the monorepos.
-- **Eslint**: A linting tool that helps maintain consistent formatting and syntax in your codebase.
-- **Jest**: An end-to-end testing framework that supports Jest-based tests and is great for writing unit and integration tests.
-
-### 11. File: `src/scanner/index.ts` (continued)
-```ts
-// file content
-
-```
-
-### Dependencies
-
-- **Next.js**: This is a popular framework for building server-side rendered applications using React, which integrates seamlessly with the monorepos.
-- **Eslint**: A linting tool that helps maintain consistent formatting and syntax in your codebase.
-- **Jest**: An end-to-end testing framework that supports Jest-based tests and is great for writing unit and integration tests.
-
-### 12. File: `src/scanner/index.ts` (continued)
-```ts
-// file content
-
-```
-
-### Dependencies
-
-- **Next.js**: This is a popular framework for building server-side rendered applications using React, which integrates seamlessly with the monorepos.
-- **Eslint**: A linting tool that helps maintain consistent formatting and syntax in your codebase.
-- **Jest**: An end-to-end testing framework that supports Jest-based tests and is great for writing unit and integration tests.
-
-### 13. File: `src/scanner/parser.ts` (continued)
-```ts
-// file content
-
-```
-
-### Dependencies
-
-- **Next.js**: This is a popular framework for building server-side rendered applications using React, which integrates seamlessly with the monorepos.
-- **Eslint**: A linting tool that helps maintain consistent formatting and syntax in your codebase.
-- **Jest**: An end-to-end testing framework that supports Jest-based tests and is great for writing unit and integration tests.
-
-### 14. File: `src/scanner/index.ts` (continued)
-```ts
-// file content
-
-```
-
-### Dependencies
-
-- **Next.js**: This is a popular framework for building server-side rendered applications using React, which integrates seamlessly with the monorepos.
-- **Eslint**: A linting tool that helps maintain consistent formatting and syntax in your codebase.
-- **Jest**: An end-to-end testing framework that supports Jest-based tests and is great for writing unit and integration tests.
-
-### 15. File: `src/scanner/index.ts` (continued)
-```ts
-// file content
-
-```
-
-### Dependencies
-
-- **Next.js**: This is a popular framework for building server-side rendered applications using React, which integrates seamlessly with the monorepos.
-- **Eslint**: A linting
+#### package

@@ -576,6 +576,28 @@ function safeWorkspacePath(projectName, relPath) {
   return full;
 }
 
+function isBogusGeneratedPath(relPath = '') {
+  const p = String(relPath || '').trim();
+  if (!p) return true;
+  if (/^(?:\d+\.\s*)?File:\s*$/i.test(p)) return true;
+  if (/^(?:\d+\.\s*)?#?\s*File:\s*$/i.test(p)) return true;
+  if (/^#\s*File:\s*$/i.test(p)) return true;
+  if (!/[./]/.test(p) && /\bfile\b/i.test(p)) return true;
+  return false;
+}
+
+function shouldIgnoreWorkspacePath(relPath = '') {
+  const p = String(relPath || '').replace(/\\/g, '/');
+  return (
+    p.startsWith('node_modules/') ||
+    p.startsWith('.next/') ||
+    p.startsWith('dist/') ||
+    p.startsWith('build/') ||
+    p.startsWith('.turbo/') ||
+    p.startsWith('.git/')
+  );
+}
+
 function parseFilesFromForgeOutput(text = '') {
   const source = String(text || '');
   const items = [];
@@ -593,6 +615,7 @@ function parseFilesFromForgeOutput(text = '') {
       const relPath = String(match[1] || '').trim();
       const content = String(match[2] || '');
       if (!relPath || !content.trim()) continue;
+      if (isBogusGeneratedPath(relPath)) continue;
       const existingIdx = items.findIndex((x) => x.path === relPath);
       if (existingIdx >= 0) {
         items[existingIdx] = { path: relPath, content };
@@ -622,6 +645,7 @@ function materializeForgeFiles(projectName, forgeOutput, opts = {}) {
       const allowed = pathAllowList.some((rx) => rx.test(item.path));
       if (!allowed) continue;
     }
+    if (isBogusGeneratedPath(item.path) || shouldIgnoreWorkspacePath(item.path)) continue;
     if (isLikelyMarkdownTableBlob(item.content)) continue;
     const target = safeWorkspacePath(projectName, item.path);
     if (!target) continue;
@@ -640,12 +664,30 @@ function listWorkspaceFiles(projectName) {
     for (const name of fs.readdirSync(dir)) {
       const full = path.join(dir, name);
       const st = fs.statSync(full);
+      const rel = path.relative(root, full).replace(/\\/g, '/');
+      if (shouldIgnoreWorkspacePath(rel)) continue;
       if (st.isDirectory()) walk(full);
-      else out.push(path.relative(root, full).replace(/\\/g, '/'));
+      else if (!isBogusGeneratedPath(rel)) out.push(rel);
     }
   };
   walk(root);
   return out;
+}
+
+function cleanupWorkspaceArtifacts(projectName) {
+  const root = path.join(PROJECTS_DIR, projectName, 'workspace');
+  if (!fs.existsSync(root)) return 0;
+  let removed = 0;
+  for (const name of fs.readdirSync(root)) {
+    const rel = name.replace(/\\/g, '/');
+    if (!isBogusGeneratedPath(rel)) continue;
+    const full = path.join(root, name);
+    try {
+      fs.rmSync(full, { recursive: true, force: true });
+      removed += 1;
+    } catch {}
+  }
+  return removed;
 }
 
 function hasRealProjectFiles(projectName) {
@@ -1107,6 +1149,10 @@ ${text}`
       for (const name of getProjects()) {
         const projectStatus = getProjectStatus(name);
         ensureWorkspaceScaffold(name, projectStatus.preferredStack || projectStatus.stack || projectStatus.template || '');
+        const removedArtifacts = cleanupWorkspaceArtifacts(name);
+        if (removedArtifacts > 0) {
+          log('system', `Cleaned ${removedArtifacts} malformed workspace artifact file(s) for "${name}".`);
+        }
         if (!hasRealProjectFiles(name)) {
           const count = hydrateWorkspaceFromOutputs(name);
           if (count) log('system', `Backfilled ${count} workspace file(s) for "${name}" from implementation output.`);
@@ -1220,6 +1266,7 @@ Do NOT propose anything similar to these. Think of genuinely new, useful develop
         audience:    proposal.audience,
         complexity:  proposal.complexity,
         reasoning:   proposal.reasoning,
+        acceptanceSignals: Array.isArray(proposal.acceptanceSignals) ? proposal.acceptanceSignals.slice(0, 8) : [],
         projectType: proposal.projectType || 'tooling',
         preferredStack: proposal.preferredStack || proposal.stack || '',
         template: proposal.template || '',
@@ -1444,9 +1491,21 @@ ${proposal.preferredStack || proposal.stack || proposal.template || 'Agent decid
 
 ${proposal.reasoning || 'Identified as a valuable addition by the Hive team.'}
 
+## NOVA Success Signals
+
+${Array.isArray(proposal.acceptanceSignals) && proposal.acceptanceSignals.length
+  ? proposal.acceptanceSignals.map((c) => `- ${c}`).join('\n')
+  : '- Define measurable success signals before implementation.'}
+
 ## APEX Reasoning
 
 ${decision.reasoning}
+
+## APEX Acceptance Criteria
+
+${Array.isArray(decision.acceptanceCriteria) && decision.acceptanceCriteria.length
+  ? decision.acceptanceCriteria.map((c) => `- ${c}`).join('\n')
+  : '- Define measurable delivery criteria during architecture stage.'}
 
 ## Definition of Done
 

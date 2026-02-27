@@ -1,7 +1,12 @@
 module.exports = {
   name: 'web-search',
   version: '1.0.0',
+  stage: 'tool',
   description: 'Search the web and return concise findings.',
+  contract: {
+    input: ['query', 'maxResults?'],
+    output: ['success', 'result{query,maxResults,note}', 'error?'],
+  },
   agents: ['scout', 'nova', 'atlas', 'echo'],
   params: {
     query: { type: 'string', required: true, description: 'Search query text' },

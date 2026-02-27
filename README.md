@@ -115,6 +115,13 @@ node hive.js --project my-project-name   # Agents pick it up
 Each project keeps markdown artifacts in `projects/<name>/output/*.md`, but actual runnable code is written into `projects/<name>/workspace/`.
 Each stage execution also writes a run packet under `projects/<name>/runs/` for resumability and audit trails.
 
+### Prompting upgrades (Ship-Faster inspired)
+- Artifact-first handoffs per stage (`proposal/tasks/context/decision/handoff/evidence`)
+- Structured reviewer output (`ACTION_ITEMS_TABLE` with stable IDs/severity/file/required_fix)
+- FORGE fix-map discipline (`FIX_MAP` entries for LENS action IDs)
+- Architecture contract section (`FORGE EXECUTION CONTRACT` with required files/tests/acceptance criteria/non-goals)
+- Proposal quality requirement from NOVA/APEX includes measurable acceptance signals
+
 ### Status schema additions
 `projects/<name>/status.json` now tracks:
 - `stageOwner`, `stageAttempt`

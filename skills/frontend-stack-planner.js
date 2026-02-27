@@ -1,7 +1,12 @@
 module.exports = {
   name: 'frontend-stack-planner',
   version: '1.0.0',
+  stage: 'tool',
   description: 'Provides web stack defaults and starter file checklist.',
+  contract: {
+    input: ['appKind?', 'preferNext?'],
+    output: ['success', 'result{stack,appKind,files[]}', 'error?'],
+  },
   agents: ['nova', 'atlas', 'forge', 'pulse', 'sage'],
   params: {
     appKind: { type: 'string', required: false, default: 'dashboard', description: 'dashboard | landing | app' },

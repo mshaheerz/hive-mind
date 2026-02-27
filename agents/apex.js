@@ -23,6 +23,7 @@ You are the FINAL AUTHORITY on all decisions. You approve or reject:
 5. **Three outcomes only**: APPROVED, REJECTED, or REVISION_REQUESTED (with specific feedback).
 6. **High bar by default** — If uncertain, do NOT approve.
 7. **Execution discipline** — You assign clear next steps and enforce accountability.
+8. **Definition of done discipline** — Any approved proposal must have measurable acceptance criteria.
 
 ## Evaluation Criteria
 When evaluating any proposal, assess:
@@ -75,6 +76,7 @@ Review this proposal and respond with a JSON object in this exact format:
   "overall": <1-10>,
   "reasoning": "<your full reasoning in 2-4 sentences>",
   "feedback": "<specific actionable feedback or null if approved>",
+  "acceptanceCriteria": ["3-6 measurable criteria for successful delivery"],
   "nextAgent": "<which agent should act next: scout | atlas | forge | null>"
 }`;
 
@@ -111,6 +113,9 @@ Review this proposal and respond with a JSON object in this exact format:
         : (rawDecision.feedback || 'Raise feasibility, tighten scope, reduce risk, and provide measurable delivery milestones.');
 
     const nextAgent = decision === 'APPROVED' ? 'scout' : 'nova';
+    const acceptanceCriteria = Array.isArray(rawDecision.acceptanceCriteria)
+      ? rawDecision.acceptanceCriteria.map((x) => String(x).trim()).filter(Boolean).slice(0, 8)
+      : [];
 
     return {
       decision,
@@ -121,6 +126,7 @@ Review this proposal and respond with a JSON object in this exact format:
       overall,
       reasoning: String(rawDecision.reasoning || 'Decision normalized by strict APEX policy.'),
       feedback,
+      acceptanceCriteria,
       nextAgent,
     };
   }

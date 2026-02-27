@@ -1,0 +1,76 @@
+{
+  "project": "dependency-ghostbuster",
+  "stage": "architecture",
+  "agent": "forge",
+  "runId": "1772213085320-forge-xe2rf",
+  "parentRunId": "1772212062730-pulse-hq50v",
+  "startedAt": "2026-02-27T17:24:45.320Z",
+  "provider": "local",
+  "model": "qwen2.5:1.5b-instruct",
+  "statusSnapshot": {
+    "stage": "architecture",
+    "proposedBy": "nova",
+    "approvedBy": "apex",
+    "approvalScore": 7.5,
+    "approvedAt": "2026-02-26T09:58:37.620Z",
+    "updatedAt": "2026-02-27T17:10:57.412Z",
+    "lensRejected": false,
+    "deadlineMissed": true,
+    "missedStage": "review",
+    "missedAgent": "lens",
+    "missedAt": "2026-02-27T07:10:42.450Z",
+    "workspaceFiles": [
+      "# File:",
+      "src/index.ts",
+      "src/scanner/index.ts",
+      "src/static-analysis/index.ts",
+      "src/dynamic-import-detection/index.ts",
+      "src/reporter/index.ts",
+      "src/report-generator.ts"
+    ],
+    "workspaceUpdatedAt": "2026-02-27T17:06:54.485Z",
+    "lensApproved": true,
+    "lensAcceptedAt": "2026-02-27T17:07:42.711Z",
+    "lensReviewSummary": null,
+    "lensActionItems": [],
+    "lensBypassed": false,
+    "lensBypassReason": null,
+    "lensBypassedAt": null,
+    "lensRejectCount": 0,
+    "lensReviewedAt": "2026-02-27T17:07:42.711Z",
+    "workspaceCheck": {
+      "checked": 10865,
+      "passed": 10858,
+      "failed": 7,
+      "ranAt": "2026-02-27T17:06:54.485Z"
+    },
+    "pulseRejected": true,
+    "pulseApproved": false,
+    "pulseAcceptedAt": null,
+    "pulseSummary": "npm test failed: > dependency-ghostbuster@1.0.0 test | > jest --watch=false | No tests found, exiting with code 1 | Run with `--passWithNoTests` to exit with code 0 | In /home/zaigopc/Desktop/my/hive-mind/projects/dependency-ghostbuster/workspace | 21 files checked.",
+    "pulseActionItems": [
+      "Fix failing tests reported by npm test.",
+      "> dependency-ghostbuster@1.0.0 test | > jest --watch=false | No tests found, exiting with code 1 | Run with `--passWithNoTests` to exit with code 0 | In /home/zaigopc/Desktop/my/hive-mind/projects/dependency-ghostbuster/workspace | 21 files checked."
+    ],
+    "escalationNeeded": false,
+    "escalationReason": null,
+    "escalatedAt": "2026-02-27T14:11:45.800Z",
+    "pulseReviewedAt": "2026-02-27T17:10:57.412Z",
+    "generatedTestFiles": [],
+    "bootstrapTemplate": "node-cli",
+    "bootstrapNotes": [
+      "Bootstrap already present."
+    ],
+    "stageAttempt": 2,
+    "lensVerdict": "APPROVED",
+    "blockedReason": {
+      "code": "tests_failed",
+      "message": "npm test failed: > dependency-ghostbuster@1.0.0 test | > jest --watch=false | No tests found, exiting with code 1 | Run with `--passWithNoTests` to exit with code 0 | In /home/zaigopc/Desktop/my/hive-mind/projects/dependency-ghostbuster/workspace | 21 files checked."
+    },
+    "escalationLevel": "none",
+    "lastHandoffRunId": "1772212062730-pulse-hq50v",
+    "stageOwner": "forge",
+    "lensIssueRepeats": {},
+    "transitionReason": "agent execution started"
+  }
+}

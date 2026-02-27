@@ -1,7 +1,12 @@
 module.exports = {
   name: 'template-selector',
   version: '1.0.0',
+  stage: 'tool',
   description: 'Selects the best starter template for a project idea.',
+  contract: {
+    input: ['projectType', 'preferredStack?'],
+    output: ['success', 'result{template,stack,rationale}', 'error?'],
+  },
   agents: ['nova', 'atlas', 'forge'],
   params: {
     projectType: { type: 'string', required: true, description: 'web_app | cli_tool | api_service | library | automation' },

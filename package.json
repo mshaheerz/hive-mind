@@ -28,7 +28,8 @@
     "test:groq:quick": "node scripts/test-openrouter-quick.js --provider groq",
     "test:local:quick": "node scripts/test-openrouter-quick.js --provider local",
     "local:advisor": "node scripts/local-model-advisor.js",
-    "local:install": "node scripts/local-model-advisor.js --install"
+    "local:install": "node scripts/local-model-advisor.js --install",
+    "skills:sync": "node scripts/skills-sync.js"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

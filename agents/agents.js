@@ -19,7 +19,13 @@ You provide:
 - Recommended tech stack with justification
 
 Style: Bullet-point heavy. Always cite reasoning. Never guess — say "uncertain" if unsure.
-Output format: Always end with a "RECOMMENDATION" section.`);
+Output contract (always):
+1. Overview
+2. Key Findings
+3. Risks
+4. Assumptions
+5. Acceptance Criteria Seed (3-6 measurable bullets)
+6. RECOMMENDATION`);
   }
 
   async research(topic, projectContext = '') {
@@ -34,7 +40,8 @@ Provide:
 3. Tech stack recommendations
 4. Potential risks/pitfalls
 5. Existing tools/libraries to leverage
-6. RECOMMENDATION: What should we do?`;
+6. Acceptance criteria seed (testable, measurable)
+7. RECOMMENDATION: What should we do?`;
 
     this.print(`Researching: ${topic}`);
     return await this.think(prompt);
@@ -60,6 +67,9 @@ Rules:
 - Include tests in the generated files (e.g., Vitest/Jest for JS/TS, pytest for Python)
 - Never invent package versions. If unsure, use widely-known stable versions or omit exact pinning.
 - Tailwind plugin rule: if using \`@tailwindcss/aspect-ratio\`, use \`^0.4.2\` (not 2.x).
+- Never output placeholder file names like "File:" / "1. File:".
+- Never output or generate \`node_modules\`, build artifacts, or lockfile noise in file blocks.
+- If mandatory rework/action items are provided, include a FIX_MAP section mapping each item ID to concrete code changes.
 
 When writing code, always output:
 1. The complete file(s) with full content
@@ -86,6 +96,9 @@ MANDATORY OUTPUT FORMAT (for automatic file creation):
 - In "Dependencies", include exact package names and safe version ranges only.
 - For web projects, include minimal runnable scaffold (package.json, app entry, and Tailwind setup when relevant).
 - Include .gitignore and .env.example if the project needs environment variables.
+- If task includes "Required FIX_MAP" items, add:
+  ## FIX_MAP
+  - <ID> -> <what changed + file>
 
 Example:
 **File: \`src/index.ts\`**
@@ -114,12 +127,19 @@ You check for:
 - Unclear variable/function names
 - Unhandled edge cases
 
-Output format:
+Output format (strict, machine-usable):
 - VERDICT: APPROVED | NEEDS_CHANGES | REJECTED
+- ACTION_ITEMS_TABLE markdown table with columns:
+  | id | severity | file | issue | required_fix |
 - CRITICAL issues (must fix before merge)
 - WARNINGS (should fix)
 - SUGGESTIONS (optional improvements)
-- Overall quality score: X/10`);
+- Overall quality score: X/10
+
+Rules:
+- If VERDICT is APPROVED, ACTION_ITEMS_TABLE must be empty or state "none".
+- Each action item id must be stable (e.g., L1, L2, C1).
+- required_fix must be concrete and testable.`);
   }
 
   async review(code, context = '') {
@@ -130,7 +150,7 @@ ${context ? `**Context:** ${context}\n` : ''}
 ${code}
 \`\`\`
 
-Give your full code review.`;
+Give your full code review in the strict output format.`;
 
     this.print(`Reviewing code...`);
     return await this.think(prompt);
@@ -168,6 +188,7 @@ Include:
 2. Edge cases (empty, null, overflow, etc.)
 3. Integration tests if applicable
 4. Test plan for manual testing
+5. A minimal runnable smoke test if full coverage is not possible
 
 MANDATORY OUTPUT FORMAT:
 - Use file blocks so tests can be materialized:
@@ -175,7 +196,13 @@ MANDATORY OUTPUT FORMAT:
   \`\`\`language
   // content
   \`\`\`
-- Include any required test config files.`;
+- Include any required test config files.
+- End with:
+  TEST_COMMAND: <exact command>
+  EXPECTED_RESULT: <what pass looks like>
+  FAILURE_ACTION_ITEMS:
+  - <action 1>
+  - <action 2>`;
 
     this.print(`Generating tests...`);
     return await this.think(prompt);
@@ -236,7 +263,15 @@ You produce:
 - Starter/template choice (e.g., Next.js starter, React+Vite+Tailwind, Node CLI)
 
 You prevent: over-engineering, under-engineering, and "we'll figure it out later" thinking.
-Every design must answer: How does data flow? How does it scale? What fails first?`);
+Every design must answer: How does data flow? How does it scale? What fails first?
+
+Output contract:
+- Include a "FORGE EXECUTION CONTRACT" section:
+  - required files
+  - minimum test targets
+  - acceptance criteria
+  - non-goals
+- Include explicit template/bootstrap choice with exact command(s).`);
   }
 
   async design(projectDescription, researchNotes = '') {
@@ -252,7 +287,8 @@ Produce:
 4. File/folder structure
 5. Key technical decisions + justification
 6. Template/bootstrap plan with exact starter choice
-7. What FORGE needs to know to start coding`;
+7. FORGE EXECUTION CONTRACT (required files + tests + acceptance criteria + non-goals)
+8. What FORGE needs to know to start coding`;
 
     this.print(`Designing architecture...`);
     return await this.think(prompt);

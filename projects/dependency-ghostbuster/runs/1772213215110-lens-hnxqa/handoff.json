@@ -1,0 +1,18 @@
+{
+  "fromAgent": "lens",
+  "toAgent": "pulse",
+  "project": "dependency-ghostbuster",
+  "stage": "implementation",
+  "runId": "1772213215110-lens-hnxqa",
+  "summary": "dependency-ghostbuster: implementation -> review",
+  "artifacts": [
+    "output/implementation.md",
+    "output/review.md"
+  ],
+  "requiredActions": [],
+  "acceptanceChecks": [],
+  "modelInfo": {
+    "provider": "local",
+    "model": "qwen2.5:1.5b-instruct"
+  }
+}

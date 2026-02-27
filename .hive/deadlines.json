@@ -14,28 +14,28 @@
     "projectName": "dependency-ghostbuster",
     "stage": "implementation",
     "agent": "forge",
-    "dueAt": "2026-02-27T21:21:40.983Z",
-    "setAt": "2026-02-27T15:21:40.983Z",
+    "dueAt": "2026-02-27T23:46:17.417Z",
+    "setAt": "2026-02-27T17:46:17.417Z",
     "status": "complete",
-    "completedAt": "2026-02-27T15:24:46.428Z"
+    "completedAt": "2026-02-27T17:48:40.340Z"
   },
   {
     "id": "dependency-ghostbuster::review",
     "projectName": "dependency-ghostbuster",
     "stage": "review",
     "agent": "lens",
-    "dueAt": "2026-02-27T17:24:46.430Z",
-    "setAt": "2026-02-27T15:24:46.430Z",
+    "dueAt": "2026-02-27T19:48:40.341Z",
+    "setAt": "2026-02-27T17:48:40.341Z",
     "status": "complete",
-    "completedAt": "2026-02-27T15:25:37.288Z"
+    "completedAt": "2026-02-27T17:49:30.860Z"
   },
   {
     "id": "envsync-cli::implementation",
     "projectName": "envsync-cli",
     "stage": "implementation",
     "agent": "forge",
-    "dueAt": "2026-02-27T21:20:00.826Z",
-    "setAt": "2026-02-27T15:20:00.826Z",
+    "dueAt": "2026-02-27T23:43:07.489Z",
+    "setAt": "2026-02-27T17:43:07.489Z",
     "status": "active"
   },
   {
@@ -133,9 +133,9 @@
     "projectName": "dependency-ghostbuster",
     "stage": "tests",
     "agent": "pulse",
-    "dueAt": "2026-02-27T17:30:37.841Z",
-    "setAt": "2026-02-27T15:30:37.841Z",
+    "dueAt": "2026-02-27T19:27:30.795Z",
+    "setAt": "2026-02-27T17:27:30.795Z",
     "status": "complete",
-    "completedAt": "2026-02-27T15:32:20.425Z"
+    "completedAt": "2026-02-27T17:28:15.288Z"
   }
 ]

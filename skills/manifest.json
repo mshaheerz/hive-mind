@@ -1,0 +1,118 @@
+{
+  "generatedAt": "2026-02-27T17:48:53.580Z",
+  "count": 3,
+  "skills": [
+    {
+      "name": "frontend-stack-planner",
+      "version": "1.0.0",
+      "stage": "tool",
+      "description": "Provides web stack defaults and starter file checklist.",
+      "agents": [
+        "nova",
+        "atlas",
+        "forge",
+        "pulse",
+        "sage"
+      ],
+      "file": "frontend-stack-planner.js",
+      "params": {
+        "appKind": {
+          "type": "string",
+          "required": false,
+          "default": "dashboard",
+          "description": "dashboard | landing | app"
+        },
+        "preferNext": {
+          "type": "boolean",
+          "required": false,
+          "default": true,
+          "description": "Prefer Next.js over React/Vite"
+        }
+      },
+      "contract": {
+        "input": [
+          "appKind?",
+          "preferNext?"
+        ],
+        "output": [
+          "success",
+          "result{stack,appKind,files[]}",
+          "error?"
+        ]
+      }
+    },
+    {
+      "name": "template-selector",
+      "version": "1.0.0",
+      "stage": "tool",
+      "description": "Selects the best starter template for a project idea.",
+      "agents": [
+        "nova",
+        "atlas",
+        "forge"
+      ],
+      "file": "template-selector.js",
+      "params": {
+        "projectType": {
+          "type": "string",
+          "required": true,
+          "description": "web_app | cli_tool | api_service | library | automation"
+        },
+        "preferredStack": {
+          "type": "string",
+          "required": false,
+          "default": "",
+          "description": "Requested stack from proposal"
+        }
+      },
+      "contract": {
+        "input": [
+          "projectType",
+          "preferredStack?"
+        ],
+        "output": [
+          "success",
+          "result{template,stack,rationale}",
+          "error?"
+        ]
+      }
+    },
+    {
+      "name": "web-search",
+      "version": "1.0.0",
+      "stage": "tool",
+      "description": "Search the web and return concise findings.",
+      "agents": [
+        "scout",
+        "nova",
+        "atlas",
+        "echo"
+      ],
+      "file": "web-search.js",
+      "params": {
+        "query": {
+          "type": "string",
+          "required": true,
+          "description": "Search query text"
+        },
+        "maxResults": {
+          "type": "number",
+          "required": false,
+          "default": 5,
+          "description": "Maximum results to return"
+        }
+      },
+      "contract": {
+        "input": [
+          "query",
+          "maxResults?"
+        ],
+        "output": [
+          "success",
+          "result{query,maxResults,note}",
+          "error?"
+        ]
+      }
+    }
+  ]
+}

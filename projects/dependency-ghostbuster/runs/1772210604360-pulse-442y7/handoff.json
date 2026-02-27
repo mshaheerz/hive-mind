@@ -1,0 +1,18 @@
+{
+  "fromAgent": "pulse",
+  "toAgent": "forge",
+  "project": "dependency-ghostbuster",
+  "stage": "review",
+  "runId": "1772210604360-pulse-442y7",
+  "summary": "npm test failed: > dependency-ghostbuster@1.0.0 test | > jest --watch=false | No tests found, exiting with code 1 | Run with `--passWithNoTests` to exit with code 0 | In /home/zaigopc/Desktop/my/hive-mind/projects/dependency-ghostbuster/workspace | 18 files checked.",
+  "artifacts": [],
+  "requiredActions": [
+    "Fix failing tests reported by npm test.",
+    "> dependency-ghostbuster@1.0.0 test | > jest --watch=false | No tests found, exiting with code 1 | Run with `--passWithNoTests` to exit with code 0 | In /home/zaigopc/Desktop/my/hive-mind/projects/dependency-ghostbuster/workspace | 18 files checked."
+  ],
+  "acceptanceChecks": [],
+  "modelInfo": {
+    "provider": "local",
+    "model": "qwen2.5:1.5b-instruct"
+  }
+}

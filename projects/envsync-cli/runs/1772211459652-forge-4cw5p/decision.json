@@ -1,0 +1,8 @@
+{
+  "outcome": "rejected",
+  "rationale": "FORGE must include FIX_MAP references for all LENS action items.",
+  "risk": "safe",
+  "approvedBy": "system",
+  "approved": true,
+  "decidedAt": "2026-02-27T16:59:27.805Z"
+}
