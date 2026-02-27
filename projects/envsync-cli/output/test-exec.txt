@@ -1,4 +1,4 @@
-Summary: npm test failed: > envsync-cli@1.0.0 test | > vitest run --watch=false | RUN  v1.6.1 /home/zaigopc/Desktop/my/hive-mind/projects/envsync-cli/workspace | ❯ tests/unit/envParser.test.ts  (0 test) | ❯ tests/logger.test.ts  (0 test) | ❯ tests/unit/sync.test.ts  (0 test)
+Summary: npm test failed: > envsync-cli@1.0.0 test | > vitest run --watch=false | RUN  v1.6.1 /home/zaigopc/Desktop/my/hive-mind/projects/envsync-cli/workspace | ❯ tests/unit/envParser.test.ts  (0 test) | ❯ tests/unit/sync.test.ts  (0 test) | ❯ tests/unit/awsService.test.ts  (0 test)
 
 > envsync-cli@1.0.0 test
 > vitest run --watch=false
@@ -7,14 +7,14 @@ Summary: npm test failed: > envsync-cli@1.0.0 test | > vitest run --watch=false 
  RUN  v1.6.1 /home/zaigopc/Desktop/my/hive-mind/projects/envsync-cli/workspace
 
  ❯ tests/unit/envParser.test.ts  (0 test)
- ❯ tests/logger.test.ts  (0 test)
  ❯ tests/unit/sync.test.ts  (0 test)
  ❯ tests/unit/awsService.test.ts  (0 test)
+ ❯ tests/logger.test.ts  (0 test)
 
  Test Files  4 failed (4)
       Tests  no tests
-   Start at  17:58:17
-   Duration  667ms (transform 164ms, setup 46ms, collect 0ms, tests 0ms, environment 1ms, prepare 466ms)
+   Start at  19:09:33
+   Duration  691ms (transform 170ms, setup 32ms, collect 0ms, tests 0ms, environment 1ms, prepare 541ms)
 
 
 [33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m

@@ -1,0 +1,7 @@
+Summary: npm install failed: npm error code EJSONPARSE | npm error JSON.parse Invalid package.json: JSONParseError: Bad control character in string literal in JSON at position 375 (line 15 column 11) while parsing near "...14.0.12\",\n    \"react\n" | npm error JSON.parse Failed to parse JSON data. | npm error JSON.parse Note: package.json must be actual JSON, not just JavaScript. | npm error A complete log of this run can be found in: /home/zaigopc/.npm/_logs/2026-02-27T13_43_55_478Z-debug-0.log
+
+npm error code EJSONPARSE
+npm error JSON.parse Invalid package.json: JSONParseError: Bad control character in string literal in JSON at position 375 (line 15 column 11) while parsing near "...14.0.12\",\n    \"react\n"
+npm error JSON.parse Failed to parse JSON data.
+npm error JSON.parse Note: package.json must be actual JSON, not just JavaScript.
+npm error A complete log of this run can be found in: /home/zaigopc/.npm/_logs/2026-02-27T13_43_55_478Z-debug-0.log

@@ -234,6 +234,102 @@ function summarizeExecutionOutput(text = '', maxLines = 6) {
   return lines.length ? lines.join(' | ') : 'No output.';
 }
 
+function commandExists(cmd) {
+  const check = spawnSync('bash', ['-lc', `command -v ${cmd}`], { encoding: 'utf8' });
+  return check.status === 0;
+}
+
+function copyDirContents(src, dest) {
+  if (!fs.existsSync(src)) return;
+  fs.mkdirSync(dest, { recursive: true });
+  for (const name of fs.readdirSync(src)) {
+    if (name === '.git') continue;
+    const from = path.join(src, name);
+    const to = path.join(dest, name);
+    const st = fs.statSync(from);
+    if (st.isDirectory()) {
+      copyDirContents(from, to);
+    } else {
+      fs.mkdirSync(path.dirname(to), { recursive: true });
+      fs.copyFileSync(from, to);
+    }
+  }
+}
+
+function inferBootstrapTemplate(status = {}, readme = '') {
+  const raw = `${status.preferredStack || ''} ${status.template || ''} ${readme || ''}`.toLowerCase();
+  if (raw.includes('next.js') || raw.includes('nextjs') || raw.includes('nextjs-starter')) return 'nextjs';
+  if (raw.includes('react') || raw.includes('vite') || raw.includes('react-vite')) return 'react-vite';
+  if (raw.includes('python') || raw.includes('pytest') || raw.includes('python-cli')) return 'python-cli';
+  if (raw.includes('api_service') || raw.includes('node-cli') || raw.includes('node')) return 'node-cli';
+  return 'node-cli';
+}
+
+function ensureProjectBootstrap(projectName, status = {}, readme = '') {
+  const root = path.join(PROJECTS_DIR, projectName, 'workspace');
+  fs.mkdirSync(root, { recursive: true });
+  const packageJson = path.join(root, 'package.json');
+  const pyProject = path.join(root, 'pyproject.toml');
+  const requirements = path.join(root, 'requirements.txt');
+  const template = inferBootstrapTemplate(status, readme);
+  const notes = [];
+
+  if (template === 'nextjs' && !fs.existsSync(packageJson)) {
+    if (!commandExists('npx')) return { ok: false, template, notes: ['npx not installed; falling back to manual FORGE generation.'] };
+    const tmp = path.join(PROJECTS_DIR, projectName, '.bootstrap-next');
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+    const run = spawnSync('npx', [
+      'create-next-app@latest', tmp, '--ts', '--tailwind', '--eslint', '--app', '--src-dir', '--use-npm', '--yes',
+    ], { encoding: 'utf8', timeout: 420000 });
+    if (run.status === 0) {
+      copyDirContents(tmp, root);
+      notes.push('Bootstrapped Next.js via create-next-app.');
+    } else {
+      notes.push(`create-next-app failed: ${summarizeExecutionOutput(`${run.stdout || ''}\n${run.stderr || ''}`)}`);
+    }
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+    return { ok: fs.existsSync(packageJson), template, notes };
+  }
+
+  if (template === 'react-vite' && !fs.existsSync(packageJson)) {
+    if (!commandExists('npx')) return { ok: false, template, notes: ['npx not installed; falling back to manual FORGE generation.'] };
+    const tmp = path.join(PROJECTS_DIR, projectName, '.bootstrap-react');
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+    const run = spawnSync('npx', ['create-vite@latest', tmp, '--template', 'react-ts'], { encoding: 'utf8', timeout: 240000 });
+    if (run.status === 0) {
+      copyDirContents(tmp, root);
+      notes.push('Bootstrapped React+Vite via create-vite.');
+    } else {
+      notes.push(`create-vite failed: ${summarizeExecutionOutput(`${run.stdout || ''}\n${run.stderr || ''}`)}`);
+    }
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {}
+    return { ok: fs.existsSync(packageJson), template, notes };
+  }
+
+  if (template === 'python-cli' && !fs.existsSync(pyProject) && !fs.existsSync(requirements)) {
+    if (!commandExists('python3')) {
+      return { ok: false, template, notes: ['python3 not installed; falling back to manual FORGE generation.'] };
+    }
+    fs.writeFileSync(requirements, 'pytest\n');
+    fs.mkdirSync(path.join(root, 'src'), { recursive: true });
+    notes.push('Bootstrapped minimal Python CLI structure.');
+    return { ok: true, template, notes };
+  }
+
+  if (template === 'node-cli' && !fs.existsSync(packageJson)) {
+    if (!commandExists('npm')) return { ok: false, template, notes: ['npm not installed; falling back to manual FORGE generation.'] };
+    const run = spawnSync('npm', ['init', '-y'], { cwd: root, encoding: 'utf8', timeout: 60000 });
+    if (run.status === 0) {
+      notes.push('Bootstrapped Node project via npm init -y.');
+      return { ok: true, template, notes };
+    }
+    notes.push(`npm init failed: ${summarizeExecutionOutput(`${run.stdout || ''}\n${run.stderr || ''}`)}`);
+    return { ok: false, template, notes };
+  }
+
+  return { ok: true, template, notes: ['Bootstrap already present.'] };
+}
+
 function runProjectTests(projectName) {
   const root = path.join(PROJECTS_DIR, projectName, 'workspace');
   if (!fs.existsSync(root)) {
@@ -522,6 +618,7 @@ class AutonomousRunner {
     };
 
     this._syncProviderState();
+    this.cycleInProgress = false;
   }
 
   _syncProviderState() {
@@ -562,6 +659,10 @@ class AutonomousRunner {
 
     // Then on interval
     this.intervalId = setInterval(async () => {
+      if (this.cycleInProgress) {
+        log('system', 'Previous cycle still running; skipping this interval tick.');
+        return;
+      }
       await this.cycle();
     }, CHECK_INTERVAL_MS);
 
@@ -736,6 +837,12 @@ ${text}`
   // ─── One full cycle ─────────────────────────────────────────
 
   async cycle() {
+    if (this.cycleInProgress) {
+      log('system', 'Cycle already in progress; ignoring duplicate trigger.');
+      return;
+    }
+    this.cycleInProgress = true;
+
     this.state.state.cycleCount++;
     this.state.state.lastCycle = new Date().toISOString();
     this.state.save();
@@ -818,6 +925,8 @@ ${text}`
 
     } catch (err) {
       log('system', `Cycle error: ${err.message}`);
+    } finally {
+      this.cycleInProgress = false;
     }
   }
 
@@ -1239,6 +1348,10 @@ ${decision.reasoning}
           const arch = readOutput(projectName, 'architecture.md');
           const res  = readOutput(projectName, 'research.md');
           const previousImplementation = readOutput(projectName, 'implementation.md');
+          const bootstrap = ensureProjectBootstrap(projectName, status, readme);
+          const bootstrapBlock = bootstrap.notes.length
+            ? `\n\n## Workspace Bootstrap\nTemplate: ${bootstrap.template}\n${bootstrap.notes.map((n) => `- ${n}`).join('\n')}\n`
+            : '';
           const remediationItems = [
             ...(Array.isArray(status.lensActionItems) ? status.lensActionItems : []),
             ...(Array.isArray(status.pulseActionItems) ? status.pulseActionItems : []),
@@ -1249,7 +1362,7 @@ ${decision.reasoning}
           const previousImplBlock = previousImplementation.trim()
             ? `\n\n## Previous Implementation (fix this, do not restart from scratch)\n${previousImplementation.slice(0, 12000)}\n`
             : '';
-          const taskForForge = `${readme}${remediationBlock}${previousImplBlock}`;
+          const taskForForge = `${readme}${bootstrapBlock}${remediationBlock}${previousImplBlock}`;
           output = await this.agents.forge.implement(taskForForge, arch, res);
           writeOutput(projectName, 'implementation.md', output);
           {
@@ -1261,6 +1374,8 @@ ${decision.reasoning}
               setProjectStatus(projectName, {
                 workspaceFiles: written,
                 workspaceUpdatedAt: new Date().toISOString(),
+                bootstrapTemplate: bootstrap.template,
+                bootstrapNotes: bootstrap.notes,
                 workspaceCheck: {
                   checked: check.checked,
                   passed: check.passed,
