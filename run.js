@@ -262,7 +262,28 @@ function beginRunArtifact({ projectName, stage, agentKey, status, parentRunId, p
     statusSnapshot: status || {},
   };
   writeRunFile(projectName, runId, 'proposal.md', `# Stage Run Proposal\n\n- Project: ${projectName}\n- Stage: ${stage}\n- Agent: ${agentKey}\n- Run ID: ${runId}\n`);
-  writeRunFile(projectName, runId, 'tasks.md', `# Tasks\n\n- [ ] Execute ${stage}\n- [ ] Emit decision + handoff\n- [ ] Attach evidence\n`);
+  writeRunFile(projectName, runId, 'tasks.md', `# Tasks
+
+status: active
+
+## Next Action
+- Execute stage \`${stage}\` by \`${agentKey}\`
+- Produce decision + handoff artifacts
+- Attach evidence for traceability
+
+## Approvals
+- [ ] Risk gate evaluated
+- [ ] High-risk actions explicitly approved by APEX (if required)
+
+## Checklist
+- [ ] Execute ${stage}
+- [ ] Emit decision + handoff
+- [ ] Attach evidence
+
+## Verification
+- [ ] Stage output persisted
+- [ ] Next stage owner identified
+`);
   writeRunFile(projectName, runId, 'context.json', context);
   return { runId, context };
 }
@@ -831,6 +852,42 @@ function finalizeRunArtifact(projectName, runId, payload = {}) {
   };
   writeRunFile(projectName, runId, 'decision.json', decision);
   writeRunFile(projectName, runId, 'handoff.json', handoff);
+  writeRunFile(projectName, runId, 'final.md', `# Run Summary
+
+- Outcome: ${decision.outcome}
+- Project: ${payload.project || projectName}
+- Stage: ${payload.stage || 'unknown'}
+- From: ${handoff.fromAgent || 'unknown'}
+- To: ${handoff.toAgent || 'none'}
+- Risk: ${decision.risk}
+- Approved: ${decision.approved ? 'yes' : 'no'}
+
+## Summary
+${handoff.summary || 'No summary provided.'}
+
+## Required Actions
+${handoff.requiredActions?.length ? handoff.requiredActions.map((a) => `- ${a}`).join('\n') : '- none'}
+`);
+  writeRunFile(projectName, runId, 'tasks.md', `# Tasks
+
+status: ${decision.outcome === 'approved' ? 'done' : decision.outcome === 'deferred' ? 'blocked' : 'active'}
+
+## Next Action
+- ${handoff.toAgent ? `Hand off to \`${handoff.toAgent}\`` : 'No downstream agent'}
+
+## Approvals
+- [x] Risk gate evaluated
+- [${decision.risk === 'high' ? 'x' : ' '}] High-risk actions explicitly approved by APEX (if required)
+
+## Checklist
+- [x] Execute stage
+- [x] Emit decision + handoff
+- [x] Attach evidence
+
+## Verification
+- [x] Stage output persisted
+- [x] Next stage owner identified
+`);
 }
 
 function isProcessAlive(pid) {

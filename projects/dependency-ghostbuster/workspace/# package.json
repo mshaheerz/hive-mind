@@ -1,0 +1,16 @@
+{
+  "scripts": {
+    "lint": "eslint .",
+    "test": "jest --watch",
+    "dev:server": "start-server",
+    "build": "tsc",
+    "start:client": "npm run dev:server && start-client",
+    "start:server": "node server/index.js"
+  },
+  "devDependencies": {
+    "@types/jest": "^26.0",
+    "jest": "^26.9.x",
+    "ts-node-dev": "latest",
+    "typescript": "^4.x"
+  }
+}

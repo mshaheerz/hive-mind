@@ -247,6 +247,12 @@ HIVE_MAX_ACTIVE_PROJECTS=2
 HIVE_STRICT_ORDER_OVERRIDE=false
 ```
 
+Skills registry commands:
+```bash
+npm run skills:sync   # regenerate skills README + manifest
+npm run skills:lint   # validate skill metadata + contracts
+```
+
 ### Quick model probe & fixes
 Run quick probes to validate configured models:
 

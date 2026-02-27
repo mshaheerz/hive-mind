@@ -1,0 +1,3 @@
+Risk class: safe
+Mode: risk_based
+Decision: auto-approved.
