@@ -1,210 +1,174 @@
-**File: `src/__init__.py`**
-```python
-"""
-EnvSync CLI package initializer.
-"""
-# No runtime initialisation required.
+**File: `package.json`**
+```json
+{
+  "name": "envsync-cli",
+  "version": "1.0.0",
+  "description": "Bidirectional sync of local .env files with cloud secret managers",
+  "main": "dist/main.js",
+  "bin": {
+    "envsync": "dist/main.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "dev": "ts-node src/main.ts",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "env",
+    "sync",
+    "cli",
+    "secrets",
+    "aws",
+    "gcp",
+    "azure"
+  ],
+  "author": "NOVA",
+  "license": "MIT",
+  "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.400.0",
+    "@azure/identity": "^3.0.0",
+    "@azure/keyvault-secrets": "^4.1.0",
+    "@google-cloud/secret-manager": "^3.3.0",
+    "commander": "^11.1.0",
+    "dotenv": "^16.4.5",
+    "winston": "^3.13.0",
+    "winston-daily-rotate-file": "^4.7.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/winston": "^3.0.11",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3",
+    "vitest": "^1.3.1"
+  }
+}
 ```
 
-**File: `src/logger.py`**
-```python
-"""
-Centralised logger creation for EnvSync CLI.
-
-Provides a thread‑safe per‑name logger factory that writes to a
-daily‑rotating file and the console. Log level can be overridden
-with the ``ENV_SYNC_LOG_LEVEL`` environment variable.
-"""
-
-import logging
-import logging.handlers
-import os
-import threading
-from pathlib import Path
-from typing import Dict
-
-# --------------------------------------------------------------------------- #
-# Constants – no magic numbers
-# --------------------------------------------------------------------------- #
-DEFAULT_LOG_LEVEL = "INFO"
-LOG_DIR_NAME = "logs"
-LOG_FILE_NAME = "envsync.log"
-ENV_LOG_LEVEL = "ENV_SYNC_LOG_LEVEL"
-
-# Rotation settings
-LOG_ROTATION_INTERVAL = "midnight"  # rotate at midnight
-LOG_BACKUP_COUNT = 7               # keep 7 rotated log files
-
-# --------------------------------------------------------------------------- #
-# Internal state
-# --------------------------------------------------------------------------- #
-# Cache of loggers keyed by name
-_LOGGERS: Dict[str, logging.Logger] = {}
-# Lock to guard creation of new loggers
-_LOCK = threading.Lock()
-
-
-def _ensure_log_dir() -> Path:
-    """
-    Ensure that the log directory exists and return its Path.
-    """
-    log_dir = Path(__file__).resolve().parent.parent / LOG_DIR_NAME
-    try:
-        log_dir.mkdir(parents=True, exist_ok=True)
-    except OSError as exc:
-        raise RuntimeError(f"Failed to create log directory {log_dir}") from exc
-    return log_dir
-
-
-def get_logger(name: str = "envsync") -> logging.Logger:
-    """
-    Return a configured logger instance.
-
-    Parameters
-    ----------
-    name : str
-        Name of the logger (defaults to ``envsync``).
-
-    Returns
-    -------
-    logging.Logger
-        Configured logger instance. Subsequent calls with the same
-        ``name`` return the same object. Different names produce
-        independent loggers.
-    """
-    with _LOCK:
-        if name in _LOGGERS:
-            return _LOGGERS[name]
-
-        # Create new logger
-        logger = logging.getLogger(name)
-        logger.setLevel(os.getenv(ENV_LOG_LEVEL, DEFAULT_LOG_LEVEL).upper())
-        logger.propagate = False
-
-        # File handler – rotate daily
-        log_dir = _ensure_log_dir()
-        log_file = log_dir / LOG_FILE_NAME
-        file_handler = logging.handlers.TimedRotatingFileHandler(
-            filename=str(log_file),
-            when=LOG_ROTATION_INTERVAL,
-            backupCount=LOG_BACKUP_COUNT,
-            encoding="utf-8",
-        )
-        file_handler.setFormatter(
-            logging.Formatter(
-                "%(asctime)s %(levelname)s %(name)s %(message)s"
-            )
-        )
-
-        # Console handler
-        console_handler = logging.StreamHandler()
-        console_handler.setFormatter(
-            logging.Formatter("%(levelname)s %(message)s")
-        )
-
-        # Guard against duplicate handlers
-        if not logger.handlers:
-            logger.addHandler(file_handler)
-            logger.addHandler(console_handler)
-
-        _LOGGERS[name] = logger
-        return logger
+**File: `tsconfig.json`**
+```json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "outDir": "dist",
+    "rootDir": "src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["src/**/*.ts", "tests/**/*.ts"]
+}
 ```
 
-**File: `src/config_parser.py`**
-```python
-"""
-Utilities for parsing and writing .env configuration files.
-"""
+**File: `vitest.config.ts`**
+```ts
+import { defineConfig } from 'vitest/config';
 
-import re
-from pathlib import Path
-from typing import Dict
-
-# Regular expression for parsing a single .env line
-_ENV_LINE_RE = re.compile(r"""
-    ^\s*
-    (?P<key>[A-Za-z_][A-Za-z0-9_]*)          # key
-    \s*=\s*
-    (?P<value>                               # value
-        (?:'[^']*') |                         # single quoted
-        (?:"[^"]*") |                         # double quoted
-        [^\s#]+                               # unquoted
-    )
-    \s*(?:#.*)?$                              # optional comment
-""", re.VERBOSE)
-
-
-def parse_env_file(file_path: Path) -> Dict[str, str]:
-    """
-    Parse a .env file into a dictionary.
-
-    Parameters
-    ----------
-    file_path : Path
-        Path to the .env file.
-
-    Returns
-    -------
-    Dict[str, str]
-        Mapping of key to value.
-    """
-    env: Dict[str, str] = {}
-    if not file_path.exists():
-        return env
-
-    with file_path.open("r", encoding="utf-8") as fh:
-        for line in fh:
-            match = _ENV_LINE_RE.match(line)
-            if match:
-                key = match.group("key")
-                raw_value = match.group("value")
-                # Strip surrounding quotes if present
-                if raw_value.startswith(("'", '"')) and raw_value.endswith(("'", '"')):
-                    value = raw_value[1:-1]
-                else:
-                    value = raw_value
-                env[key] = value
-    return env
-
-
-def write_env_file(env: Dict[str, str], file_path: Path) -> None:
-    """
-    Write a dictionary to a .env file.
-
-    Parameters
-    ----------
-    env : Dict[str, str]
-        Mapping of key to value.
-    file_path : Path
-        Path to the .env file to write.
-    """
-    lines = [f"{key}={value}" for key, value in env.items()]
-    content = "\n".join(lines) + "\n"
-    try:
-        file_path.write_text(content, encoding="utf-8")
-    except OSError as exc:
-        raise RuntimeError(f"Failed to write .env file {file_path}") from exc
+export default defineConfig({
+  test: {
+    globals: true,
+    environment: 'node',
+    setupFiles: ['./tests/setup.ts']
+  }
+});
 ```
 
-**File: `src/cloud_providers/__init__.py`**
-```python
-"""
-Package for cloud provider adapters.
-"""
-# No runtime initialisation required.
+**File: `tests/setup.ts`**
+```ts
+// Global test setup if needed
 ```
 
-**File: `src/cloud_providers/aws.py`**
-```python
-"""
-AWS Secrets Manager adapter.
+**File: `.gitignore`**
+```
+node_modules
+dist
+logs
+.env
+*.log
+```
 
-Provides a simple interface to fetch and store secrets.
-"""
+**File: `.env.example`**
+```
+# AWS credentials
+AWS_ACCESS_KEY_ID=YOUR_AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY=YOUR_AWS_SECRET_ACCESS_KEY
+AWS_REGION=YOUR_AWS_REGION
 
-import os
-from typing import Dict
-import boto3
-from botocore.exceptions import BotoCoreError, ClientError
-from ..logger import
+# GCP credentials
+GOOGLE_APPLICATION_CREDENTIALS=path/to/your/service-account.json
+
+# Azure credentials
+AZURE_CLIENT_ID=YOUR_AZURE_CLIENT_ID
+AZURE_TENANT_ID=YOUR_AZURE_TENANT_ID
+AZURE_CLIENT_SECRET=YOUR_AZURE_CLIENT_SECRET
+AZURE_KEYVAULT_NAME=YOUR_KEYVAULT_NAME
+```
+
+**File: `README.md`**
+```markdown
+# EnvSync CLI
+
+A command‑line tool that synchronizes local `.env` files with cloud secret managers
+(aws secrets manager, gcp secret manager, azure key vault).
+
+## Install
+
+```bash
+npm install -g envsync-cli
+```
+
+## Usage
+
+```bash
+envsync --provider aws --env-file .env
+```
+
+## Options
+
+- `--provider <aws|gcp|azure>`: Cloud provider to sync with.
+- `--env-file <path>`: Path to the local `.env` file.
+- `--sync`: Perform bidirectional sync (default).
+
+## Development
+
+```bash
+npm run dev   # run CLI with ts-node
+npm run test  # run tests
+npm run build # compile to dist/
+```
+```
+
+---
+
+## Core Implementation
+
+**File: `src/logger.ts`**
+```ts
+/**
+ * Centralised logger creation for EnvSync CLI.
+ *
+ * Provides a thread‑safe per‑name logger factory that writes to a
+ * daily‑rotating file and the console. Log level can be overridden
+ * with the `ENV_SYNC_LOG_LEVEL` environment variable.
+ */
+
+import winston from 'winston';
+import DailyRotateFile from 'winston-daily-rotate-file';
+import { join } from 'path';
+import { existsSync, mkdirSync } from 'fs';
+
+const DEFAULT_LOG_LEVEL = 'info';
+const LOG_DIR_NAME = 'logs';
+const LOG_FILE_NAME = 'envsync.log';
+const ENV_LOG_LEVEL = 'ENV_SYNC_LOG_LEVEL';
+
+const LOG_ROTATION_INTERVAL = '1d'; // rotate daily
+const LOG_BACKUP_COUNT = 7; // keep 7 rotated log files
+
+// Cache of loggers keyed by name
+const loggers: Record<string, winston.Logger> = {};
+
+/**
+ * Ensure that the log directory exists and return its absolute
