@@ -16,17 +16,17 @@
     "agent": "forge",
     "dueAt": "2026-02-27T18:08:56.663Z",
     "setAt": "2026-02-27T12:08:56.663Z",
-    "status": "active"
+    "status": "complete",
+    "completedAt": "2026-02-27T12:10:53.125Z"
   },
   {
     "id": "dependency-ghostbuster::review",
     "projectName": "dependency-ghostbuster",
     "stage": "review",
     "agent": "lens",
-    "dueAt": "2026-02-27T14:00:03.352Z",
-    "setAt": "2026-02-27T12:00:03.352Z",
-    "status": "complete",
-    "completedAt": "2026-02-27T12:02:03.335Z"
+    "dueAt": "2026-02-27T14:10:53.127Z",
+    "setAt": "2026-02-27T12:10:53.127Z",
+    "status": "active"
   },
   {
     "id": "envsync-cli::implementation",

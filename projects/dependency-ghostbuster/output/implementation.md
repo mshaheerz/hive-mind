@@ -1,5 +1,92 @@
-**File: `src/scanner/index.ts`**
+**File: `package.json`**
+```json
+{
+  "name": "dependency-ghostbuster",
+  "version": "1.0.0",
+  "description": "Static analysis tool for detecting truly unused dependencies in monorepos",
+  "main": "dist/main.js",
+  "bin": {
+    "ghostbuster": "dist/main.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "dependency",
+    "analysis",
+    "monorepo",
+    "unused-dependencies"
+  ],
+  "author": "NOVA",
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/parser": "^7.24.0",
+    "@babel/traverse": "^7.24.0",
+    "@types/node": "^20.11.0",
+    "p-limit": "^4.0.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.3.3",
+    "vitest": "^1.3.1",
+    "globby": "^14.0.2"
+  },
+  "dependencies": {
+    "p-limit": "^4.0.0"
+  }
+}
+```
 
+---
+
+**File: `tsconfig.json`**
+```json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "CommonJS",
+    "outDir": "dist",
+    "rootDir": "src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["src/**/*.ts", "tests/**/*.ts"]
+}
+```
+
+---
+
+**File: `src/config/constants.ts`**
+```ts
+/**
+ * @fileoverview Global constants used across the project.
+ *
+ * These constants can be overridden by environment variables or a
+ * configuration file in the future if needed.
+ */
+
+export const PACKAGE_JSON_GLOB = '**/package.json';
+export const NODE_MODULES_IGNORE = '!**/node_modules/**';
+
+export const SOURCE_GLOB = '**/*.{js,jsx,ts,tsx}';
+export const DEFAULT_IGNORE_PATTERNS = [
+  '!**/node_modules/**',
+  '!**/dist/**',
+  '!**/build/**',
+  '!**/coverage/**',
+  '!**/tmp/**',
+  '!**/generated/**'
+];
+
+export const TEST_FILE_REGEX = /\.(test|spec)\.[jt]sx?$/i;
+export const TESTS_DIR_NAME = '__tests__';
+```
+
+---
+
+**File: `src/scanner/index.ts`**
 ```ts
 /**
  * @fileoverview Scanner – discovers every package in a monorepo and collects the
@@ -17,6 +104,13 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import globby from 'globby';
+import pLimit from 'p-limit';
+import {
+  PACKAGE_JSON_GLOB,
+  NODE_MODULES_IGNORE,
+  SOURCE_GLOB,
+  DEFAULT_IGNORE_PATTERNS
+} from '../config/constants.js';
 
 export interface PackageInfo {
   /** Absolute path to the folder that contains the `package.json`. */
@@ -26,13 +120,6 @@ export interface PackageInfo {
   /** Absolute paths of every source file that belongs to the package. */
   sourceFiles: string[];
 }
-
-/**
- * Glob pattern that matches every `package.json` file in the repository,
- * while ignoring `node_modules`.
- */
-const PACKAGE_JSON_GLOB = '**/package.json';
-const NODE_MODULES_IGNORE = '!**/node_modules/**';
 
 /**
  * Returns a list of absolute paths to every `package.json` file under `repoRoot`.
@@ -59,8 +146,16 @@ export async function findPackageJsonFiles(repoRoot: string): Promise<string[]> 
  */
 export async function loadDeclaredDependencies(pkgPath: string): Promise<Set<string>> {
   try {
-    const raw = await fs.readFile(pkgPath, 'utf‑8');
-    const pkg = JSON.parse(raw);
+    const raw = await fs.readFile(pkgPath, 'utf-8');
+    let pkg: any;
+    try {
+      pkg = JSON.parse(raw);
+    } catch (parseErr) {
+      if (parseErr instanceof SyntaxError) {
+        throw new Error(`Invalid JSON in ${pkgPath}: ${parseErr.message}`);
+      }
+      throw parseErr;
+    }
     const runtime = Object.keys(pkg.dependencies ?? {});
     const dev = Object.keys(pkg.devDependencies ?? {});
     const peer = Object.keys(pkg.peerDependencies ?? {});
@@ -78,15 +173,8 @@ export async function loadDeclaredDependencies(pkgPath: string): Promise<Set<str
  * @param pkgRoot Absolute path to the folder that contains the `package.json`.
  */
 export async function collectSourceFiles(pkgRoot: string): Promise<string[]> {
-  const SOURCE_GLOB = '**/*.{js,jsx,ts,tsx}';
-  const IGNORE_PATTERNS = [
-    '!**/node_modules/**',
-    '!**/dist/**',
-    '!**/build/**',
-  ];
-
   try {
-    return await globby([SOURCE_GLOB, ...IGNORE_PATTERNS], {
+    return await globby([SOURCE_GLOB, ...DEFAULT_IGNORE_PATTERNS], {
       cwd: pkgRoot,
       absolute: true,
     });
@@ -103,145 +191,15 @@ export async function collectSourceFiles(pkgRoot: string): Promise<string[]> {
  */
 export async function scanRepository(repoRoot: string): Promise<Map<string, PackageInfo>> {
   const packages = new Map<string, PackageInfo>();
-
   const pkgJsonPaths = await findPackageJsonFiles(repoRoot);
-  for (const pkgJsonPath of pkgJsonPaths) {
-    const pkgRoot = path.dirname(pkgJsonPath);
-    const declaredDeps = await loadDeclaredDependencies(pkgJsonPath);
-    const sourceFiles = await collectSourceFiles(pkgRoot);
-    packages.set(pkgRoot, { root: pkgRoot, declaredDeps, sourceFiles });
-  }
 
-  return packages;
-}
-```
-
----
-
-**File: `src/parser/index.ts`**
-
-```ts
-/**
- * @fileoverview Parser – extracts every module specifier used in a file.
- *
- * Supported import styles:
- *   • ES6 static `import … from 'module'`
- *   • CommonJS `require('module')`
- *   • Dynamic `import('module')`
- *
- * The function returns a `Set` of raw specifiers (e.g. `'lodash'`,
- * `'../utils'`). Relative specifiers are kept as‑is; the caller decides
- * whether they refer to a workspace package or an external dependency.
- */
-
-import { readFile } from 'node:fs/promises';
-import { parse } from '@babel/parser';
-import traverse from '@babel/traverse';
-import type * as t from '@babel/types';
-
-/**
- * Parses a file and extracts all imported module specifiers.
- *
- * @param filePath Absolute path to the file to analyse.
- * @returns Set of module specifiers found in the file.
- */
-export async function parseFile(filePath: string): Promise<Set<string>> {
-  const imports = new Set<string>();
-
-  try {
-    const code = await readFile(filePath, 'utf‑8');
-
-    const ast = parse(code, {
-      sourceType: 'unambiguous',
-      plugins: [
-        'typescript',
-        'jsx',
-        'dynamicImport',
-        'classProperties',
-        'optionalChaining',
-        'nullishCoalescingOperator',
-      ],
-    });
-
-    // Walk the AST and collect import specifiers.
-    traverse(ast, {
-      // import foo from 'module';
-      ImportDeclaration(path) {
-        const source = path.node.source.value;
-        imports.add(source);
-      },
-
-      // const foo = require('module');
-      CallExpression(path) {
-        const callee = path.node.callee as t.Expression;
-        // Detect require('module')
-        if (
-          t.isIdentifier(callee) &&
-          callee.name === 'require' &&
-          path.node.arguments.length === 1
-        ) {
-          const arg = path.node.arguments[0];
-          if (t.isStringLiteral(arg)) {
-            imports.add(arg.value);
-          }
-        }
-
-        // Detect import('module')
-        if (t.isImport(callee) && path.node.arguments.length === 1) {
-          const arg = path.node.arguments[0];
-          if (t.isStringLiteral(arg)) {
-            imports.add(arg.value);
-          }
-        }
-      },
-    });
-  } catch (err) {
-    console.error(`Failed to parse ${filePath}:`, err);
-    // Propagate the error so the caller can decide whether to abort or continue.
-    throw err;
-  }
-
-  return imports;
-}
-```
-
----
-
-**File: `src/analysis/index.ts`**
-
-```ts
-/**
- * @fileoverview Core analysis – maps each package's declared dependencies
- * against the imports that actually appear in its source files.
- *
- * The analysis distinguishes three groups:
- *   • `usedDeps` – dependencies imported somewhere in the package.
- *   • `testOnlyDeps` – dependencies that appear **only** in test files.
- *   • `unusedDeps` – declared dependencies that never appear.
- *
- * Test files are identified by:
- *   • filename matches `*.test.*` or `*.spec.*`
- *   • file resides under a `__tests__` directory.
- */
-
-import path from 'node:path';
-import { parseFile } from '../parser/index.js';
-import type { PackageInfo } from '../scanner/index.js';
-
-/** RegExp that matches typical test file names. */
-const TEST_FILE_REGEX = /\.(test|spec)\.[jt]sx?$/i;
-
-/** Name of the folder conventionally used for tests. */
-const TESTS_DIR_NAME = '__tests__';
-
-/**
- * Result of analysing a single package.
- */
-export interface PackageAnalysis {
-  /** Package root directory (absolute). */
-  root: string;
-  /** Declared dependencies (as read from package.json). */
-  declaredDeps: Set<string>;
-  /** Dependencies that are actually used somewhere in the package. */
-  usedDeps: Set<string>;
-  /**
+  // Run per‑package work in parallel with a concurrency limit
+  const limit = pLimit(8);
+  const tasks = pkgJsonPaths.map((pkgJsonPath) =>
+    limit(async () => {
+      const pkgRoot = path.dirname(pkgJsonPath);
+      const declaredDeps = await loadDeclaredDependencies(pkgJsonPath);
+      const sourceFiles = await collectSourceFiles(pkgRoot);
+      packages.set(pkgRoot, { root: pkgRoot, declaredDeps, sourceFiles });
+    })
+ 
