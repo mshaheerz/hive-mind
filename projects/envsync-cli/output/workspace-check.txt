@@ -1,13 +1,7 @@
-Checked=4517 Passed=4509 Failed=8
+Checked=4517 Passed=4510 Failed=7
 [FAIL] python3 -m py_compile src/cloud_providers/gcp.py
 File "/home/zaigopc/Desktop/my/hive-mind/projects/envsync-cli/workspace/src/cloud_providers/gcp.py", line 2
     | Function | Test Name | Expected Outcome |
-    ^
-SyntaxError: invalid syntax
-
-[FAIL] python3 -m py_compile src/config_parser.py
-File "/home/zaigopc/Desktop/my/hive-mind/projects/envsync-cli/workspace/src/config_parser.py", line 2
-    | Test Name | Expected Outcome |
     ^
 SyntaxError: invalid syntax
 

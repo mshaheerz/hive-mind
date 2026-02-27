@@ -5,6 +5,7 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { createRequire } from 'module';
 
 // Path to the hive-mind root (parent of web/)
 const HIVE_ROOT    = path.join(process.cwd(), '..');
@@ -14,6 +15,8 @@ const DISCUSS_DIR  = path.join(HIVE_DIR, 'discussions');
 const LOGS_DIR     = path.join(HIVE_ROOT, 'logs');
 const RUNNER_LOCK  = path.join(HIVE_DIR, 'runner.lock.json');
 const SUPPORTED_PROVIDERS = ['openrouter', 'groq', 'local'];
+const requireFromApi = createRequire(import.meta.url);
+const { buildAgentModels } = requireFromApi(path.join(HIVE_ROOT, 'core', 'llm-client.js'));
 
 function safeRead(file: string, fallback: any): any {
   try {
@@ -92,10 +95,31 @@ function resolveRunningFlag(stateRunning: boolean): boolean {
   if (!fs.existsSync(RUNNER_LOCK)) return false;
   try {
     const lock = JSON.parse(fs.readFileSync(RUNNER_LOCK, 'utf8'));
-    return isPidAlive(Number(lock?.pid));
+    const alive = isPidAlive(Number(lock?.pid));
+    if (!alive) {
+      try { fs.unlinkSync(RUNNER_LOCK); } catch {}
+    }
+    return alive;
   } catch {
     return Boolean(stateRunning);
   }
+}
+
+function resolveProvider(state: any, logs: string[], running: boolean): string {
+  let lockProvider = '';
+  if (running && fs.existsSync(RUNNER_LOCK)) {
+    try {
+      const lock = JSON.parse(fs.readFileSync(RUNNER_LOCK, 'utf8'));
+      lockProvider = normalizeProvider(lock?.provider || '');
+    } catch {}
+  }
+  return normalizeProvider(
+    lockProvider ||
+    state?.llmProvider ||
+    inferProviderFromLogs(logs) ||
+    process.env.LLM_PROVIDER ||
+    'openrouter'
+  );
 }
 
 function deriveStats(queue: any[], projects: any[], stateStats: any = {}) {
@@ -127,19 +151,18 @@ export async function GET() {
   const discussions = getDiscussions();
   const logs      = getRecentLogs();
   const stats = deriveStats(queue, projects, state.stats || {});
-  const providerFromLogs = inferProviderFromLogs(logs);
-  const provider = normalizeProvider(
-    state.llmProvider ||
-    providerFromLogs ||
-    process.env.LLM_PROVIDER ||
-    'openrouter'
-  );
+  const provider = resolveProvider(state, logs, running);
+  const activeAgentModels = state.activeAgentModels && Object.keys(state.activeAgentModels).length
+    ? state.activeAgentModels
+    : buildAgentModels(provider);
+  const stateWithModels = { ...stateWithRuntime, llmProvider: provider, activeAgentModels };
 
   return NextResponse.json({
     running,
-    state: stateWithRuntime,
+    state: stateWithModels,
     stats,
     provider,
+    activeAgentModels,
     queue,
     deadlines,
     ideaIndex,

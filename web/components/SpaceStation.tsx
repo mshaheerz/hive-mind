@@ -135,6 +135,7 @@ export default function SpaceStation({ hive, agentStatus, selected, setSelected,
                 top: `${p.py}%`,
                 width: 8,
                 height: 8,
+                aspectRatio: '1 / 1',
                 transform: 'translate(-50%, -50%)',
                 background: p.color,
                 boxShadow: `0 0 8px ${p.color}`,
@@ -202,7 +203,7 @@ function Room({ agent, status, isSelected, hive }: RoomProps) {
   });
 
   return (
-    <div className="relative text-center" style={{ width: size }}>
+    <div className="relative text-center" style={{ width: size, height: size }}>
       {/* Pulse rings when active */}
       {(isActive || isDue) && (
         <>
@@ -290,7 +291,7 @@ function Room({ agent, status, isSelected, hive }: RoomProps) {
       </div>
 
       {/* Role label below */}
-      <div className="mt-1.5 text-[0.55rem] font-medium tracking-[0.15em] transition-colors duration-300" style={{
+      <div className="absolute left-1/2 top-[calc(100%+6px)] -translate-x-1/2 text-[0.55rem] font-medium tracking-[0.15em] transition-colors duration-300 whitespace-nowrap" style={{
         color: isSelected ? agent.color : isDue ? '#ffd93d' : isActive ? agent.color : 'var(--text-secondary)',
         opacity: isSelected ? 1 : 0.9,
       }}>

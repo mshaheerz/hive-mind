@@ -32,9 +32,25 @@ const PROJECTS_DIR = path.join(__dirname, 'projects');
 const QUEUE_FILE   = path.join(__dirname, '.hive', 'queue.json');
 const CEO_BRIDGE_FILE = path.join(__dirname, '.hive', 'ceo-bridge.json');
 const RUNNER_ARGS = process.argv.slice(2);
-const MAX_ACTIVE_PROJECTS = 2;
-const MAX_LENS_REJECTS_BEFORE_BYPASS = Number(process.env.MAX_LENS_REJECTS_BEFORE_BYPASS || 3);
+const MAX_ACTIVE_PROJECTS = Number(process.env.HIVE_MAX_ACTIVE_PROJECTS || 2);
+const MAX_LENS_REJECTS_BEFORE_BYPASS = Number(process.env.HIVE_ESCALATION_REJECT_THRESHOLD || process.env.MAX_LENS_REJECTS_BEFORE_BYPASS || 3);
 const RUNNER_LOCK_FILE = path.join(__dirname, '.hive', 'runner.lock.json');
+const APPROVAL_MODE = String(process.env.HIVE_APPROVAL_MODE || 'risk_based').toLowerCase();
+const STRICT_ORDER_OVERRIDE = /^(1|true|yes|on)$/i.test(String(process.env.HIVE_STRICT_ORDER_OVERRIDE || 'false'));
+
+const STAGE_RESPONSIBLE_AGENT = {
+  approved: 'scout',
+  research: 'atlas',
+  architecture: 'forge',
+  implementation: 'lens',
+  review: 'pulse',
+  tests: 'sage',
+  docs: 'echo',
+  launch: null,
+  complete: null,
+  failed: null,
+  new: null,
+};
 
 function printUsage() {
   console.log(`Usage: node run.js [options]
@@ -132,8 +148,14 @@ function getProjects() {
 
 function getProjectStatus(name) {
   const sf = path.join(PROJECTS_DIR, name, 'status.json');
-  if (!fs.existsSync(sf)) return { stage: 'new' };
-  try { return JSON.parse(fs.readFileSync(sf)); } catch { return { stage: 'new' }; }
+  if (!fs.existsSync(sf)) return schemaNormalizedStatus({ stage: 'new' });
+  try {
+    const parsed = schemaNormalizedStatus(JSON.parse(fs.readFileSync(sf)));
+    fs.writeFileSync(sf, JSON.stringify(parsed, null, 2));
+    return parsed;
+  } catch {
+    return schemaNormalizedStatus({ stage: 'new' });
+  }
 }
 
 function getActiveProjectsWithStatus() {
@@ -166,14 +188,123 @@ function stageRank(stage) {
   return idx >= 0 ? idx : -1;
 }
 
+function schemaNormalizedStatus(status = {}) {
+  const normalized = { ...(status || {}) };
+  normalized.stage = String(normalized.stage || 'new').toLowerCase();
+  if (!Number.isFinite(Number(normalized.stageAttempt)) || Number(normalized.stageAttempt) < 1) normalized.stageAttempt = 1;
+  if (!['APPROVED', 'NEEDS_CHANGES', null].includes(normalized.lensVerdict)) {
+    if (normalized.lensRejected === true) normalized.lensVerdict = 'NEEDS_CHANGES';
+    else if (normalized.lensRejected === false || normalized.lensApproved) normalized.lensVerdict = 'APPROVED';
+    else normalized.lensVerdict = null;
+  }
+  if (!Array.isArray(normalized.lensActionItems)) normalized.lensActionItems = [];
+  normalized.lensActionItems = normalized.lensActionItems
+    .map((item, idx) => {
+      if (typeof item === 'string') {
+        return { id: `L${idx + 1}`, severity: 'critical', requirement: item };
+      }
+      return {
+        id: String(item?.id || `L${idx + 1}`),
+        severity: String(item?.severity || 'critical').toLowerCase() === 'warning' ? 'warning' : 'critical',
+        file: item?.file ? String(item.file) : undefined,
+        requirement: String(item?.requirement || item?.action || '').trim(),
+      };
+    })
+    .filter((item) => item.requirement);
+  if (!normalized.blockedReason || typeof normalized.blockedReason !== 'object') normalized.blockedReason = null;
+  if (!['none', 'apex_watch', 'force_progress'].includes(normalized.escalationLevel)) {
+    normalized.escalationLevel = normalized.escalationNeeded ? 'apex_watch' : 'none';
+  }
+  normalized.lastHandoffRunId = normalized.lastHandoffRunId || null;
+  normalized.stageOwner = normalized.stageOwner || STAGE_RESPONSIBLE_AGENT[normalized.stage] || null;
+  if (!normalized.lensIssueRepeats || typeof normalized.lensIssueRepeats !== 'object') normalized.lensIssueRepeats = {};
+  return normalized;
+}
+
+function classifyRisk(action = '') {
+  const text = String(action || '').toLowerCase();
+  if (/deploy|publish|release|migration|drop|truncate|delete from|secret write|secretsmanager put|keyvault set|destroy|rm -rf|git reset --hard/.test(text)) {
+    return 'high';
+  }
+  if (/install|npm i|npm install|pip install|build|workspace generation|materializ|bootstrap|scaffold/.test(text)) {
+    return 'moderate';
+  }
+  return 'safe';
+}
+
+function createRunId(agentKey = 'agent') {
+  return `${Date.now()}-${agentKey}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+function runDir(projectName, runId) {
+  return path.join(PROJECTS_DIR, projectName, 'runs', runId);
+}
+
+function writeRunFile(projectName, runId, rel, content) {
+  const full = path.join(runDir(projectName, runId), rel);
+  fs.mkdirSync(path.dirname(full), { recursive: true });
+  if (typeof content === 'string') fs.writeFileSync(full, content);
+  else fs.writeFileSync(full, JSON.stringify(content, null, 2));
+}
+
+function beginRunArtifact({ projectName, stage, agentKey, status, parentRunId, provider, model }) {
+  const runId = createRunId(agentKey);
+  const startedAt = new Date().toISOString();
+  const context = {
+    project: projectName,
+    stage,
+    agent: agentKey,
+    runId,
+    parentRunId: parentRunId || null,
+    startedAt,
+    provider: provider || process.env.LLM_PROVIDER || 'openrouter',
+    model: model || null,
+    statusSnapshot: status || {},
+  };
+  writeRunFile(projectName, runId, 'proposal.md', `# Stage Run Proposal\n\n- Project: ${projectName}\n- Stage: ${stage}\n- Agent: ${agentKey}\n- Run ID: ${runId}\n`);
+  writeRunFile(projectName, runId, 'tasks.md', `# Tasks\n\n- [ ] Execute ${stage}\n- [ ] Emit decision + handoff\n- [ ] Attach evidence\n`);
+  writeRunFile(projectName, runId, 'context.json', context);
+  return { runId, context };
+}
+
+function appendRunEvidence(projectName, runId, fileName, content) {
+  const safeName = String(fileName || 'evidence.txt').replace(/[^\w.\-]+/g, '-');
+  writeRunFile(projectName, runId, path.join('evidence', safeName), String(content || ''));
+}
+
 function setProjectStatus(name, updates) {
   const dir = path.join(PROJECTS_DIR, name);
   fs.mkdirSync(dir, { recursive: true });
   const sf  = path.join(dir, 'status.json');
   let status = {};
-  if (fs.existsSync(sf)) { try { status = JSON.parse(fs.readFileSync(sf)); } catch {} }
+  if (fs.existsSync(sf)) { try { status = schemaNormalizedStatus(JSON.parse(fs.readFileSync(sf))); } catch {} }
   Object.assign(status, updates, { updatedAt: new Date().toISOString() });
+  status = schemaNormalizedStatus(status);
   fs.writeFileSync(sf, JSON.stringify(status, null, 2));
+}
+
+function transitionProjectStage(projectName, nextStage, opts = {}) {
+  const { reason = '', allowBackward = false, runId = null } = opts;
+  const current = getProjectStatus(projectName);
+  const currentStage = String(current.stage || 'new').toLowerCase();
+  const target = String(nextStage || currentStage).toLowerCase();
+  const curRank = stageRank(currentStage);
+  const nextRank = stageRank(target);
+
+  if (!allowBackward && curRank >= 0 && nextRank >= 0 && nextRank < curRank) {
+    throw new Error(`Illegal stage regression ${currentStage} -> ${target} without decision artifact`);
+  }
+
+  const sameStage = currentStage === target;
+  const updates = {
+    stage: target,
+    stageOwner: STAGE_RESPONSIBLE_AGENT[target] || null,
+    stageAttempt: sameStage ? Number(current.stageAttempt || 1) + 1 : 1,
+    blockedReason: null,
+    ...(runId ? { lastHandoffRunId: runId } : {}),
+  };
+  if (reason) updates.transitionReason = reason;
+  setProjectStatus(projectName, updates);
 }
 
 function readOutput(projectName, file) {
@@ -558,8 +689,13 @@ function extractLensActionItems(text = '', maxItems = 5) {
 
     const issue = cols[2] || '';
     const fix = cols[4] || cols[3] || '';
-    const item = `${issue} -> ${fix}`.replace(/\s+/g, ' ').trim();
-    if (item && !items.includes(item)) items.push(item);
+    const requirement = `${issue} ${fix}`.replace(/\s+/g, ' ').trim();
+    if (!requirement) continue;
+    const severityRaw = `${cols[1] || ''} ${cols[2] || ''}`.toLowerCase();
+    const severity = /warn|non.?critical|should/.test(severityRaw) ? 'warning' : 'critical';
+    const idCandidate = String(cols[0] || '').replace(/[^\w-]/g, '').toUpperCase() || `L${items.length + 1}`;
+    const file = (cols[2] || '').includes('.') ? cols[2] : undefined;
+    items.push({ id: idCandidate, severity, file, requirement });
     if (items.length >= maxItems) break;
   }
 
@@ -570,9 +706,49 @@ function extractLensActionItems(text = '', maxItems = 5) {
     .map((l) => l.trim())
     .filter((l) => /critical|must fix|security|validation|tests|injection/i.test(l))
     .slice(0, maxItems)
-    .map((l) => l.replace(/\s+/g, ' ').trim());
+    .map((l, idx) => ({
+      id: `L${idx + 1}`,
+      severity: /warning|should/i.test(l) ? 'warning' : 'critical',
+      requirement: l.replace(/\s+/g, ' ').trim(),
+    }));
 
   return fallback;
+}
+
+function parseForgeFixMap(text = '') {
+  const lines = String(text || '').replace(/\r/g, '').split('\n');
+  const mappings = {};
+  for (const line of lines) {
+    const m = line.match(/(?:^|\s)([A-Z]\d+)\s*(?:=>|->|:)\s*(.+)$/i);
+    if (!m) continue;
+    mappings[m[1].toUpperCase()] = String(m[2] || '').trim();
+  }
+  return mappings;
+}
+
+function finalizeRunArtifact(projectName, runId, payload = {}) {
+  const decision = {
+    outcome: payload.outcome || 'deferred',
+    rationale: payload.rationale || '',
+    risk: payload.risk || 'safe',
+    approvedBy: payload.approvedBy || (payload.risk === 'high' ? 'apex' : 'system'),
+    approved: payload.approved !== false,
+    decidedAt: new Date().toISOString(),
+  };
+  const handoff = {
+    fromAgent: payload.fromAgent || 'system',
+    toAgent: payload.toAgent || null,
+    project: payload.project,
+    stage: payload.stage || null,
+    runId,
+    summary: payload.summary || '',
+    artifacts: Array.isArray(payload.artifacts) ? payload.artifacts : [],
+    requiredActions: Array.isArray(payload.requiredActions) ? payload.requiredActions : [],
+    acceptanceChecks: Array.isArray(payload.acceptanceChecks) ? payload.acceptanceChecks : [],
+    modelInfo: payload.modelInfo || { provider: process.env.LLM_PROVIDER || 'openrouter', model: 'unknown' },
+  };
+  writeRunFile(projectName, runId, 'decision.json', decision);
+  writeRunFile(projectName, runId, 'handoff.json', handoff);
 }
 
 function isProcessAlive(pid) {
@@ -634,6 +810,25 @@ class AutonomousRunner {
 
     this._syncProviderState();
     this.cycleInProgress = false;
+  }
+
+  cleanupOldRuns() {
+    const retentionDays = Number(process.env.HIVE_RUNS_RETENTION_DAYS || 30);
+    if (!Number.isFinite(retentionDays) || retentionDays <= 0) return;
+    const cutoff = Date.now() - retentionDays * 24 * 60 * 60 * 1000;
+    for (const projectName of getProjects()) {
+      const runsRoot = path.join(PROJECTS_DIR, projectName, 'runs');
+      if (!fs.existsSync(runsRoot)) continue;
+      for (const entry of fs.readdirSync(runsRoot)) {
+        const full = path.join(runsRoot, entry);
+        let st;
+        try { st = fs.statSync(full); } catch { continue; }
+        if (!st.isDirectory()) continue;
+        if (st.mtimeMs < cutoff) {
+          try { fs.rmSync(full, { recursive: true, force: true }); } catch {}
+        }
+      }
+    }
   }
 
   _syncProviderState() {
@@ -770,15 +965,7 @@ class AutonomousRunner {
     const minsSince = last ? Math.floor((Date.now() - new Date(last).getTime()) / 60000) : null;
     const wait = minsSince === null ? 0 : Math.max(0, cycle - minsSince);
 
-    const stageOwners = {
-      approved: 'scout',
-      research: 'atlas',
-      architecture: 'forge',
-      implementation: 'lens',
-      review: 'pulse',
-      tests: 'sage',
-      docs: 'echo',
-    };
+    const stageOwners = STAGE_RESPONSIBLE_AGENT;
     const assigned = getActiveProjectsWithStatus()
       .filter(({ status }) => stageOwners[status.stage] === agent)
       .map(({ name, status }) => `${name}:${status.stage}`);
@@ -875,6 +1062,7 @@ ${text}`
     }
 
     try {
+      this.cleanupOldRuns();
       // 0.5 Ensure projects have real workspace files and revoke invalid "complete" states.
       for (const name of getProjects()) {
         const projectStatus = getProjectStatus(name);
@@ -887,6 +1075,8 @@ ${text}`
         if (status.stage === 'complete' && !hasRealProjectFiles(name)) {
           setProjectStatus(name, {
             stage: 'architecture',
+            stageOwner: STAGE_RESPONSIBLE_AGENT.architecture,
+            stageAttempt: 1,
             completionRevoked: true,
             completionRevokedAt: new Date().toISOString(),
             completionRevokedReason: 'No real source files materialized in workspace',
@@ -1235,12 +1425,19 @@ ${decision.reasoning}
     ensureWorkspaceScaffold(slug, proposal.preferredStack || proposal.stack || proposal.template || '');
     setProjectStatus(slug, {
       stage: 'approved',
+      stageOwner: STAGE_RESPONSIBLE_AGENT.approved,
+      stageAttempt: 1,
+      blockedReason: null,
       proposedBy: 'nova',
       approvedBy: 'apex',
       approvalScore: decision.overall,
       projectType: proposal.projectType || 'tooling',
       preferredStack: proposal.preferredStack || proposal.stack || '',
       template: proposal.template || '',
+      lensVerdict: null,
+      lensActionItems: [],
+      lastHandoffRunId: null,
+      escalationLevel: 'none',
       approvedAt: new Date().toISOString(),
     });
 
@@ -1292,7 +1489,7 @@ ${decision.reasoning}
           }
           if (currentStatus.stage !== 'complete') {
             const workspaceFiles = listWorkspaceFiles(name);
-            setProjectStatus(name, { stage: 'complete', workspaceFiles });
+            setProjectStatus(name, { stage: 'complete', stageOwner: null, stageAttempt: 1, blockedReason: null, workspaceFiles });
             this.state.increment('completed');
             log('system', `🎉 Project "${name}" is COMPLETE!`);
           }
@@ -1305,11 +1502,16 @@ ${decision.reasoning}
           const cycleMinutes = this.state.getCycleMinutes(stageInfo.agentKey);
           const minutesSince = last ? (Date.now() - new Date(last).getTime()) / 60000 : cycleMinutes;
           const minsLeft = Math.max(0, Math.ceil(cycleMinutes - minutesSince));
-          // Operational strict mode: if a prioritized project is blocked, wake and run now.
-          log('apex', `Strict order: waking ${stageInfo.agentKey.toUpperCase()} now for "${name}" (${currentStatus.stage}); skipped wait ${minsLeft}m.`);
-          delete this.state.state.agentLastRun[stageInfo.agentKey];
-          this.state.save();
-          dueSnapshot[stageInfo.agentKey] = true;
+          const forceNow = STRICT_ORDER_OVERRIDE || currentStatus.escalationLevel === 'force_progress';
+          if (forceNow) {
+            log('apex', `Strict order: waking ${stageInfo.agentKey.toUpperCase()} now for "${name}" (${currentStatus.stage}); skipped wait ${minsLeft}m.`);
+            delete this.state.state.agentLastRun[stageInfo.agentKey];
+            this.state.save();
+            dueSnapshot[stageInfo.agentKey] = true;
+          } else {
+            blocked.push({ project: name, stage: currentStatus.stage, agent: stageInfo.agentKey, minsLeft });
+            break;
+          }
         }
 
         const beforeStage = currentStatus.stage;
@@ -1338,8 +1540,19 @@ ${decision.reasoning}
   async runProjectStage(projectName, stage, stageInfo, status) {
     const readmePath = path.join(PROJECTS_DIR, projectName, 'README.md');
     const readme     = fs.existsSync(readmePath) ? fs.readFileSync(readmePath, 'utf8') : '';
+    const model = this.state.state.activeAgentModels?.[stageInfo.agentKey] || 'unknown';
+    const run = beginRunArtifact({
+      projectName,
+      stage,
+      agentKey: stageInfo.agentKey,
+      status,
+      parentRunId: status.lastHandoffRunId || null,
+      provider: this.state.state.llmProvider || process.env.LLM_PROVIDER,
+      model,
+    });
 
     log(stageInfo.agentKey, `Working on "${projectName}" → ${stage}`);
+    transitionProjectStage(projectName, stage, { reason: 'agent execution started', runId: run.runId });
 
     // Set a deadline for this stage
     const hoursMap = { scout: 2, atlas: 3, forge: 6, lens: 2, pulse: 2, sage: 2, echo: 1 };
@@ -1347,17 +1560,43 @@ ${decision.reasoning}
 
     try {
       let output = '';
+      const riskClass = classifyRisk(`${stageInfo.agentKey}:${stage}`);
+      const decisionApproved = APPROVAL_MODE !== 'risk_based' || riskClass !== 'high';
+      if (!decisionApproved) {
+        appendRunEvidence(projectName, run.runId, 'risk-gate.txt', `Risk class: ${riskClass}\nMode: ${APPROVAL_MODE}\nAction deferred pending APEX.`);
+        finalizeRunArtifact(projectName, run.runId, {
+          outcome: 'deferred',
+          rationale: 'High-risk action requires APEX decision artifact.',
+          risk: riskClass,
+          approved: false,
+          approvedBy: 'apex',
+          fromAgent: stageInfo.agentKey,
+          toAgent: 'apex',
+          project: projectName,
+          stage,
+          summary: 'Execution blocked by risk gate.',
+          modelInfo: { provider: this.state.state.llmProvider || process.env.LLM_PROVIDER, model },
+        });
+        setProjectStatus(projectName, {
+          blockedReason: { code: 'risk_gate_blocked', message: `High risk action blocked for ${stage}. Await APEX decision.` },
+          escalationLevel: 'apex_watch',
+        });
+        return { worked: false, success: false, haltProjectThisCycle: true };
+      }
+      appendRunEvidence(projectName, run.runId, 'risk-gate.txt', `Risk class: ${riskClass}\nMode: ${APPROVAL_MODE}\nDecision: auto-approved.`);
 
       switch (stage) {
         case 'approved':
           output = await this.agents.scout.research(readme);
           writeOutput(projectName, 'research.md', output);
+          appendRunEvidence(projectName, run.runId, 'research.md', output.slice(0, 4000));
           break;
 
         case 'research':
           const research = readOutput(projectName, 'research.md');
           output = await this.agents.atlas.design(readme, research);
           writeOutput(projectName, 'architecture.md', output);
+          appendRunEvidence(projectName, run.runId, 'architecture.md', output.slice(0, 4000));
           break;
 
         case 'architecture':
@@ -1365,6 +1604,7 @@ ${decision.reasoning}
           const res  = readOutput(projectName, 'research.md');
           const previousImplementation = readOutput(projectName, 'implementation.md');
           const bootstrap = ensureProjectBootstrap(projectName, status, readme);
+          appendRunEvidence(projectName, run.runId, 'bootstrap.txt', bootstrap.notes.join('\n') || 'No bootstrap notes.');
           const bootstrapBlock = bootstrap.notes.length
             ? `\n\n## Workspace Bootstrap\nTemplate: ${bootstrap.template}\n${bootstrap.notes.map((n) => `- ${n}`).join('\n')}\n`
             : '';
@@ -1372,15 +1612,45 @@ ${decision.reasoning}
             ...(Array.isArray(status.lensActionItems) ? status.lensActionItems : []),
             ...(Array.isArray(status.pulseActionItems) ? status.pulseActionItems : []),
           ];
+          const mandatoryFixMap = Array.isArray(status.lensActionItems) && status.lensActionItems.length
+            ? `\n\n## Required FIX_MAP\nFor every lens action item below, include a FIX_MAP section using "ID -> change".\n${status.lensActionItems.map((x) => `- ${x.id} -> ${x.requirement}`).join('\n')}\n`
+            : '';
           const remediationBlock = remediationItems.length
-            ? `\n\n## Mandatory Rework (LENS/PULSE)\n${remediationItems.map((x, i) => `${i + 1}. ${x}`).join('\n')}\n`
+            ? `\n\n## Mandatory Rework (LENS/PULSE)\n${remediationItems.map((x, i) => `${i + 1}. ${x.requirement || x}`).join('\n')}\n`
             : '';
           const previousImplBlock = previousImplementation.trim()
             ? `\n\n## Previous Implementation (fix this, do not restart from scratch)\n${previousImplementation.slice(0, 12000)}\n`
             : '';
-          const taskForForge = `${readme}${bootstrapBlock}${remediationBlock}${previousImplBlock}`;
+          const taskForForge = `${readme}${bootstrapBlock}${mandatoryFixMap}${remediationBlock}${previousImplBlock}`;
           output = await this.agents.forge.implement(taskForForge, arch, res);
           writeOutput(projectName, 'implementation.md', output);
+          appendRunEvidence(projectName, run.runId, 'implementation.md', output.slice(0, 6000));
+          if (Array.isArray(status.lensActionItems) && status.lensActionItems.length) {
+            const fixMap = parseForgeFixMap(output);
+            const missing = status.lensActionItems.filter((item) => !fixMap[String(item.id || '').toUpperCase()]);
+            if (missing.length) {
+              setProjectStatus(projectName, {
+                blockedReason: {
+                  code: 'missing_fix_map',
+                  message: `FORGE response missing FIX_MAP references for: ${missing.map((m) => m.id).join(', ')}`,
+                },
+              });
+              finalizeRunArtifact(projectName, run.runId, {
+                outcome: 'rejected',
+                rationale: 'FORGE must include FIX_MAP references for all LENS action items.',
+                risk: riskClass,
+                fromAgent: 'forge',
+                toAgent: 'forge',
+                project: projectName,
+                stage,
+                summary: `Missing FIX_MAP IDs: ${missing.map((m) => m.id).join(', ')}`,
+                requiredActions: missing.map((m) => `${m.id}: ${m.requirement}`),
+                modelInfo: { provider: this.state.state.llmProvider || process.env.LLM_PROVIDER, model },
+              });
+              return { worked: true, success: false, haltProjectThisCycle: true };
+            }
+            setProjectStatus(projectName, { forgeFixMap: fixMap });
+          }
           {
             ensureWorkspaceScaffold(projectName, status.preferredStack || status.stack || status.template || '');
             const written = materializeForgeFiles(projectName, output);
@@ -1392,6 +1662,7 @@ ${decision.reasoning}
                 workspaceUpdatedAt: new Date().toISOString(),
                 bootstrapTemplate: bootstrap.template,
                 bootstrapNotes: bootstrap.notes,
+                blockedReason: check.failed > 0 ? { code: 'workspace_invalid', message: 'Workspace checks failed. FORGE must fix syntax/runtime issues.' } : null,
                 workspaceCheck: {
                   checked: check.checked,
                   passed: check.passed,
@@ -1410,59 +1681,105 @@ ${decision.reasoning}
           const impl = readOutput(projectName, 'implementation.md');
           output = await this.agents.lens.review(impl, readme);
           writeOutput(projectName, 'review.md', output);
+          appendRunEvidence(projectName, run.runId, 'review.md', output.slice(0, 5000));
 
           // Check if LENS approved
           if (output.toLowerCase().includes('needs_changes') || output.toLowerCase().includes('rejected')) {
             const lensSummary = summarizeLensReview(output);
-            const lensActionItems = extractLensActionItems(output, 6);
+            const lensActionItems = extractLensActionItems(output, 8);
             const nextRejectCount = (Number(status.lensRejectCount) || 0) + 1;
             log('lens', `⚠ Code issues found in "${projectName}". Sending back to FORGE.`);
             log('lens', `   Issues: ${lensSummary}`);
-            const shouldBypass = nextRejectCount >= MAX_LENS_REJECTS_BEFORE_BYPASS;
+            const repeats = { ...(status.lensIssueRepeats || {}) };
+            for (const item of lensActionItems) {
+              repeats[item.id] = Number(repeats[item.id] || 0) + 1;
+            }
+            const hasRepeatedCritical = lensActionItems.some((item) => item.severity === 'critical' && Number(repeats[item.id] || 0) >= MAX_LENS_REJECTS_BEFORE_BYPASS);
+            const shouldBypass = nextRejectCount >= MAX_LENS_REJECTS_BEFORE_BYPASS || hasRepeatedCritical;
 
             if (shouldBypass) {
               setProjectStatus(projectName, {
                 stage: 'review',
+                stageOwner: STAGE_RESPONSIBLE_AGENT.review,
+                stageAttempt: 1,
+                blockedReason: null,
                 lensRejected: false,
                 lensApproved: false,
                 lensBypassed: true,
                 lensBypassReason: `LENS rejected ${nextRejectCount} times. Auto-advanced to unblock pipeline.`,
                 lensBypassedAt: new Date().toISOString(),
                 lensReviewSummary: null,
+                lensVerdict: 'NEEDS_CHANGES',
                 lensActionItems: [],
                 lensRejectCount: nextRejectCount,
+                lensIssueRepeats: repeats,
                 lensReviewedAt: new Date().toISOString(),
                 escalationNeeded: true,
                 escalationReason: 'Repeated LENS rejections',
                 escalatedAt: new Date().toISOString(),
+                escalationLevel: 'force_progress',
               });
               delete this.state.state.agentLastRun.apex;
               delete this.state.state.agentLastRun.pulse;
               this.state.save();
               log('apex', `🚨 Escalation: "${projectName}" rejected by LENS ${nextRejectCount} times. Auto-bypassing to PULSE review.`);
               this.deadlines.complete(projectName, stageInfo.next);
+              finalizeRunArtifact(projectName, run.runId, {
+                outcome: 'approved',
+                rationale: 'Escalation policy bypassed repeated rejection loop to progress pipeline.',
+                risk: riskClass,
+                fromAgent: 'lens',
+                toAgent: 'pulse',
+                project: projectName,
+                stage,
+                summary: 'LENS bypassed after repeated rejections.',
+                requiredActions: [lensSummary],
+                modelInfo: { provider: this.state.state.llmProvider || process.env.LLM_PROVIDER, model },
+              });
               return { worked: true, success: true, haltProjectThisCycle: true };
             }
 
             setProjectStatus(projectName, {
               stage: 'architecture',
+              stageOwner: STAGE_RESPONSIBLE_AGENT.architecture,
+              stageAttempt: Number(status.stageAttempt || 1) + 1,
+              blockedReason: {
+                code: 'lens_rejected',
+                message: lensSummary,
+              },
               lensRejected: true,
               lensApproved: false,
+              lensVerdict: 'NEEDS_CHANGES',
               lensReviewSummary: lensSummary,
               lensActionItems,
               lensRejectCount: nextRejectCount,
+              lensIssueRepeats: repeats,
+              escalationLevel: hasRepeatedCritical ? 'apex_watch' : 'none',
               lensReviewedAt: new Date().toISOString(),
               lensBypassed: false,
               lensBypassReason: null,
               lensBypassedAt: null,
             });
             this.deadlines.complete(projectName, stageInfo.next);
+            finalizeRunArtifact(projectName, run.runId, {
+              outcome: 'rejected',
+              rationale: 'LENS found critical issues and sent implementation back to FORGE.',
+              risk: riskClass,
+              fromAgent: 'lens',
+              toAgent: 'forge',
+              project: projectName,
+              stage,
+              summary: lensSummary,
+              requiredActions: lensActionItems.map((item) => `${item.id}: ${item.requirement}`),
+              modelInfo: { provider: this.state.state.llmProvider || process.env.LLM_PROVIDER, model },
+            });
             return { worked: true, success: true, haltProjectThisCycle: true };
           }
 
           setProjectStatus(projectName, {
             lensRejected: false,
             lensApproved: true,
+            lensVerdict: 'APPROVED',
             lensAcceptedAt: new Date().toISOString(),
             lensReviewSummary: null,
             lensActionItems: [],
@@ -1473,6 +1790,8 @@ ${decision.reasoning}
             lensBypassedAt: null,
             escalationNeeded: false,
             escalationReason: null,
+            escalationLevel: 'none',
+            blockedReason: null,
           });
           log('lens', `✓ LENS accepted "${projectName}". Moving to PULSE.`);
           break;
@@ -1496,16 +1815,34 @@ ${decision.reasoning}
             if (!testRun.passed) {
               setProjectStatus(projectName, {
                 stage: 'architecture',
+                stageOwner: STAGE_RESPONSIBLE_AGENT.architecture,
+                stageAttempt: Number(status.stageAttempt || 1) + 1,
                 pulseRejected: true,
                 pulseSummary: testRun.summary,
                 pulseActionItems: testRun.actionItems || [],
                 pulseReviewedAt: new Date().toISOString(),
                 pulseApproved: false,
                 generatedTestFiles,
+                blockedReason: {
+                  code: 'tests_failed',
+                  message: testRun.summary,
+                },
               });
               log('pulse', `⚠ Tests/checks failed for "${projectName}". Sending back to FORGE.`);
               log('pulse', `   Issues: ${testRun.summary}`);
               this.deadlines.complete(projectName, stageInfo.next);
+              finalizeRunArtifact(projectName, run.runId, {
+                outcome: 'rejected',
+                rationale: 'PULSE tests failed; implementation sent back for remediation.',
+                risk: riskClass,
+                fromAgent: 'pulse',
+                toAgent: 'forge',
+                project: projectName,
+                stage,
+                summary: testRun.summary,
+                requiredActions: testRun.actionItems || [],
+                modelInfo: { provider: this.state.state.llmProvider || process.env.LLM_PROVIDER, model },
+              });
               return { worked: true, success: true, haltProjectThisCycle: true };
             }
             setProjectStatus(projectName, {
@@ -1516,6 +1853,7 @@ ${decision.reasoning}
               pulseApproved: true,
               pulseAcceptedAt: new Date().toISOString(),
               generatedTestFiles,
+              blockedReason: null,
             });
             log('pulse', `✓ PULSE accepted "${projectName}" (${testRun.summary}).`);
           }
@@ -1537,12 +1875,13 @@ ${decision.reasoning}
       }
 
       this.deadlines.complete(projectName, stageInfo.next);
-      const updates = { stage: stageInfo.next };
+      const updates = { stage: stageInfo.next, stageOwner: STAGE_RESPONSIBLE_AGENT[stageInfo.next] || null, stageAttempt: 1, blockedReason: null, lastHandoffRunId: run.runId };
       if (stage === 'architecture' && stageInfo.next === 'implementation') {
         updates.lensRejected = false;
         updates.lensApproved = false;
         updates.lensAcceptedAt = null;
         updates.lensReviewSummary = null;
+        updates.lensVerdict = null;
         updates.lensActionItems = [];
         updates.lensBypassed = false;
         updates.lensBypassReason = null;
@@ -1554,11 +1893,36 @@ ${decision.reasoning}
         updates.pulseActionItems = [];
       }
       setProjectStatus(projectName, updates);
+      finalizeRunArtifact(projectName, run.runId, {
+        outcome: 'approved',
+        rationale: `${stage} completed.`,
+        risk: riskClass,
+        fromAgent: stageInfo.agentKey,
+        toAgent: STAGE_RESPONSIBLE_AGENT[stageInfo.next] || null,
+        project: projectName,
+        stage,
+        summary: `${projectName}: ${stage} -> ${stageInfo.next}`,
+        artifacts: [`output/${stage}.md`, `output/${stageInfo.next}.md`],
+        acceptanceChecks: stage === 'architecture' ? ['Workspace files materialized'] : [],
+        modelInfo: { provider: this.state.state.llmProvider || process.env.LLM_PROVIDER, model },
+      });
       log(stageInfo.agentKey, `✓ "${projectName}" → moved to "${stageInfo.next}"`);
       return { worked: true, success: true };
 
     } catch (err) {
       log(stageInfo.agentKey, `✗ Error on "${projectName}" at ${stage}: ${err.message}`);
+      appendRunEvidence(projectName, run.runId, 'error.txt', String(err?.stack || err?.message || err));
+      finalizeRunArtifact(projectName, run.runId, {
+        outcome: 'rejected',
+        rationale: String(err?.message || err),
+        risk: 'safe',
+        fromAgent: stageInfo.agentKey,
+        toAgent: stageInfo.agentKey,
+        project: projectName,
+        stage,
+        summary: `Execution failed at ${stage}: ${err.message}`,
+        modelInfo: { provider: this.state.state.llmProvider || process.env.LLM_PROVIDER, model },
+      });
       return { worked: true, success: false };
     }
   }

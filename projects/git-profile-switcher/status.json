@@ -10,5 +10,13 @@
     "config/profiles.json",
     "src/profile.py"
   ],
-  "workspaceUpdatedAt": "2026-02-27T10:59:23.542Z"
+  "workspaceUpdatedAt": "2026-02-27T10:59:23.542Z",
+  "stageAttempt": 1,
+  "lensVerdict": "NEEDS_CHANGES",
+  "lensActionItems": [],
+  "blockedReason": null,
+  "escalationLevel": "none",
+  "lastHandoffRunId": null,
+  "stageOwner": "forge",
+  "lensIssueRepeats": {}
 }

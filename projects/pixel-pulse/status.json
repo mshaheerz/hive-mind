@@ -13,5 +13,13 @@
     "src/models/baseline.js",
     "src/models/comparison.js"
   ],
-  "workspaceUpdatedAt": "2026-02-27T10:59:23.544Z"
+  "workspaceUpdatedAt": "2026-02-27T10:59:23.544Z",
+  "stageAttempt": 1,
+  "lensVerdict": "NEEDS_CHANGES",
+  "lensActionItems": [],
+  "blockedReason": null,
+  "escalationLevel": "none",
+  "lastHandoffRunId": null,
+  "stageOwner": "forge",
+  "lensIssueRepeats": {}
 }

@@ -14,27 +14,28 @@
     "projectName": "dependency-ghostbuster",
     "stage": "implementation",
     "agent": "forge",
-    "dueAt": "2026-02-27T20:55:44.479Z",
-    "setAt": "2026-02-27T14:55:44.479Z",
-    "status": "active"
+    "dueAt": "2026-02-27T21:01:39.149Z",
+    "setAt": "2026-02-27T15:01:39.149Z",
+    "status": "complete",
+    "completedAt": "2026-02-27T15:03:52.907Z"
   },
   {
     "id": "dependency-ghostbuster::review",
     "projectName": "dependency-ghostbuster",
     "stage": "review",
     "agent": "lens",
-    "dueAt": "2026-02-27T16:09:32.853Z",
-    "setAt": "2026-02-27T14:09:32.853Z",
+    "dueAt": "2026-02-27T17:03:52.908Z",
+    "setAt": "2026-02-27T15:03:52.908Z",
     "status": "complete",
-    "completedAt": "2026-02-27T14:11:45.801Z"
+    "completedAt": "2026-02-27T15:04:42.166Z"
   },
   {
     "id": "envsync-cli::implementation",
     "projectName": "envsync-cli",
     "stage": "implementation",
     "agent": "forge",
-    "dueAt": "2026-02-27T20:56:57.620Z",
-    "setAt": "2026-02-27T14:56:57.620Z",
+    "dueAt": "2026-02-27T21:20:00.826Z",
+    "setAt": "2026-02-27T15:20:00.826Z",
     "status": "active"
   },
   {
@@ -52,10 +53,10 @@
     "projectName": "envsync-cli",
     "stage": "review",
     "agent": "lens",
-    "dueAt": "2026-02-27T16:54:58.486Z",
-    "setAt": "2026-02-27T14:54:58.486Z",
+    "dueAt": "2026-02-27T17:01:03.425Z",
+    "setAt": "2026-02-27T15:01:03.425Z",
     "status": "complete",
-    "completedAt": "2026-02-27T14:55:44.479Z"
+    "completedAt": "2026-02-27T15:01:39.148Z"
   },
   {
     "id": "postman-to-sdk::review",
@@ -132,9 +133,9 @@
     "projectName": "dependency-ghostbuster",
     "stage": "tests",
     "agent": "pulse",
-    "dueAt": "2026-02-27T16:43:25.875Z",
-    "setAt": "2026-02-27T14:43:25.875Z",
+    "dueAt": "2026-02-27T17:04:42.168Z",
+    "setAt": "2026-02-27T15:04:42.168Z",
     "status": "complete",
-    "completedAt": "2026-02-27T14:44:54.644Z"
+    "completedAt": "2026-02-27T15:06:25.526Z"
   }
 ]

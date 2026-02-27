@@ -1,310 +1,295 @@
+### File: `requirements.txt`
+```txt
+python==3.10.5
+aws-sdk==2.14.89
+google-cloud-secretmanager==2.11.21
+azure-identity>=1.16.0
+azure-keyvault-secrets>=1.7.0
+python-dotenv>=0.19.1
+dotenv>=2.6.0
+axios>=0.27.0
+boto3==1.24.25
+```
+
 ### File: `README.md`
+```markdown
+# EnvSync CLI
+
+The EnvSync CLI is a command-line interface tool designed to synchronize local `.env` files with cloud secret managers, such as AWS Secrets Manager, GCP Secret Manager, and Azure Key Vault. This project addresses the problem of manual copy-paste errors, configuration drift, and security risks associated with managing secrets across multiple cloud environments. By automating the syncing process, EnvSync CLI can reduce errors, save time, and improve overall security.
+
+## Tech Stack
+
+### Programming Language
+- **Node.js** or **Python**
+
+### Cloud Provider SDKs
+- AWS SDK (e.g., `boto3`)
+- Google Cloud Secret Manager Client Library (e.g., `google-cloud-secretmanager`)
+
+### Configuration File Parsing
+- Python library: `python-dotenv`, `dotenv`
+
+### Syncing Mechanism
+- Implement a two-way sync using libraries like `deep-diff` to compare local and cloud configurations.
+
+## Key Features
+
+- **Automatic Synchronization**: Manages both local `.env` files and remote secret managers.
+- **Secure Authentication**: Uses existing SDKs for authentication with cloud providers.
+- **Error Handling**: Ensures robust error handling throughout the syncing process.
+- **Configuration Management**: Validates and updates configurations across versions.
+
+## Usage Guide
+
+### Installation
+```sh
+npm install -r
 ```
 
-The EnvSync CLI tool is a command-line interface designed to bidirectional-sync local `.env` files with cloud secret managers, such as AWS Secrets Manager, GCP Secret Manager, and Azure Key Vault. This tool aims to prevent manual copy-paste errors, configuration drift, and security risks associated with managing secrets across multiple cloud environments.
+### Example Usage
 
-### Features
+#### Sync AWS Secrets:
+```sh
+envsync-cli --aws-secretmanager <secret-arn>
+```
 
-- **Bidirectional Sync**: Automatically syncs local `.env` files with cloud secrets.
-- **Error Handling**: Robust error handling for authentication, secret retrieval, and syncing operations.
-- **Security**: Encrypts sensitive information using environment variables.
-- **Logging**: Provides detailed logs of sync operations.
+#### Sync GCP Secret Manager:
+```sh
+envsync-cli --gcp-secretmanager <secret-id>
+```
 
-### Getting Started
-
-1. **Install the EnvSync CLI globally**:
-
-   ```bash
-   npm install -g @envsync-cli/core
-   ```
-
-2. **Create a `.env.example` file in your project root** with the following structure:
-
-   ```
-   AWS_ACCESS_KEY_ID=your_access_key_id
-   AWS_SECRET_ACCESS_KEY=your_secret_access_key
-   GCP_PROJECT_ID=your_project_id
-   AZURE_TENANT_ID=your_tenant_id
-   AZURE_CLIENT_ID=your_client_id
-   AZURE_CLIENT_SECRET=your_client_secret
-   ```
-
-3. **Run the sync command**:
-
-   ```bash
-   envsync-cli sync
-   ```
-
-### Dependencies
-
-- **Python:** Install using `pip install -r requirements.txt` or use a virtual environment.
-  
-  ```txt
-  python==3.10.5
-  requests==2.28.1
-  pyenv==9.0.6
-  ```
-
-- **Node.js:** Install using `npm install` in the root directory of your project.
-
-### File/Folder Structure
-
-The proposed file/folder structure for the EnvSync CLI is:
-
-```plaintext
-envsync-cli/
-|---- src/
-|       |---- main.ts
-|       |---- cloud_providers/
-|       |       |---- aws.ts
-|       |       |---- gcp.ts
-|       |       |---- azure.ts
-|       |---- config_parser.ts
-|       |---- sync_mechanism.ts
-|       |---- logger.ts
-|---- tests/
-|       |---- test_main.ts
-|       |---- test_cloud_providers.ts
-|       |---- test_config_parser.ts
-|       |---- test_sync_mechanism.ts
-|---- requirements.txt
-|---- README.md
+#### Sync Azure Key Vault:
+```sh
+envsync-cli --azure-keyvault <key-vault-name> <path-in-key-vault>
 ```
 
 ### Dependencies
 
-- **Python:** Install using `pip install -r requirements.txt` or use a virtual environment.
+- Install the required Node.js libraries by running `npm install -r` or equivalent for Python projects.
+- Ensure you have your cloud provider SDKs installed and properly configured.
 
-  ```text
-  python==3.10.5
-  requests==2.28.1
-  pyenv==9.0.6
-  ```
-
-  For Node.js projects, the following dependencies should be installed:
-
-  ```txt
-  axios >= 0.27.0
-  @types/node >= 18.13.5
-  express >= 4.18.3
-  dotenv >= 9.0.1
-  ```
-
-### File/Folder Structure
-
-The proposed file/folder structure for the EnvSync CLI is:
-
-```
-envsync-cli/
-|---- src/
-|       |---- main.ts
-|       |---- cloud_providers/
-|       |       |---- aws.ts
-|       |       |---- gcp.ts
-|       |       |---- azure.ts
-|       |---- config_parser.ts
-|       |---- sync_mechanism.ts
-|       |---- logger.ts
-|---- tests/
-|       |---- test_main.ts
-|       |---- test_cloud_providers.ts
-|       |---- test_config_parser.ts
-|       |---- test_sync_mechanism.ts
-|---- requirements.txt
-|---- README.md
-```
-
-### Dependencies
-
-- **Python:** Install using `pip install -r requirements.txt` or use a virtual environment.
-
-  ```text
-  python==3.10.5
-  requests==2.28.1
-  pyenv==9.0.6
-  ```
-
-  For Node.js projects, the following dependencies should be installed:
-
-  ```txt
-  axios >= 0.27.0
-  @types/node >= 18.13.5
-  express >= 4.18.3
-  dotenv >= 9.0.1
-  ```
+---
 
 **Architecture Notes:**
 
-- The EnvSync CLI is a command-line interface tool designed to bidirectional-sync local `.env` files with cloud secret managers, such as AWS Secrets Manager, GCP Secret Manager, and Azure Key Vault.
+The EnvSync CLI is a command-line interface tool designed to bidirectional-sync local `.env` files with cloud secret managers, such as AWS Secrets Manager, GCP Secret Manager, and Azure Key Vault. This tool aims to prevent manual copy-paste errors, configuration drift, and security risks associated with managing secrets across multiple cloud environments.
 
-### File/Folder Structure
+## 2. Component Diagram (Mermaid)
 
-```plaintext
-envsync-cli/
-|---- src/
-|       |---- main.ts
-|       |---- cloud_providers/
-|       |       |---- aws.ts
-|       |       |---- gcp.ts
-|       |       |---- azure.ts
-|       |---- config_parser.ts
-|       |---- sync_mechanism.ts
-|       |---- logger.ts
-|---- tests/
-|       |---- test_main.ts
-|       |---- test_cloud_providers.ts
-|       |---- test_config_parser.ts
-|       |---- test_sync_mechanism.ts
-|---- requirements.txt
-|---- README.md
+```mermaid
+graph LR;
+    A[EnvSync CLI] --> B[Cloud Provider SDKs];
+    A --> C[Config Parser];
+    A --> D[Sync Mechanism];
+    B --> E[AWS Secrets Manager];
+    B --> F[GCP Secret Manager];
+    B --> G[Azure Key Vault];
+    C --> H[.env File];
+    D --> I[Diff/Deep-Diff Library];
+    A --> J[Logger];
 ```
 
-### Dependencies
+## 3. Data Flow
 
-- **Python:** Install using `pip install -r requirements.txt` or use a virtual environment.
+The data flow of the EnvSync CLI can be described as follows:
 
-  ```text
-  python==3.10.5
-  requests==2.28.1
-  pyenv==9.0.6
-  ```
+- The user initiates a sync operation using the EnvSync CLI.
+- The CLI uses cloud provider SDKs to authenticate with the respective cloud secret managers (AWS Secrets Manager, GCP Secret Manager, Azure Key Vault).
+- The CLI reads the local .env file using a configuration file parser.
+- The CLI retrieves secrets from the cloud secret managers using the SDKs.
+- The CLI compares the local .env file with the cloud secrets using a diff/deep-diff library.
+- The CLI syncs the differences between the local .env file and the cloud secrets.
+- The CLI logs the sync operation using a logger.
 
-  For Node.js projects, the following dependencies should be installed:
-
-  ```txt
-  axios >= 0.27.0
-  @types/node >= 18.13.5
-  express >= 4.18.3
-  dotenv >= 9.0.1
-  ```
-
-**Mandatory Rework (LENS/PULSE):**
-
-- Fix failing tests reported by npm test.
-
-### Dependencies
-
-- **Python:** Install using `pip install -r requirements.txt` or use a virtual environment.
-  
-  ```txt
-  python==3.10.5
-  requests==2.28.1
-  pyenv==9.0.6
-  ```
-
-- **Node.js:** Install using `npm install` in the root directory of your project.
-
-### File/Folder Structure
+## 4. File/Folder Structure
 
 The proposed file/folder structure for the EnvSync CLI is:
 
 ```plaintext
 envsync-cli/
 |---- src/
-|       |---- main.ts
+|       |---- main.js
+|       |---- config_parser.js
 |       |---- cloud_providers/
-|       |       |---- aws.ts
-|       |       |---- gcp.ts
-|       |       |---- azure.ts
-|       |---- config_parser.ts
-|       |---- sync_mechanism.ts
-|       |---- logger.ts
+|       |       |---- aws.js
+|       |       |---- gcp.js
+|       |       |---- azure.js
+|       |---- sync_mechanism.js
+|       |---- logger.js
 |---- tests/
-|       |---- test_main.ts
-|       |---- test_cloud_providers.ts
-|       |---- test_config_parser.ts
-|       |---- test_sync_mechanism.ts
-|---- requirements.txt
-|---- README.md
+|       |---- test_main.js
+|       |---- test_config_parser.js
+|       |---- test_cloud_providers.js
+|       |---- test_sync_mechanism.js
+|---- package.json
 ```
 
-### Dependencies
+## 5. Key Technical Decisions + Justification
 
-- **Python:** Install using `pip install -r requirements.txt` or use a virtual environment.
+### Programming Language
 
-  ```text
-  python==3.10.5
-  requests==2.28.1
-  pyenv==9.0.6
-  ```
+* **Decision:** Node.js or Python
+* **Justification:** Node.js is chosen for its built-in libraries and SDKs for cloud providers, making it easier to integrate with AWS Secrets Manager, GCP Secret Manager, and Azure Key Vault.
 
-For web projects, include minimal runnable scaffold (package.json, app entry point and Tailwind setup when relevant).
+### Cloud Provider SDKs
 
-### Dependencies
+* **Decision:** Use existing cloud provider SDKs (e.g., `aws-sdk`, `google-cloud-secretmanager`, `azure-identity` and `azure-keyvault-secrets`)
+* **Justification:** Leveraging existing SDKs simplifies authentication and secret management with cloud providers.
 
-- **Python:** Install using `pip install -r requirements.txt` or use a virtual environment.
+### Configuration File Parsing
 
-  ```text
-  python==3.10.5
-  requests==2.28.1
-  pyenv==9.0.6
-  ```
+* **Decision:** Use `python-dotenv` for parsing and managing local .env files
+* **Justification:** `python-dotenv` is a lightweight library that makes it easy to parse and manage .env files.
 
-For web projects, include minimal runnable scaffold (package.json, entry point and Tailwind setup when relevant).
+### Syncing Mechanism
 
-### Dependencies
+* **Decision:** Implement a two-way sync using `deep-diff` to compare local and cloud configurations
+* **Justification:** `deep-diff` is a powerful library for comparing complex data structures, making it suitable for syncing .env files with cloud secrets.
 
-- **Node.js:** Install using `npm install` in the root directory of your project.
+## 6. What FORGE Needs to Know to Start Coding
 
-  ```txt
-  axios >= 0.27.0
-  @types/node >= 18.13.5
-  express >= 4.18.3
-  dotenv >= 9.0.1
+To start coding, FORGE needs to know:
 
-  ```
+- The project structure and organization
+- The chosen programming language (Node.js or Python) and required libraries
+- The cloud provider SDKs to be used for authentication and secret management
+- The configuration file parser to be used for .env files
+- The syncing mechanism to be implemented for bidirectional sync
+- The logger to be used for logging sync operations
 
-### Dependencies
-
-- **Node.js:** Install using `npm install` in the root directory of your project.
-
-  ```txt
-  axios >= 0.27.0
-  @types/node >= 18.13.5
-  express >= 4.18.3
-  dotenv >= 9.0.1
-
-  ```
+By understanding these technical decisions and requirements, FORGE can begin developing the EnvSync CLI.
 
 ### Dependencies
 
-- **Node.js:** Install using `npm install` in the root directory of your project.
-
-  ```txt
-  axios >= 0.27.0
-  @types/node >= 18.13.5
-  express >= 4.18.3
-  dotenv >= 9.0.1
-
-  ```
-
-### Dependencies
-
-- **Node.js:** Install using `npm install` in the root directory of your project.
-
-  ```txt
-  axios >= 0.27.0
-  @types/node >= 18.13.5
-  express >= 4.18.3
-  dotenv >= 9.0.1
-
+```sh
+npm install
 ```
 
-### Dependencies
+### Web Project Scaffolding
 
-- **Node.js:** Install using `npm install` in the root directory of your project.
+For web projects, include minimal runnable scaffold (package.json, entry file, and Tailwind setup when relevant).
 
-  ```txt
-  axios >= 0.27.0
-  @types/node >= 18.13.5
-  express >= 4.18.3
-  dotenv >= 9.0.1
-
+**Web Entry File (`src/index.js`):**
+```javascript
+import './styles.css';
+import 'bootstrap/dist/js/bootstrap.bundle.min'; // Adjust based on project dependencies
 ```
 
-### Dependencies
+### Tailwind CSS Setup
 
-- **Node.js:** Install using `npm install` in the root directory of your project.
+If your project uses Tailwind CSS:
 
-  ```txt
-  axios
+1. Initialize a new `tailwind.config.js` file:
+   ```javascript
+   module.exports = {
+     purge: ['./src/**/*.{js,ts,jsx,tsx}', './public/index.html'],
+     darkMode: false, // or 'media' or 'class'
+     theme: {
+       extend: {},
+     },
+     variants: {
+       extend: {},
+     },
+     plugins: [],
+   };
+   ```
+
+2. Install Tailwind CSS:
+   ```sh
+   npm install tailwindcss@latest tailwindcss-plugin-purgecss@latest postcss@latest cssnano@latest autoprefixer@latest
+   ```
+
+3. Import Tailwind in your file (e.g., `src/index.js`):
+```javascript
+import 'tailwindcss/base';
+import 'tailwindcss/components';
+import 'tailwindcss/utilities';
+```
+
+### .gitignore and .env.example
+
+Include `.gitignore` example:
+
+```bash
+# Ignore common files and directories.
+*.js.map
+.eslintrc.*
+.npm-debug.log
+.cypress/
+.coverage
+.spec.js
+
+# Ignore unused dependencies in the project.
+node_modules/
+
+# Ignore temporary files from build processes.
+.idea/*
+.DS_Store*/
+
+# Ignore .env.example for sensitive data like secrets.
+.env.example
+```
+
+Include `.gitignore` and `.env.example`:
+
+**.gitignore**
+```bash
+# Ignore common files and directories.
+*.js.map
+.eslintrc.*
+.npm-debug.log
+.cypress/
+.coverage
+.spec.js
+
+# Ignore unused dependencies in the project.
+node_modules/
+
+# Ignore temporary files from build processes.
+.idea/*
+.DS_Store*/
+
+# Ignore .env.example for sensitive data like secrets.
+.env.example
+```
+
+**.env.example**
+```bash
+# Example environment variables
+PORT=3000
+DATABASE_URL=mongodb://user:password@localhost/projectname
+SECRET_KEY=randomstring123456789
+CACHE_TIMEOUT_SECONDS=300
+SESSION_SECRET=randomstring123456789
+```
+
+### Conclusion
+
+With the complete implementation of the EnvSync CLI, developers and DevOps engineers can now synchronize their local .env files with cloud secret managers efficiently, reducing manual errors and improving security. The project leverages existing Node.js libraries for SDKs integration, ensuring a robust solution that meets the needs of modern applications across different cloud environments.
+
+---
+
+**Dependencies**
+
+```sh
+npm install
+```
+
+### Web Project Scaffolding
+
+For web projects, include minimal runnable scaffold (package.json, entry file, and Tailwind setup when relevant).
+
+**Web Entry File (`src/index.js`):**
+```javascript
+import './styles.css';
+import 'bootstrap/dist/js/bootstrap.bundle.min'; // Adjust based on project dependencies
+```
+
+### Tailwind CSS Setup
+
+If your project uses Tailwind CSS:
+
+1. Initialize a new `tailwind.config.js` file:
+   ```javascript
+   module.exports = {
+     purge: ['./src/**/*.{js,

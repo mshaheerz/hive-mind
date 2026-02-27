@@ -87,9 +87,10 @@ node run.js --provider groq          # Start autonomous mode on Groq
 node run.js --provider local         # Start autonomous mode on local Ollama
 ```
 The runner checks on a 5-minute interval. It also enforces:
-- capacity gate (`MAX_ACTIVE_PROJECTS=2` prioritized oldest projects)
+- capacity gate (`HIVE_MAX_ACTIVE_PROJECTS`, default `2`, prioritized oldest projects)
 - strict wake for blocked stage owners
 - non-overlapping cycles (next interval skips if previous cycle is still running)
+- per-project run artifacts in `projects/<name>/runs/<runId>/` (`proposal.md`, `tasks.md`, `context.json`, `decision.json`, `handoff.json`, `evidence/*`)
 
 ### 3. Create a Project (Human)
 ```bash
@@ -112,6 +113,15 @@ node hive.js --project my-project-name   # Agents pick it up
 8. **Agents propose improvements** — all go back through APEX
 
 Each project keeps markdown artifacts in `projects/<name>/output/*.md`, but actual runnable code is written into `projects/<name>/workspace/`.
+Each stage execution also writes a run packet under `projects/<name>/runs/` for resumability and audit trails.
+
+### Status schema additions
+`projects/<name>/status.json` now tracks:
+- `stageOwner`, `stageAttempt`
+- `blockedReason`
+- `lensVerdict` + structured `lensActionItems[]`
+- `lastHandoffRunId`
+- `escalationLevel`
 
 ---
 
@@ -218,6 +228,15 @@ MODEL_LENS=openai/gpt-oss-120b
 LLM_PROVIDER=local
 LOCAL_MODEL_FORGE=qwen2.5-coder:3b-instruct
 LOCAL_MODEL_LENS=qwen2.5-coder:3b-instruct
+```
+
+Autonomous governance envs:
+```bash
+HIVE_APPROVAL_MODE=risk_based
+HIVE_ESCALATION_REJECT_THRESHOLD=3
+HIVE_RUNS_RETENTION_DAYS=30
+HIVE_MAX_ACTIVE_PROJECTS=2
+HIVE_STRICT_ORDER_OVERRIDE=false
 ```
 
 ### Quick model probe & fixes

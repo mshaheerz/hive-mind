@@ -1,5 +1,6 @@
 // AgentRoom: typed agent detail view panel component
 'use client';
+import { useMemo } from 'react';
 
 type AgentStatus = 'active' | 'due' | 'resting' | 'idle';
 
@@ -55,15 +56,15 @@ interface SectionProps {
 
 const AGENT_INFO: Record<string, AgentInfo> = {
   ceo:   { color: '#fb923c', emoji: '🧭', model: 'Human strategic control', desc: 'Human CEO bridge. Can issue direct operational orders to APEX.' },
-  apex:  { color: '#f0b429', emoji: '👁',  model: 'Hermes 3 405B',        desc: 'Reviews all proposals. Never biased. Final authority.' },
-  nova:  { color: '#a78bfa', emoji: '💡', model: 'Mistral Small 3.1 24B', desc: 'Generates project ideas autonomously every 60 minutes.' },
-  scout: { color: '#34d399', emoji: '🔍', model: 'Mistral Small 3.1 24B', desc: 'Researches every proposal before it reaches APEX.' },
-  atlas: { color: '#38bdf8', emoji: '🏗', model: 'Llama 3.2 3B',          desc: 'Designs system architecture before any code is written.' },
-  forge: { color: '#f97316', emoji: '⚒', model: 'Llama 3.2 3B',          desc: 'Implements clean, production-ready code with full docs.' },
-  lens:  { color: '#ec4899', emoji: '🔎', model: 'Llama 3.2 3B',          desc: 'Reviews all code. No bad code ships.' },
-  pulse: { color: '#ef4444', emoji: '🧪', model: 'Mistral Small 3.1 24B', desc: 'Tests adversarially — breaks things before users do.' },
-  sage:  { color: '#e2e8f0', emoji: '📖', model: 'Hermes 3 405B',          desc: 'Writes documentation developers actually read.' },
-  echo:  { color: '#60a5fa', emoji: '📡', model: 'Mistral Small 3.1 24B', desc: 'Crafts launch content. Twitter threads, Product Hunt, GitHub.' },
+  apex:  { color: '#f0b429', emoji: '👁',  model: 'runtime model', desc: 'Reviews all proposals. Never biased. Final authority.' },
+  nova:  { color: '#a78bfa', emoji: '💡', model: 'runtime model', desc: 'Generates project ideas autonomously every 60 minutes.' },
+  scout: { color: '#34d399', emoji: '🔍', model: 'runtime model', desc: 'Researches every proposal before it reaches APEX.' },
+  atlas: { color: '#38bdf8', emoji: '🏗', model: 'runtime model', desc: 'Designs system architecture before any code is written.' },
+  forge: { color: '#f97316', emoji: '⚒', model: 'runtime model', desc: 'Implements clean, production-ready code with full docs.' },
+  lens:  { color: '#ec4899', emoji: '🔎', model: 'runtime model', desc: 'Reviews all code. No bad code ships.' },
+  pulse: { color: '#ef4444', emoji: '🧪', model: 'runtime model', desc: 'Tests adversarially — breaks things before users do.' },
+  sage:  { color: '#e2e8f0', emoji: '📖', model: 'runtime model', desc: 'Writes documentation developers actually read.' },
+  echo:  { color: '#60a5fa', emoji: '📡', model: 'runtime model', desc: 'Crafts launch content. Twitter threads, Product Hunt, GitHub.' },
 };
 
 const SCHEDULE: Record<string, number> = {
@@ -114,24 +115,29 @@ export default function AgentRoom({ agentName, anchor, hive, agentStatus, onClos
     active:  '#4ade80', due: '#ffd93d', resting: '#60a5fa', idle: '#7d9ac3',
   };
 
-  const panelWidth = 560;
-  const margin = 12;
-  const vw = typeof window !== 'undefined' ? window.innerWidth : 1280;
-  const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
-  const clampedWidth = Math.min(panelWidth, vw - margin * 2);
-  const placeRight = anchor.x + 20 + clampedWidth <= vw - margin;
-  const desiredLeft = placeRight ? anchor.x + 20 : anchor.x - clampedWidth - 20;
-  const left = Math.max(margin, Math.min(vw - clampedWidth - margin, desiredLeft));
-  const top = Math.max(72, Math.min(vh - 120, anchor.y - 160));
+  const layout = useMemo(() => {
+    const panelWidth = 560;
+    const estimatedHeight = 580;
+    const margin = 12;
+    const vw = typeof window !== 'undefined' ? window.innerWidth : 1280;
+    const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+    const clampedWidth = Math.min(panelWidth, vw - margin * 2);
+    const placeRight = anchor.x + 20 + clampedWidth <= vw - margin;
+    const desiredLeft = placeRight ? anchor.x + 20 : anchor.x - clampedWidth - 20;
+    const left = Math.max(margin, Math.min(vw - clampedWidth - margin, desiredLeft));
+    const desiredTop = anchor.y - estimatedHeight / 2;
+    const top = Math.max(72, Math.min(vh - margin - Math.min(estimatedHeight, vh - 84), desiredTop));
+    return { left, top, clampedWidth, vh, margin };
+  }, [anchor.x, anchor.y]);
 
   return (
     <div
       className="fixed z-50 animate-[fadeSlideUp_0.2s_ease]"
       style={{
-        left,
-        top,
-        width: clampedWidth,
-        maxHeight: vh - top - margin,
+        left: layout.left,
+        top: layout.top,
+        width: layout.clampedWidth,
+        maxHeight: layout.vh - layout.top - layout.margin,
       }}
     >
       <div className="h-full overflow-y-auto bg-gradient-to-br from-[#142d45] to-[#0f1725] rounded-2xl p-8 border" style={{ borderColor: `${info.color}66`, boxShadow: `0 0 60px ${info.color}25, 0 20px 60px rgba(0,0,0,0.9)` }}>

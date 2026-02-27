@@ -18,7 +18,7 @@ export default function TopNav({ running, provider, cycleCount, stats }: TopNavP
 
   return (
     <header className="sticky top-0 z-50 border-b border-(--border-dim) bg-[rgba(15,23,37,0.9)] backdrop-blur-lg">
-      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-4 px-5 py-4 md:px-8 md:py-5 lg:flex-row lg:items-center lg:justify-between">
+      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-5 px-5 py-4 md:px-8 md:py-5 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 items-center gap-4">
           <div className="relative w-12 h-12">
             <div className="w-12 h-12 rounded-full bg-[radial-gradient(circle,#ffd93d_0%,#fb923c_60%,transparent_100%)] shadow-[0_0_30px_rgba(255,217,61,0.8)] animate-[float_3s_ease-in-out_infinite]" />
@@ -33,7 +33,7 @@ export default function TopNav({ running, provider, cycleCount, stats }: TopNavP
           </div>
         </div>
 
-        <div className="grid w-full grid-cols-2 gap-2 md:grid-cols-4 lg:w-auto lg:grid-cols-6 lg:gap-3">
+        <div className="grid w-full grid-cols-2 gap-3 md:grid-cols-3 lg:w-auto lg:grid-cols-6 lg:gap-3">
           <StatusPill running={running} />
           <Stat label="PROVIDER" value={providerLabel} color="var(--nova-color)" />
           <Stat label="CYCLE" value={`#${cycleCount || 0}`} />
