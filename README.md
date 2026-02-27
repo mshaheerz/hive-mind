@@ -189,8 +189,9 @@ Then register it in `skills/index.js`.
   - `groq` via `groq-sdk`
   - `local` via Ollama HTTP API (`/api/chat`)
 - Fallback behavior:
-  - Per-agent default model map per provider
-  - Provider fallback chain on transient/model availability errors
+- Per-agent default model map per provider
+- Provider fallback chain on transient/model availability errors
+- Workspace dependency guard auto-fixes known invalid generated versions (e.g. `@tailwindcss/aspect-ratio` -> `^0.4.2`) before `npm install` during PULSE stage
 - Useful ops commands:
   - `npm run runner:status`
   - `npm run test:openrouter:quick`

@@ -58,6 +58,8 @@ Rules:
 - Prefer readability over cleverness
 - Include runnable project files (not only markdown explanations)
 - Include tests in the generated files (e.g., Vitest/Jest for JS/TS, pytest for Python)
+- Never invent package versions. If unsure, use widely-known stable versions or omit exact pinning.
+- Tailwind plugin rule: if using \`@tailwindcss/aspect-ratio\`, use \`^0.4.2\` (not 2.x).
 
 When writing code, always output:
 1. The complete file(s) with full content
@@ -81,6 +83,7 @@ MANDATORY OUTPUT FORMAT (for automatic file creation):
 - Do not omit paths.
 - Do not provide pseudo-code.
 - End with a short "Dependencies" section.
+- In "Dependencies", include exact package names and safe version ranges only.
 - For web projects, include minimal runnable scaffold (package.json, app entry, and Tailwind setup when relevant).
 - Include .gitignore and .env.example if the project needs environment variables.
 

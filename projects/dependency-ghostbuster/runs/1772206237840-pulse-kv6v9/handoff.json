@@ -1,0 +1,18 @@
+{
+  "fromAgent": "pulse",
+  "toAgent": "forge",
+  "project": "dependency-ghostbuster",
+  "stage": "review",
+  "runId": "1772206237840-pulse-kv6v9",
+  "summary": "npm install failed: npm error code ETARGET | npm error notarget No matching version found for @tailwindcss/aspect-ratio@^2.0.5. | npm error notarget In most cases you or one of your dependencies are requesting | npm error notarget a package version that doesn't exist. | npm error A complete log of this run can be found in: /home/zaigopc/.npm/_logs/2026-02-27T15_31_56_011Z-debug-0.log",
+  "artifacts": [],
+  "requiredActions": [
+    "Fix dependency installation errors (npm install).",
+    "npm error code ETARGET | npm error notarget No matching version found for @tailwindcss/aspect-ratio@^2.0.5. | npm error notarget In most cases you or one of your dependencies are requesting | npm error notarget a package version that doesn't exist. | npm error A complete log of this run can be found in: /home/zaigopc/.npm/_logs/2026-02-27T15_31_56_011Z-debug-0.log"
+  ],
+  "acceptanceChecks": [],
+  "modelInfo": {
+    "provider": "local",
+    "model": "qwen2.5:1.5b-instruct"
+  }
+}

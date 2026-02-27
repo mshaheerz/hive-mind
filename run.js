@@ -476,6 +476,7 @@ function runProjectTests(projectName) {
 
   const pkgJson = path.join(root, 'package.json');
   if (fs.existsSync(pkgJson)) {
+    sanitizeWorkspacePackageJson(root);
     if (!fs.existsSync(path.join(root, 'node_modules'))) {
       const install = spawnSync('npm', ['install', '--no-fund', '--no-audit'], { cwd: root, encoding: 'utf8', timeout: 240000 });
       if (install.status !== 0) {
@@ -522,6 +523,45 @@ function runProjectTests(projectName) {
     actionItems: ['Create runnable tests and declare how to run them (npm test or pytest).'],
     raw: '',
   };
+}
+
+function sanitizeWorkspacePackageJson(workspaceRoot) {
+  const pkgPath = path.join(workspaceRoot, 'package.json');
+  if (!fs.existsSync(pkgPath)) return;
+  let pkg;
+  try {
+    pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+  } catch {
+    return;
+  }
+
+  let changed = false;
+  const fixes = {
+    '@tailwindcss/aspect-ratio': '^0.4.2',
+    '@tailwindcss/line-clamp': '^0.4.4',
+    'dep-graph': '^1.1.0',
+  };
+  const removeIfPresent = ['@types/next'];
+  for (const depKey of ['dependencies', 'devDependencies']) {
+    const deps = pkg[depKey];
+    if (!deps || typeof deps !== 'object') continue;
+    for (const [name, validVersion] of Object.entries(fixes)) {
+      if (typeof deps[name] === 'string' && deps[name] !== validVersion) {
+        deps[name] = validVersion;
+        changed = true;
+      }
+    }
+    for (const name of removeIfPresent) {
+      if (Object.prototype.hasOwnProperty.call(deps, name)) {
+        delete deps[name];
+        changed = true;
+      }
+    }
+  }
+
+  if (changed) {
+    fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
+  }
 }
 
 function safeWorkspacePath(projectName, relPath) {

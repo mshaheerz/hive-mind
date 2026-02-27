@@ -1,7 +1,7 @@
-Summary: npm install failed: npm error code ETARGET | npm error notarget No matching version found for @tailwindcss/aspect-ratio@^2.0.5. | npm error notarget In most cases you or one of your dependencies are requesting | npm error notarget a package version that doesn't exist. | npm error A complete log of this run can be found in: /home/zaigopc/.npm/_logs/2026-02-27T15_05_54_714Z-debug-0.log
+Summary: npm install failed: npm error code ETARGET | npm error notarget No matching version found for @tailwindcss/aspect-ratio@^2.0.5. | npm error notarget In most cases you or one of your dependencies are requesting | npm error notarget a package version that doesn't exist. | npm error A complete log of this run can be found in: /home/zaigopc/.npm/_logs/2026-02-27T15_31_56_011Z-debug-0.log
 
 npm error code ETARGET
 npm error notarget No matching version found for @tailwindcss/aspect-ratio@^2.0.5.
 npm error notarget In most cases you or one of your dependencies are requesting
 npm error notarget a package version that doesn't exist.
-npm error A complete log of this run can be found in: /home/zaigopc/.npm/_logs/2026-02-27T15_05_54_714Z-debug-0.log
+npm error A complete log of this run can be found in: /home/zaigopc/.npm/_logs/2026-02-27T15_31_56_011Z-debug-0.log

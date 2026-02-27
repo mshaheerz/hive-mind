@@ -1,10 +1,10 @@
 {
-  "stage": "review",
+  "stage": "architecture",
   "proposedBy": "nova",
   "approvedBy": "apex",
   "approvalScore": 7.5,
   "approvedAt": "2026-02-26T09:58:37.620Z",
-  "updatedAt": "2026-02-27T15:25:37.288Z",
+  "updatedAt": "2026-02-27T15:32:20.424Z",
   "lensRejected": false,
   "deadlineMissed": true,
   "missedStage": "review",
@@ -48,26 +48,32 @@
     "failed": 0,
     "ranAt": "2026-02-27T15:24:46.427Z"
   },
-  "pulseRejected": false,
+  "pulseRejected": true,
   "pulseApproved": false,
   "pulseAcceptedAt": null,
-  "pulseSummary": null,
-  "pulseActionItems": [],
+  "pulseSummary": "npm install failed: npm error code ETARGET | npm error notarget No matching version found for @tailwindcss/aspect-ratio@^2.0.5. | npm error notarget In most cases you or one of your dependencies are requesting | npm error notarget a package version that doesn't exist. | npm error A complete log of this run can be found in: /home/zaigopc/.npm/_logs/2026-02-27T15_31_56_011Z-debug-0.log",
+  "pulseActionItems": [
+    "Fix dependency installation errors (npm install).",
+    "npm error code ETARGET | npm error notarget No matching version found for @tailwindcss/aspect-ratio@^2.0.5. | npm error notarget In most cases you or one of your dependencies are requesting | npm error notarget a package version that doesn't exist. | npm error A complete log of this run can be found in: /home/zaigopc/.npm/_logs/2026-02-27T15_31_56_011Z-debug-0.log"
+  ],
   "escalationNeeded": false,
   "escalationReason": null,
   "escalatedAt": "2026-02-27T14:11:45.800Z",
-  "pulseReviewedAt": "2026-02-27T15:06:25.525Z",
+  "pulseReviewedAt": "2026-02-27T15:32:20.424Z",
   "generatedTestFiles": [],
   "bootstrapTemplate": "node-cli",
   "bootstrapNotes": [
     "Bootstrap already present."
   ],
-  "stageAttempt": 1,
+  "stageAttempt": 2,
   "lensVerdict": "APPROVED",
-  "blockedReason": null,
+  "blockedReason": {
+    "code": "tests_failed",
+    "message": "npm install failed: npm error code ETARGET | npm error notarget No matching version found for @tailwindcss/aspect-ratio@^2.0.5. | npm error notarget In most cases you or one of your dependencies are requesting | npm error notarget a package version that doesn't exist. | npm error A complete log of this run can be found in: /home/zaigopc/.npm/_logs/2026-02-27T15_31_56_011Z-debug-0.log"
+  },
   "escalationLevel": "none",
-  "lastHandoffRunId": "1772205886429-lens-jtgbf",
-  "stageOwner": "pulse",
+  "lastHandoffRunId": "1772206237840-pulse-kv6v9",
+  "stageOwner": "forge",
   "lensIssueRepeats": {},
   "transitionReason": "agent execution started"
 }

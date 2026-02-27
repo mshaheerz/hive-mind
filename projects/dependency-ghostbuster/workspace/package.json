@@ -16,9 +16,9 @@
     "dynamic imports"
   ],
   "dependencies": {
-    "@tailwindcss/aspect-ratio": "^2.0.5",
+    "@tailwindcss/aspect-ratio": "^0.4.2",
     "@tailwindcss/forms": "^0.5.3",
-    "@tailwindcss/line-clamp": "^0.1.5",
+    "@tailwindcss/line-clamp": "^0.4.4",
     "@tailwindcss/typography": "^0.5.4",
     "next": "^14.0.12",
     "react": "^18.2.0",
@@ -26,10 +26,9 @@
     "eslint": "^8.19.0",
     "jest": "^27.4.3",
     "babel-core": "^6.26.3",
-    "dep-graph": "^5.0.0"
+    "dep-graph": "^1.1.0"
   },
   "devDependencies": {
-    "@types/next": "^14.0.11",
     "@types/react": "^18.0.17",
     "@typescript-eslint/parser": "^5.29.0",
     "@typescript-eslint/eslint-plugin": "^5.30.0"
