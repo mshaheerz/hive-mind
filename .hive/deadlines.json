@@ -14,18 +14,17 @@
     "projectName": "dependency-ghostbuster",
     "stage": "implementation",
     "agent": "forge",
-    "dueAt": "2026-02-27T18:08:56.663Z",
-    "setAt": "2026-02-27T12:08:56.663Z",
-    "status": "complete",
-    "completedAt": "2026-02-27T12:10:53.125Z"
+    "dueAt": "2026-02-27T18:35:02.934Z",
+    "setAt": "2026-02-27T12:35:02.934Z",
+    "status": "active"
   },
   {
     "id": "dependency-ghostbuster::review",
     "projectName": "dependency-ghostbuster",
     "stage": "review",
     "agent": "lens",
-    "dueAt": "2026-02-27T14:10:53.127Z",
-    "setAt": "2026-02-27T12:10:53.127Z",
+    "dueAt": "2026-02-27T14:40:02.884Z",
+    "setAt": "2026-02-27T12:40:02.884Z",
     "status": "active"
   },
   {
@@ -33,10 +32,10 @@
     "projectName": "envsync-cli",
     "stage": "implementation",
     "agent": "forge",
-    "dueAt": "2026-02-27T18:12:20.863Z",
-    "setAt": "2026-02-27T12:12:20.863Z",
+    "dueAt": "2026-02-27T18:45:00.868Z",
+    "setAt": "2026-02-27T12:45:00.868Z",
     "status": "complete",
-    "completedAt": "2026-02-27T12:15:27.285Z"
+    "completedAt": "2026-02-27T12:49:51.635Z"
   },
   {
     "id": "postman-to-sdk::implementation",
@@ -53,9 +52,10 @@
     "projectName": "envsync-cli",
     "stage": "review",
     "agent": "lens",
-    "dueAt": "2026-02-27T14:15:27.287Z",
-    "setAt": "2026-02-27T12:15:27.287Z",
-    "status": "active"
+    "dueAt": "2026-02-27T14:50:00.938Z",
+    "setAt": "2026-02-27T12:50:00.938Z",
+    "status": "complete",
+    "completedAt": "2026-02-27T13:30:27.553Z"
   },
   {
     "id": "postman-to-sdk::review",
@@ -72,10 +72,9 @@
     "projectName": "envsync-cli",
     "stage": "tests",
     "agent": "pulse",
-    "dueAt": "2026-02-27T14:08:36.373Z",
-    "setAt": "2026-02-27T12:08:36.373Z",
-    "status": "complete",
-    "completedAt": "2026-02-27T12:08:56.660Z"
+    "dueAt": "2026-02-27T15:32:20.950Z",
+    "setAt": "2026-02-27T13:32:20.950Z",
+    "status": "active"
   },
   {
     "id": "envsync-cli::docs",
@@ -126,5 +125,14 @@
     "setAt": "2026-02-27T11:42:16.629Z",
     "status": "complete",
     "completedAt": "2026-02-27T11:42:17.845Z"
+  },
+  {
+    "id": "dependency-ghostbuster::tests",
+    "projectName": "dependency-ghostbuster",
+    "stage": "tests",
+    "agent": "pulse",
+    "dueAt": "2026-02-27T15:35:29.380Z",
+    "setAt": "2026-02-27T13:35:29.380Z",
+    "status": "active"
   }
 ]

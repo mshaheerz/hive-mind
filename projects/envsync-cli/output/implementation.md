@@ -1,17 +1,18 @@
-### File: `package.json`
+## File: `package.json`
 
 ```json
 {
   "name": "envsync-cli",
   "version": "1.0.0",
   "description": "Bidirectional sync of local .env files with cloud secret managers",
-  "main": "dist/main.py",
+  "main": "dist/index.js",
   "bin": {
-    "envsync": "dist/main.py"
+    "envsync": "./index.js"
   },
   "scripts": {
-    "build": "pyinstaller --onefile src/main.py",
-    "start": "envsync <arguments>"
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "test": "vitest run --watch=false"
   },
   "keywords": [
     "env",
@@ -25,25 +26,28 @@
   "author": "NOVA",
   "license": "MIT",
   "dependencies": {
-    "@awscdk/aws-secretsmanager": "^1.78.0",
-    "@aws-sdk/client-ssm": "^4.61.0",
-    "@google-cloud/secret-manager": "^4.3.0",
-    "@azure/identity": "^2.9.0",
-    "@azure/keyvault-keys": "^5.1.0",
-    "pycryptodome": "^3.17.0",
-    "argparse": "^1.4.4",
-    "dotenv": "^0.18.0"
+    "@aws-sdk/client-secretsmanager": "^1.204.0",
+    "@aws-sdk/client-ssm": "^4.189.0",
+    "@google-cloud/secret-manager": "^5.3.0",
+    "@azure/identity": "^2.16.0",
+    "@azure/keyvault-secrets": "^7.0.0",
+    "dotenv": "^10.0.0",
+    "deep-diff": "^4.0.2",
+    "argparse": "^2.8.0"
   },
   "devDependencies": {
     "typescript": "^5.2.2",
-    "vite": "^4.1.5",
     "@types/node": "^18.7.13",
-    "@types/dotenv": "^9.0.4"
+    "@types/dotenv": "^9.2.0",
+    "@types/aws-sdk": "^2.476.0",
+    "@types/google-cloud-secretmanager": "^5.0.0",
+    "vitest": "^0.34.0",
+    "ts-node": "^10.8.0"
   }
 }
 ```
 
-### File: `tsconfig.json`
+## File: `tsconfig.json`
 
 ```json
 {
@@ -57,11 +61,11 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/**/*.py", "tests/**/*.ts"]
+  "include": ["src/**/*.ts", "tests/**/*.ts"]
 }
 ```
 
-### File: `vitest.config.ts`
+## File: `vitest.config.ts`
 
 ```ts
 import { defineConfig } from 'vitest/config';
@@ -70,18 +74,18 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    setupFiles: ['./tests/setup.js']
+    setupFiles: ['./setup.js']
   }
 });
 ```
 
-### File: `tests/setup.js`
+## File: `setup.js`
 
 ```js
 // Global test setup if needed
 ```
 
-### File: `.gitignore`
+## File: `.gitignore`
 
 ```
 dist/
@@ -90,7 +94,7 @@ logs/
 *.log
 ```
 
-### File: `.env.example`
+## File: `.env.example`
 
 ```
 # AWS credentials
@@ -106,88 +110,101 @@ AZURE_CLIENT_SECRET=YOUR_AZURE_CLIENT_SECRET
 AZURE_TENANT_ID=YOUR_AZURE_TENANT_ID
 ```
 
-### File: `src/main.py`
+## File: `src/index.ts`
 
-```python
-import os
-import dotenv
-from argparse import ArgumentParser
+```ts
+import 'dotenv/config';
+import { SecretsManagerClient, ClientConfiguration } from '@aws-sdk/client-secretsmanager';
+import { SSMClient } from '@aws-sdk/client-ssm';
+import { AzureKeyVaultSecretsClient } from '@azure/keyvault-secrets';
+import * as argparse from 'argparse';
+import deepDiff from 'deep-diff';
 
-# Load environment variables from .env file
-dotenv.load_dotenv()
+// Define argument parser
+const parser = new argparse.ArgumentParser({
+  description: 'EnvSync CLI - Synchronize local .env files with cloud secret managers',
+});
 
-class CloudProvider:
-    def __init__(self, provider):
-        if provider == 'aws':
-            self.client = aws_client()
-        elif provider == 'gcp':
-            self.client = gcp_client()
-        elif provider == 'azure':
-            self.client = azure_client()
-        else:
-            raise ValueError("Unsupported cloud provider")
+parser.addArgument('--local', {
+  help: 'Path to the local .env file',
+});
 
-class AWSClient:
-    def __init__(self):
-        # Initialize AWS client
-        pass
+parser.addArgument('--remote', {
+  help: 'Type of remote (aws, gcp, azure)',
+});
 
-def aws_client():
-    return AWSClient()
+// Parse arguments
+const args = parser.parseArgs();
 
-class GCPClient:
-    def __init__(self):
-        # Initialize GCP client
-        pass
+async function syncSecrets() {
+  try {
+    const secretsManagerClient = new SecretsManagerClient();
+    const ssmClient = new SSMClient({});
+    let secretValue;
 
-def gcp_client():
-    return GCPClient()
+    switch (args.remote) {
+      case 'aws':
+        // Implement AWS Secrets Manager logic here
+        secretValue = await getAWSSecretValue(secretsManagerClient, args.local);
+        break;
+      case 'gcp':
+        // Implement GCP Secret Manager logic here
+        secretValue = await getGCPSecret(secretssClient, args.local);
+        break;
+      case 'azure':
+        // Implement Azure Key Vault logic here
+        secretValue = await getAzureKeyVaultSecret(args.local);
+        break;
+      default:
+        console.error('Invalid remote type');
+        return;
+    }
 
-class AZUREClient:
-    def __init__(self):
-        # Initialize Azure client
-        pass
+    const localConfig = parseLocalEnv(args.local);
+    const diff = deepDiff(localConfig, secretValue);
 
-def azure_client():
-    return AZUREClient()
+    if (diff.length === 0) {
+      console.log('No changes detected.');
+      return;
+    }
 
-class ConfigParser:
-    def parse_config(self, file_path):
-        # Parse .env file and return config as dictionary
-        with open(file_path, 'r') as f:
-            content = f.read()
-        os.environ.update(content)
-        return os.environ
+    // Implement sync logic here
+    console.log('Syncing changes...');
+  } catch (error) {
+    console.error('Error syncing secrets:', error);
+  }
+}
 
-class SyncMechanism:
-    def sync(self, local_file_path, cloud_provider):
-        # Compare and sync local and cloud configurations
-        pass
+async function getAWSSecretValue(client: SecretsManagerClient, path: string): Promise<string> {
+  // Placeholder for actual AWS Secrets Manager logic
+  return '';
+}
 
-def sync(local_file_path, cloud_provider):
-    config_parser = ConfigParser()
-    local_config = config_parser.parse_config(local_file_path)
-    cloud_client = CloudProvider(cloud_provider)
-    cloud_config = cloud_client.get_secret()
+async function getGCPSecret(client: SSMClient, path: string): Promise<string> {
+  // Placeholder for actual GCP Secret Manager logic
+  return '';
+}
 
-    # Sync logic here
+function parseLocalEnv(path: string) {
+  const env = {};
+  require('dotenv').config({ path });
+  return env;
+}
 
-if __name__ == "__main__":
-    parser = ArgumentParser(description="EnvSync CLI tool")
-    parser.add_argument("--local-file", type=str, required=True,
-                        help="Path to local .env file")
-    parser.add_argument("--cloud-provider", type=str, required=True,
-                        help="Cloud provider (aws, gcp, azure)")
-    args = parser.parse_args()
+async function getAzureKeyVaultSecret(path: string): Promise<any> {
+  // Placeholder for actual Azure Key Vault logic
+  return {};
+}
 
-    sync(args.local_file, args.cloud_provider)
+syncSecrets();
 ```
 
-### Dependencies
+## Dependencies
 
-- `pycryptodome`: for handling encryption and decryption of secrets
-- `argparse`: for parsing command-line arguments
-- `dotenv`: for loading environment variables from .env files
-- `aws-sdk` and `boto3`: for interacting with AWS Secrets Manager
-- `google-cloud-secretmanager`: for interacting with GCP Secret Manager
-- `azure-identity` and `azure-keyvault-secrets`: for interacting with Azure Key Vault
+- `aws-sdk`: AWS SDK for JavaScript, version 2.476.0.
+- `google-cloud-secretmanager`: GCP Client Library, version 5.3.0.
+- `azure-keyvault-secrets`: Azure Key Vault Secrets client library, version 7.0.0.
+- `dotenv`: Library to read and parse .env files, version 10.0.0.
+- `deep-diff`: Library to compare complex data structures, version 4.0.2.
+- `argparse`: Command-line argument parser, version 2.8.0.
+- `ts-node`: TypeScript execution tool, version 10.8.0.

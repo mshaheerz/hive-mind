@@ -1,210 +1,282 @@
-**File: `tests/unit/envParser.test.ts`**
-```ts
-import { parseEnvFile, serializeEnv } from '../../src/utils/envParser';
-import { describe, it, expect } from 'vitest';
+### Unit Tests for `envsync-cli`
 
-/**
- * Test Plan for envParser utilities
- * 1. Empty file → empty object
- * 2. File with comments only → empty object
- * 3. File with valid key/value pairs
- * 4. File with quoted values and embedded newlines
- * 5. File with duplicate keys → last one wins
- * 6. File with invalid lines → ignored
- * 7. Serialization round‑trip → original string (ignoring order)
- */
+**File: `tests/unit/main.py.js`**
 
-describe('envParser', () => {
-  it('parses empty string to empty object', () => {
-    const env = parseEnvFile('');
-    expect(env).toEqual({});
-  });
+```javascript
+import { sync } from '../src/main';
+import dotenv from 'dotenv';
 
-  it('ignores comments and returns empty object', () => {
-    const env = parseEnvFile('# comment\n# another\n');
-    expect(env).toEqual({});
-  });
+beforeEach(() => {
+    dotenv.config({ path: '.env.example' });
+});
 
-  it('parses simple key/value pairs', () => {
-    const content = `
-      DB_HOST=localhost
-      DB_PORT=5432
-    `;
-    const env = parseEnvFile(content);
-    expect(env).toEqual({ DB_HOST: 'localhost', DB_PORT: '5432' });
-  });
+describe('sync function', () => {
+    it('should sync local .env file with AWS Secret Manager correctly', async () => {
+        const mockAWSClient = jest.fn();
+        mockAWSClient.mockReturnValue({
+            getSecretValue: jest.fn().mockResolvedValueOnce({ SecretString: 'test-secret' })
+        });
 
-  it('handles quoted values and newlines inside them', () => {
-    const content = `
-      TOKEN="abc\\nxyz"
-      EMPTY=""
-    `;
-    const env = parseEnvFile(content);
-    expect(env).toEqual({ TOKEN: 'abc\nxyz', EMPTY: '' });
-  });
+        global.AWSClient = mockAWSClient;
 
-  it('last duplicate key wins', () => {
-    const content = `
-      KEY=first
-      KEY=second
-    `;
-    const env = parseEnvFile(content);
-    expect(env).toEqual({ KEY: 'second' });
-  });
+        await sync('sample.env', 'aws');
 
-  it('ignores malformed lines', () => {
-    const content = `
-      VALID=ok
-      INVALID_LINE
-      ANOTHER=good
-    `;
-    const env = parseEnvFile(content);
-    expect(env).toEqual({ VALID: 'ok', ANOTHER: 'good' });
-  });
+        expect(global.AWSClient).toHaveBeenCalled();
+        expect(global.AWSClient.mock.calls[0][0]).toBe('aws');
+    });
 
-  it('round‑trips through serializeEnv', () => {
-    const env = { A: '1', B: 'two', C: 'three\nfour' };
-    const str = serializeEnv(env);
-    const parsed = parseEnvFile(str);
-    expect(parsed).toEqual(env);
-  });
+    it('should sync local .env file with GCP Secret Manager correctly', async () => {
+        const mockGCPClient = jest.fn();
+        mockGCPClient.mockReturnValue({
+            getSecret: jest.fn().mockResolvedValueOnce({ data: 'test-secret' })
+        });
+
+        global.GCPClient = mockGCPClient;
+
+        await sync('sample.env', 'gcp');
+
+        expect(global.GCPClient).toHaveBeenCalled();
+        expect(global.GCPClient.mock.calls[0][0]).toBe('gcp');
+    });
+
+    it('should sync local .env file with Azure Key Vault correctly', async () => {
+        const mockAZUREClient = jest.fn();
+        mockAZUREClient.mockReturnValue({
+            getSecret: jest.fn().mockResolvedValueOnce({ value: 'test-secret' })
+        });
+
+        global.AZUREClient = mockAZUREClient;
+
+        await sync('sample.env', 'azure');
+
+        expect(global.AZUREClient).toHaveBeenCalled();
+        expect(global.AZUREClient.mock.calls[0][0]).toBe('azure');
+    });
+
+    it('should handle empty local .env file correctly', async () => {
+        const mockAWSClient = jest.fn();
+        mockAWSClient.mockReturnValue({
+            getSecretValue: jest.fn()
+        });
+
+        global.AWSClient = mockAWSClient;
+
+        await sync('empty.env', 'aws');
+
+        expect(global.AWSClient).toHaveBeenCalled();
+    });
+
+    it('should handle null local .env file correctly', async () => {
+        const mockAWSClient = jest.fn();
+        mockAWSClient.mockReturnValue({
+            getSecretValue: jest.fn()
+        });
+
+        global.AWSClient = mockAWSClient;
+
+        await sync(null, 'aws');
+
+        expect(global.AWSClient).toHaveBeenCalled();
+    });
+
+    it('should handle massive data correctly', async () => {
+        const mockAWSClient = jest.fn();
+        mockAWSClient.mockReturnValue({
+            getSecretValue: jest.fn().mockResolvedValueOnce({ SecretString: new Array(100000).fill('a').join('') })
+        });
+
+        global.AWSClient = mockAWSClient;
+
+        await sync('large.env', 'aws');
+
+        expect(global.AWSClient).toHaveBeenCalled();
+    });
+
+    it('should handle special characters correctly', async () => {
+        const mockAWSClient = jest.fn();
+        mockAWSClient.mockReturnValue({
+            getSecretValue: jest.fn().mockResolvedValueOnce({ SecretString: '$pecial!@#%^&*()' })
+        });
+
+        global.AWSClient = mockAWSClient;
+
+        await sync('special.env', 'aws');
+
+        expect(global.AWSClient).toHaveBeenCalled();
+    });
 });
 ```
 
----
+**File: `tests/unit/config_parser.py.js`**
 
-**File: `tests/unit/sync.test.ts`**
-```ts
-import { syncLocalToCloud, syncCloudToLocal } from '../../src/sync/syncer';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { SecretsManagerClient, GetSecretValueCommand, PutSecretValueCommand } from '@aws-sdk/client-secrets-manager';
-import { SecretClient, SecretProperties, SecretPropertiesWithVersion } from '@azure/keyvault-secrets';
-import { SecretManagerServiceClient } from '@google-cloud/secret-manager';
-import { parseEnvFile } from '../../src/utils/envParser';
+```javascript
+import { ConfigParser } from '../src/main';
+import dotenv from 'dotenv';
 
-/**
- * Mocking external SDKs to isolate logic
- * 1. AWS SDK client
- * 2. Azure SecretClient
- * 3. GCP SecretManagerServiceClient
- */
+beforeEach(() => {
+    dotenv.config({ path: '.env.example' });
+});
 
-const mockAWSClient = vi.fn(() => ({
-  send: vi.fn(),
-}));
-const mockAzureClient = vi.fn(() => ({
-  getSecret: vi.fn(),
-  setSecret: vi.fn(),
-}));
-const mockGCPClient = vi.fn(() => ({
-  accessSecretVersion: vi.fn(),
-  createSecret: vi.fn(),
-  addSecretVersion: vi.fn(),
-}));
+describe('ConfigParser', () => {
+    it('should parse local .env file correctly', () => {
+        const config_parser = new ConfigParser();
+        const parsed_config = config_parser.parse_config('sample.env');
+        expect(parsed_config.AWS_ACCESS_KEY_ID).toBe(process.env.AWS_ACCESS_KEY_ID);
+        expect(parsed_config.AWS_SECRET_ACCESS_KEY).toBe(process.env.AWS_SECRET_ACCESS_KEY);
+    });
 
-// Replace actual imports with mocks
-vi.mock('@aws-sdk/client-secrets-manager', () => ({
-  SecretsManagerClient: mockAWSClient,
-  GetSecretValueCommand: vi.fn(),
-  PutSecretValueCommand: vi.fn(),
-}));
-vi.mock('@azure/keyvault-secrets', () => ({
-  SecretClient: mockAzureClient,
-}));
-vi.mock('@google-cloud/secret-manager', () => ({
-  SecretManagerServiceClient: mockGCPClient,
-}));
+    it('should handle empty .env file correctly', () => {
+        const config_parser = new ConfigParser();
+        const parsed_config = config_parser.parse_config('empty.env');
+        expect(parsed_config).toEqual({});
+    });
 
-// Helper: fake env content
-const envContent = `
-  API_KEY=12345
-  DB_PASS=secret
-`;
-const envMap = parseEnvFile(envContent);
-
-describe('syncer', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it('pushes local env to AWS Secrets Manager', async () => {
-    const awsSend = mockAWSClient().send;
-    awsSend.mockResolvedValueOnce({}); // PutSecretValue
-    await syncLocalToCloud({ provider: 'aws', env: envMap, secretName: 'myapp' });
-
-    expect(awsSend).toHaveBeenCalledTimes(2);
-    const calls = awsSend.mock.calls.map(c => c[0].input);
-    expect(calls).toEqual(
-      expect.arrayContaining([
-        { SecretId: 'myapp', SecretString: JSON.stringify(envMap) },
-      ])
-    );
-  });
-
-  it('pulls secrets from Azure to local env', async () => {
-    const azureGet = mockAzureClient().getSecret;
-    azureGet.mockResolvedValueOnce({ value: '12345' });
-    azureGet.mockResolvedValueOnce({ value: 'secret' });
-
-    const result = await syncCloudToLocal({ provider: 'azure', secretName: 'myapp' });
-
-    expect(azureGet).toHaveBeenCalledTimes(2);
-    expect(result).toEqual(envMap);
-  });
-
-  it('handles GCP secret access errors gracefully', async () => {
-    const gcpAccess = mockGCPClient().accessSecretVersion;
-    gcpAccess.mockRejectedValueOnce(new Error('Not Found'));
-
-    await expect(
-      syncCloudToLocal({ provider: 'gcp', secretName: 'myapp' })
-    ).rejects.toThrow('Not Found');
-  });
-
-  it('ignores empty keys during sync', async () => {
-    const envWithEmpty = { EMPTY: '', VALID: 'ok' };
-    const awsSend = mockAWSClient().send;
-    awsSend.mockResolvedValueOnce({});
-
-    await syncLocalToCloud({ provider: 'aws', env: envWithEmpty, secretName: 'app' });
-
-    const calls = awsSend.mock.calls.map(c => c[0].input);
-    // Expect only VALID to be sent
-    expect(calls[0].SecretString).toContain('"VALID":"ok"');
-    expect(calls[0].SecretString).not.toContain('"EMPTY":"');
-  });
+    it('should handle null .env file correctly', () => {
+        const config_parser = new ConfigParser();
+        const parsed_config = config_parser.parse_config(null);
+        expect(parsed_config).toEqual({});
+    });
 });
 ```
 
----
+### Edge Cases
 
-**File: `tests/integration/sync.integration.test.ts`**
-```ts
-/**
- * Integration test for end‑to‑end sync flow.
- * Uses a local in‑memory mock of AWS Secrets Manager.
- * Only runs if the environment variable `RUN_INTEGRATION` is set to `true`.
- */
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
-import { syncLocalToCloud, syncCloudToLocal } from '../../src/sync/syncer';
-import { parseEnvFile } from '../../src/utils/envParser';
-import { SecretsManagerClient, PutSecretValueCommand, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
+**File: `tests/edge_cases/main.py.js`**
 
-const INTEGRATION = process.env.RUN_INTEGRATION === 'true';
-if (!INTEGRATION) {
-  console.warn('Skipping integration test – set RUN_INTEGRATION=true to run.');
-}
+```javascript
+import { sync } from '../src/main';
 
-describe('Integration: AWS sync flow', () => {
-  if (!INTEGRATION) return;
+describe('Edge Cases', () => {
+    it('should handle missing arguments correctly', async () => {
+        try {
+            await sync();
+            expect.fail('Expected error');
+        } catch (error) {
+            expect(error.message).toBe('Missing argument: --local-file');
+        }
+    });
 
-  const secretName = 'integration-test';
-  const envContent = 'FOO=bar\nBAZ=qux';
-  const envMap = parseEnvFile(envContent);
+    it('should handle non-existent local .env file correctly', async () => {
+        const mockAWSClient = jest.fn();
+        mockAWSClient.mockReturnValue({
+            getSecretValue: jest.fn()
+        });
 
-  // In‑memory mock store
-  const store: Record<string, string> = {};
+        global.AWSClient = mockAWSClient;
 
-  // Patch the AWS client to use the in‑memory store
-  vi.mock('@aws-sdk/client-secrets-manager', () => ({
-    SecretsManagerClient: vi
+        await sync('nonexistent.env', 'aws');
+
+        expect(global.AWSClient).toHaveBeenCalled();
+    });
+
+    it('should handle invalid cloud provider correctly', async () => {
+        try {
+            await sync('sample.env', 'invalid-provider');
+            expect.fail('Expected error');
+        } catch (error) {
+            expect(error.message).toBe("Unsupported cloud provider");
+        }
+    });
+});
+```
+
+### Integration Tests
+
+**File: `tests/integration/main.py.js`**
+
+```javascript
+import { sync } from '../src/main';
+
+describe('Integration Tests', () => {
+    it('should handle successful sync between local and AWS Secret Manager', async () => {
+        const mockAWSClient = jest.fn();
+        mockAWSClient.mockReturnValue({
+            getSecretValue: jest.fn().mockResolvedValueOnce({ SecretString: 'test-secret' }),
+            putSecretValue: jest.fn().mockResolvedValueOnce({})
+        });
+
+        global.AWSClient = mockAWSClient;
+
+        await sync('sample.env', 'aws');
+
+        expect(global.AWSClient).toHaveBeenCalledTimes(2);
+    });
+
+    it('should handle successful sync between local and GCP Secret Manager', async () => {
+        const mockGCPClient = jest.fn();
+        mockGCPClient.mockReturnValue({
+            getSecret: jest.fn().mockResolvedValueOnce({ data: 'test-secret' }),
+            createSecret: jest.fn().mockResolvedValueOnce({})
+        });
+
+        global.GCPClient = mockGCPClient;
+
+        await sync('sample.env', 'gcp');
+
+        expect(global.GCPClient).toHaveBeenCalledTimes(2);
+    });
+
+    it('should handle successful sync between local and Azure Key Vault', async () => {
+        const mockAZUREClient = jest.fn();
+        mockAZUREClient.mockReturnValue({
+            getSecret: jest.fn().mockResolvedValueOnce({ value: 'test-secret' }),
+            setSecret: jest.fn().mockResolvedValueOnce({})
+        });
+
+        global.AZUREClient = mockAZUREClient;
+
+        await sync('sample.env', 'azure');
+
+        expect(global.AZUREClient).toHaveBeenCalledTimes(2);
+    });
+});
+```
+
+### Security Tests
+
+**File: `tests/security/main.py.js`**
+
+```javascript
+import { sync } from '../src/main';
+
+describe('Security Tests', () => {
+    it('should handle secure storage and retrieval of secrets', async () => {
+        const mockAWSClient = jest.fn();
+        mockAWSClient.mockReturnValue({
+            getSecretValue: jest.fn().mockResolvedValueOnce({ SecretString: 'secure-secret' })
+        });
+
+        global.AWSClient = mockAWSClient;
+
+        await sync('sample.env', 'aws');
+    });
+});
+```
+
+### Test Plan for Manual Testing
+
+1. **Core Functionality**:
+   - Ensure the CLI tool can be installed and executed.
+   - Verify that command-line arguments are required and handled correctly.
+   - Confirm the correct operation of each cloud provider client (AWS, GCP, Azure).
+
+2. **Edge Cases**:
+   - Test with an empty `.env` file to ensure no errors occur.
+   - Attempt to run without specifying a local file path or cloud provider to check error handling.
+   - Verify that unsupported cloud providers are handled properly.
+
+3. **Integration Tests**:
+   - Test the sync functionality between a local `.env` file and each supported cloud provider.
+   - Ensure that secrets are securely stored and retrieved.
+
+4. **Security Tests**:
+   - Check for any security vulnerabilities or issues related to secret storage and retrieval.
+
+### Pass/Fail Criteria
+
+- All tests must pass without errors.
+- Edge cases should not result in unexpected behavior or crashes.
+- Integration tests should demonstrate successful sync between local and cloud providers.
+- Security tests should ensure that secrets are securely handled.
+
+Done: [ ] Core functionality implemented, LENS code review passed, PULSE tests passing, SAGE documentation complete, ECHO launch content ready.

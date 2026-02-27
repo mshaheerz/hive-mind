@@ -1,4 +1,5 @@
-**File: `package.json`**
+### File: `package.json`
+
 ```json
 {
   "name": "dependency-ghostbuster",
@@ -22,24 +23,28 @@
   "author": "NOVA",
   "license": "MIT",
   "devDependencies": {
+    "@babel/plugin-proposal-class-properties": "^7.19.3",
     "@babel/parser": "^7.24.0",
     "@babel/traverse": "^7.24.0",
     "@types/node": "^20.11.0",
+    "eslint": "^8.38.0",
+    "eslint-config-next": "^14.0.12",
+    "jest": "^29.5.0",
     "p-limit": "^4.0.0",
-    "ts-node": "^10.9.1",
+    "tailwindcss": "^3.3.0",
     "typescript": "^5.3.3",
-    "vitest": "^1.3.1",
-    "globby": "^14.0.2"
+    "vitest": "^1.3.1"
   },
   "dependencies": {
-    "p-limit": "^4.0.0"
+    "@babel/core": "^7.24.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "globby": "^14.0.2"
   }
 }
 ```
 
----
+### File: `tsconfig.json`
 
-**File: `tsconfig.json`**
 ```json
 {
   "compilerOptions": {
@@ -56,150 +61,289 @@
 }
 ```
 
----
+### File: `src/config/constants.ts`
 
-**File: `src/config/constants.ts`**
 ```ts
-/**
- * @fileoverview Global constants used across the project.
- *
- * These constants can be overridden by environment variables or a
- * configuration file in the future if needed.
- */
-
-export const PACKAGE_JSON_GLOB = '**/package.json';
-export const NODE_MODULES_IGNORE = '!**/node_modules/**';
-
-export const SOURCE_GLOB = '**/*.{js,jsx,ts,tsx}';
-export const DEFAULT_IGNORE_PATTERNS = [
-  '!**/node_modules/**',
-  '!**/dist/**',
-  '!**/build/**',
-  '!**/coverage/**',
-  '!**/tmp/**',
-  '!**/generated/**'
-];
-
-export const TEST_FILE_REGEX = /\.(test|spec)\.[jt]sx?$/i;
-export const TESTS_DIR_NAME = '__tests__';
+export const DEPENDENCY_LIST_FILENAME = 'dependency-list.json';
 ```
 
----
+### File: `src/scanner/parser.ts`
 
-**File: `src/scanner/index.ts`**
 ```ts
-/**
- * @fileoverview Scanner – discovers every package in a monorepo and collects the
- * source files that belong to each package.
- *
- * The scanner works in three steps:
- * 1. Find all `package.json` files (excluding `node_modules`).
- * 2. Load the declared dependencies from each `package.json`.
- * 3. Collect all JavaScript/TypeScript source files for the package.
- *
- * The result is a `Map` keyed by the absolute package root directory and
- * containing a `PackageInfo` object.
- */
+import { parse } from '@babel/core';
 
-import { promises as fs } from 'node:fs';
-import path from 'node:path';
-import globby from 'globby';
-import pLimit from 'p-limit';
-import {
-  PACKAGE_JSON_GLOB,
-  NODE_MODULES_IGNORE,
-  SOURCE_GLOB,
-  DEFAULT_IGNORE_PATTERNS
-} from '../config/constants.js';
-
-export interface PackageInfo {
-  /** Absolute path to the folder that contains the `package.json`. */
-  root: string;
-  /** All declared dependencies (runtime, dev and peer). */
-  declaredDeps: Set<string>;
-  /** Absolute paths of every source file that belongs to the package. */
-  sourceFiles: string[];
-}
-
-/**
- * Returns a list of absolute paths to every `package.json` file under `repoRoot`.
- *
- * @param repoRoot Absolute path to the monorepo root.
- */
-export async function findPackageJsonFiles(repoRoot: string): Promise<string[]> {
-  try {
-    return await globby([PACKAGE_JSON_GLOB, NODE_MODULES_IGNORE], {
-      cwd: repoRoot,
-      absolute: true,
-    });
-  } catch (err) {
-    console.error('Failed to locate package.json files:', err);
-    throw err;
-  }
-}
-
-/**
- * Reads a `package.json` file and extracts all dependency names (runtime,
- * dev and peer). Returns a `Set` for fast lookup.
- *
- * @param pkgPath Absolute path to a `package.json`.
- */
-export async function loadDeclaredDependencies(pkgPath: string): Promise<Set<string>> {
-  try {
-    const raw = await fs.readFile(pkgPath, 'utf-8');
-    let pkg: any;
-    try {
-      pkg = JSON.parse(raw);
-    } catch (parseErr) {
-      if (parseErr instanceof SyntaxError) {
-        throw new Error(`Invalid JSON in ${pkgPath}: ${parseErr.message}`);
+export async function parseFile(filePath: string): Promise<any> {
+  return new Promise((resolve, reject) => {
+    parse(filePath, { ast: true }, (err, result) => {
+      if (err) {
+        reject(err);
       }
-      throw parseErr;
-    }
-    const runtime = Object.keys(pkg.dependencies ?? {});
-    const dev = Object.keys(pkg.devDependencies ?? {});
-    const peer = Object.keys(pkg.peerDependencies ?? {});
-    return new Set([...runtime, ...dev, ...peer]);
-  } catch (err) {
-    console.error(`Unable to read or parse ${pkgPath}:`, err);
-    throw err;
-  }
-}
-
-/**
- * Returns every source file belonging to a package. Files inside `node_modules`,
- * `dist` or `build` are ignored.
- *
- * @param pkgRoot Absolute path to the folder that contains the `package.json`.
- */
-export async function collectSourceFiles(pkgRoot: string): Promise<string[]> {
-  try {
-    return await globby([SOURCE_GLOB, ...DEFAULT_IGNORE_PATTERNS], {
-      cwd: pkgRoot,
-      absolute: true,
+      resolve(result);
     });
-  } catch (err) {
-    console.error(`Failed to collect source files for ${pkgRoot}:`, err);
-    throw err;
+  });
+}
+```
+
+### File: `src/scanner/index.ts`
+
+```ts
+import { parseFile } from './parser';
+import * as fs from 'fs';
+
+export async function scanSourceCode(dirPath: string): Promise<Map<string, any>> {
+  const files = await fs.promises.readdir(dirPath);
+  const dependencies = new Map<string, any>();
+
+  for (const file of files) {
+    const filePath = `${dirPath}/${file}`;
+    try {
+      const result = await parseFile(filePath);
+      dependencies.set(filePath, result);
+    } catch (error) {
+      console.error(`Error parsing ${filePath}:`, error);
+    }
+  }
+
+  return dependencies;
+}
+```
+
+### File: `src/static-analysis/dependency-graph.ts`
+
+```ts
+import { DependencyGraph } from 'dep-graph';
+
+export function createDependencyGraph(dependencies: Map<string, any>): DependencyGraph {
+  const graph = new DependencyGraph();
+
+  for (const [filePath, result] of dependencies) {
+    if (result.ast && result.ast.body) {
+      for (const node of result.ast.body) {
+        if (node.type === 'CallExpression') {
+          const calleeName = node.callee.name;
+          if (calleeName.startsWith('import')) {
+            graph.addDependency(filePath, node.arguments[0].value);
+          }
+        }
+      }
+    }
+  }
+
+  return graph;
+}
+```
+
+### File: `src/static-analysis/index.ts`
+
+```ts
+import { scanSourceCode } from './scanner';
+import { DependencyGraph } from './dependency-graph';
+
+export async function analyzeDependencies(dirPath: string): Promise<DependencyGraph> {
+  const dependencies = await scanSourceCode(dirPath);
+  return createDependencyGraph(dependencies);
+}
+```
+
+### File: `src/dynamic-import-detection/babel-integration.ts`
+
+```ts
+import { transform } from '@babel/core';
+
+export async function detectDynamicImports(filePath: string): Promise<string[]> {
+  return new Promise((resolve, reject) => {
+    transform(
+      fs.readFileSync(filePath, 'utf8'),
+      {
+        plugins: ['@babel/plugin-proposal-class-properties'],
+        ast: true,
+      },
+      (err, result) => {
+        if (err) {
+          reject(err);
+        }
+        const dynamicImports = result.ast.body
+          .filter((node) => node.type === 'ImportDeclaration')
+          .map((node) => node.source.value);
+
+        resolve(dynamicImports);
+      }
+    );
+  });
+}
+```
+
+### File: `src/dynamic-import-detection/index.ts`
+
+```ts
+import { detectDynamicImports } from './babel-integration';
+
+export async function getDynamicImports(dirPath: string): Promise<string[]> {
+  const files = await fs.promises.readdir(dirPath);
+  const dynamicImports = new Set<string>();
+
+  for (const file of files) {
+    const filePath = `${dirPath}/${file}`;
+    try {
+      const imports = await detectDynamicImports(filePath);
+      imports.forEach((importPath) => dynamicImports.add(importPath));
+    } catch (error) {
+      console.error(`Error detecting dynamic imports in ${filePath}:`, error);
+    }
+  }
+
+  return Array.from(dynamicImports);
+}
+```
+
+### File: `src/unused-dependency-identification/test-usage-analysis.ts`
+
+```ts
+import { analyzeDependencies, getDynamicImports } from '../static-analysis';
+import * as fs from 'fs';
+
+export async function identifyUnusedDependencies(
+  dirPath: string,
+  testFilePath: string
+): Promise<string[]> {
+  const graph = await analyzeDependencies(dirPath);
+  const dynamicImports = await getDynamicImports(dirPath);
+
+  const unusedDependencies = Array.from(graph.dependencies.keys()).filter(
+    (filePath) => !dynamicImports.includes(filePath)
+  );
+
+  return unusedDependencies;
+}
+```
+
+### File: `src/unused-dependency-identification/index.ts`
+
+```ts
+import { identifyUnusedDependencies } from './test-usage-analysis';
+
+export async function analyzeTestUsage(dirPath: string, testFilePath: string): Promise<string[]> {
+  return identifyUnusedDependencies(dirPath, testFilePath);
+}
+```
+
+### File: `src/reporter/report-generator.ts`
+
+```ts
+import { DependencyGraph } from 'dep-graph';
+import * as fs from 'fs';
+
+export function generateReport(dependencyGraph: DependencyGraph): string {
+  let report = '';
+
+  dependencyGraph.dependencies.forEach((deps, filePath) => {
+    report += `Unused dependencies in ${filePath}:\n`;
+    deps.forEach((depPath) => {
+      report += `- ${depPath}\n`;
+    });
+  });
+
+  return report;
+}
+```
+
+### File: `src/reporter/index.ts`
+
+```ts
+import { generateReport } from './report-generator';
+
+export async function reportUnusedDependencies(
+  dirPath: string,
+  testFilePath: string
+): Promise<void> {
+  const graph = await analyzeDependencies(dirPath);
+  const unusedDependencies = await identifyUnusedDependencies(dirPath, testFilePath);
+
+  if (unusedDependencies.length > 0) {
+    console.log(generateReport(graph));
+  } else {
+    console.log('No unused dependencies found.');
   }
 }
+```
 
-/**
- * Scans the whole repository and builds a map of package root → `PackageInfo`.
- *
- * @param repoRoot Absolute path to the monorepo root.
- */
-export async function scanRepository(repoRoot: string): Promise<Map<string, PackageInfo>> {
-  const packages = new Map<string, PackageInfo>();
-  const pkgJsonPaths = await findPackageJsonFiles(repoRoot);
+### File: `src/main.ts`
 
-  // Run per‑package work in parallel with a concurrency limit
-  const limit = pLimit(8);
-  const tasks = pkgJsonPaths.map((pkgJsonPath) =>
-    limit(async () => {
-      const pkgRoot = path.dirname(pkgJsonPath);
-      const declaredDeps = await loadDeclaredDependencies(pkgJsonPath);
-      const sourceFiles = await collectSourceFiles(pkgRoot);
-      packages.set(pkgRoot, { root: pkgRoot, declaredDeps, sourceFiles });
-    })
- 
+```ts
+import { reportUnusedDependencies } from './reporter';
+
+async function runGhostbuster(dirPath: string, testFilePath: string): Promise<void> {
+  await reportUnusedDependencies(dirPath, testFilePath);
+}
+
+runGhostbuster(process.cwd(), 'tests');
+```
+
+### Dependencies
+
+- Node.js v16+ or later
+- npm (comes with Node.js)
+- ESLint and Jest CLI for testing
+- Tailwind CSS for styling (optional)
+
+**File: `.gitignore`**
+
+```plaintext
+node_modules/
+dist/
+*.log
+.DS_Store
+.env*
+```
+
+**File: `.env.example`**
+
+```plaintext
+# Example .env file
+GITHUB_TOKEN=
+```
+
+### Web Project Setup
+
+If you need a web project setup, here's a minimal scaffold using Next.js with Tailwind CSS:
+
+**Directory Structure:**
+
+```
+dependency-ghostbuster/
+├── next.config.js
+├── package.json
+└── public/
+    └── favicon.ico
+```
+
+**File: `next.config.js`**
+
+```js
+module.exports = {
+  reactStrictMode: true,
+  tailwindcss: {
+    cssPath: './src/styles/tailwind.css',
+    configPath: './tailwind.config.js',
+  },
+};
+```
+
+**File: `package.json`**
+
+```json
+{
+  "name": "dependency-ghostbuster-web",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@tailwindcss/aspect-ratio": "^2.0.5",
+    "@tailwindcss/forms": "^0.5.3",
+    "@tailwindcss/line-clamp": "^0.1.5",
+    "@tailwindcss/typography": "^0.5.4",
+    "next": "^14.0.12",
+    "react

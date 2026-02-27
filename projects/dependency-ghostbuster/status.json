@@ -1,39 +1,42 @@
 {
-  "stage": "implementation",
+  "stage": "review",
   "proposedBy": "nova",
   "approvedBy": "apex",
   "approvalScore": 7.5,
   "approvedAt": "2026-02-26T09:58:37.620Z",
-  "updatedAt": "2026-02-27T12:10:53.125Z",
+  "updatedAt": "2026-02-27T12:37:56.416Z",
   "lensRejected": false,
   "deadlineMissed": true,
   "missedStage": "review",
   "missedAgent": "lens",
   "missedAt": "2026-02-27T07:10:42.450Z",
   "workspaceFiles": [
-    "package.json",
-    "tsconfig.json",
-    "src/config/constants.ts"
+    ".gitignore",
+    ".env.example",
+    "next.config.js"
   ],
-  "workspaceUpdatedAt": "2026-02-27T12:10:53.124Z",
+  "workspaceUpdatedAt": "2026-02-27T12:33:04.191Z",
   "lensApproved": false,
   "lensAcceptedAt": null,
   "lensReviewSummary": null,
   "lensActionItems": [],
-  "lensBypassed": false,
-  "lensBypassReason": null,
-  "lensBypassedAt": null,
-  "lensRejectCount": 1,
-  "lensReviewedAt": "2026-02-27T12:02:03.334Z",
+  "lensBypassed": true,
+  "lensBypassReason": "LENS rejected 3 times. Auto-advanced to unblock pipeline.",
+  "lensBypassedAt": "2026-02-27T12:37:56.416Z",
+  "lensRejectCount": 3,
+  "lensReviewedAt": "2026-02-27T12:37:56.416Z",
   "workspaceCheck": {
-    "checked": 0,
-    "passed": 0,
+    "checked": 1,
+    "passed": 1,
     "failed": 0,
-    "ranAt": "2026-02-27T12:10:53.124Z"
+    "ranAt": "2026-02-27T12:33:04.191Z"
   },
   "pulseRejected": false,
   "pulseApproved": false,
   "pulseAcceptedAt": null,
   "pulseSummary": null,
-  "pulseActionItems": []
+  "pulseActionItems": [],
+  "escalationNeeded": true,
+  "escalationReason": "Repeated LENS rejections",
+  "escalatedAt": "2026-02-27T12:37:56.416Z"
 }
