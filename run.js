@@ -28,6 +28,7 @@ const {
 
 const PROJECTS_DIR = path.join(__dirname, 'projects');
 const QUEUE_FILE   = path.join(__dirname, '.hive', 'queue.json');
+const CEO_BRIDGE_FILE = path.join(__dirname, '.hive', 'ceo-bridge.json');
 const RUNNER_ARGS = process.argv.slice(2);
 const MAX_ACTIVE_PROJECTS = 2;
 const RUNNER_LOCK_FILE = path.join(__dirname, '.hive', 'runner.lock.json');
@@ -91,6 +92,26 @@ const log = (agent, msg, type = 'info') => {
 function loadQueue() {
   if (!fs.existsSync(QUEUE_FILE)) return [];
   try { return JSON.parse(fs.readFileSync(QUEUE_FILE, 'utf8')); } catch { return []; }
+}
+
+function loadCeoBridge() {
+  if (!fs.existsSync(CEO_BRIDGE_FILE)) return { messages: [] };
+  try {
+    const parsed = JSON.parse(fs.readFileSync(CEO_BRIDGE_FILE, 'utf8'));
+    if (!Array.isArray(parsed.messages)) return { messages: [] };
+    return parsed;
+  } catch {
+    return { messages: [] };
+  }
+}
+
+function saveCeoBridge(data) {
+  fs.mkdirSync(path.dirname(CEO_BRIDGE_FILE), { recursive: true });
+  const payload = {
+    messages: Array.isArray(data?.messages) ? data.messages : [],
+    updatedAt: new Date().toISOString(),
+  };
+  fs.writeFileSync(CEO_BRIDGE_FILE, JSON.stringify(payload, null, 2));
 }
 
 function saveQueue(q) {
@@ -161,6 +182,28 @@ function writeOutput(projectName, file, content) {
   const dir = path.join(PROJECTS_DIR, projectName, 'output');
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, file), content);
+}
+
+function summarizeLensReview(text = '') {
+  const raw = String(text || '').replace(/\r/g, '');
+  const lines = raw.split('\n').map((l) => l.trim()).filter(Boolean);
+  const picked = [];
+
+  const verdict = lines.find((l) => /verdict\s*:/i.test(l));
+  if (verdict) picked.push(verdict);
+
+  const critical = lines.filter((l) => /critical|must fix|security|needs_changes|rejected/i.test(l));
+  for (const line of critical) {
+    if (picked.length >= 4) break;
+    if (!picked.includes(line)) picked.push(line);
+  }
+
+  if (!picked.length) {
+    const first = lines.slice(0, 2).join(' ');
+    return first.slice(0, 260) || 'LENS requested changes before merge.';
+  }
+
+  return picked.join(' | ').slice(0, 520);
 }
 
 function isProcessAlive(pid) {
@@ -262,10 +305,20 @@ class AutonomousRunner {
       await this.cycle();
     }, CHECK_INTERVAL_MS);
 
+    // CEO bridge is processed more frequently than full cycles for faster replies.
+    this.bridgeIntervalId = setInterval(async () => {
+      try {
+        await this.processCeoBridge();
+      } catch (err) {
+        log('system', `CEO bridge error: ${err.message}`);
+      }
+    }, 10 * 1000);
+
     // Graceful shutdown
     process.on('SIGINT', () => {
       log('system', 'Shutting down gracefully...');
       clearInterval(this.intervalId);
+      clearInterval(this.bridgeIntervalId);
       this.state.state.running = false;
       this.state.save();
       releaseRunnerLock();
@@ -328,6 +381,98 @@ class AutonomousRunner {
     }
   }
 
+  _mentionedAgents(text = '') {
+    const msg = String(text || '').toLowerCase();
+    return Object.keys(AGENT_SCHEDULE).filter((name) => msg.includes(name));
+  }
+
+  _agentOpsSummary(agent) {
+    const last = this.state.state.agentLastRun?.[agent];
+    const cycle = this.state.getCycleMinutes(agent);
+    const due = this.state.isAgentDue(agent);
+    const minsSince = last ? Math.floor((Date.now() - new Date(last).getTime()) / 60000) : null;
+    const wait = minsSince === null ? 0 : Math.max(0, cycle - minsSince);
+
+    const stageOwners = {
+      approved: 'scout',
+      research: 'atlas',
+      architecture: 'forge',
+      implementation: 'lens',
+      review: 'pulse',
+      tests: 'sage',
+      docs: 'echo',
+    };
+    const assigned = getActiveProjectsWithStatus()
+      .filter(({ status }) => stageOwners[status.stage] === agent)
+      .map(({ name, status }) => `${name}:${status.stage}`);
+
+    return `${agent.toUpperCase()} status=${due ? 'DUE' : 'REST'} cycle=${cycle}m last=${minsSince === null ? 'never' : `${minsSince}m ago`} next=${wait}m assignments=${assigned.length ? assigned.join(', ') : 'none'}`;
+  }
+
+  async processCeoBridge() {
+    const bridge = loadCeoBridge();
+    const pending = bridge.messages.filter((m) => m?.from === 'ceo' && !m.handledAt);
+    if (!pending.length) return;
+
+    for (const msg of pending) {
+      const text = String(msg.message || '');
+      const lower = text.toLowerCase();
+      const mentioned = this._mentionedAgents(text);
+      const strictOrder =
+        lower.includes('strict') ||
+        lower.includes('stop resting') ||
+        lower.includes('wake') ||
+        lower.includes('immediate');
+      const asksWhy = lower.includes('why') || lower.includes('status') || lower.includes('not working');
+
+      const responseParts = [];
+
+      if (strictOrder && mentioned.length) {
+        for (const agent of mentioned) {
+          delete this.state.state.agentLastRun[agent];
+        }
+        this.state.save();
+        responseParts.push(`Strict order accepted. Forced wake: ${mentioned.map((a) => a.toUpperCase()).join(', ')}.`);
+      }
+
+      if (asksWhy) {
+        const targets = mentioned.length ? mentioned : ['apex', 'forge'];
+        responseParts.push(...targets.map((agent) => this._agentOpsSummary(agent)));
+      }
+
+      if (!responseParts.length) {
+        try {
+          const convo = await this.agents.apex.think(
+            `You are speaking directly to the HUMAN CEO in a private bridge.
+Respond naturally and briefly (2-5 lines), with operational clarity.
+Do not ask for approval. You remain in full control of execution.
+
+CEO message:
+${text}`
+          );
+          responseParts.push(String(convo || '').trim() || 'Acknowledged. I am monitoring execution and will enforce discipline.');
+        } catch (err) {
+          responseParts.push('Acknowledged. I am monitoring execution and will enforce discipline.');
+        }
+      }
+
+      const reply = {
+        id: `apex_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        from: 'apex',
+        message: responseParts.join('\n'),
+        at: new Date().toISOString(),
+        inReplyTo: msg.id || null,
+      };
+
+      msg.handledAt = new Date().toISOString();
+      msg.handledBy = 'apex';
+      bridge.messages.push(reply);
+      log('apex', `CEO bridge: processed command "${text.slice(0, 90)}"`);
+    }
+
+    saveCeoBridge(bridge);
+  }
+
   // ─── One full cycle ─────────────────────────────────────────
 
   async cycle() {
@@ -347,6 +492,9 @@ class AutonomousRunner {
     }
 
     try {
+      // 0. CEO -> APEX bridge commands
+      await this.processCeoBridge();
+
       const activeProjects = getActiveProjectsWithStatus();
       const capacityFull = activeProjects.length >= MAX_ACTIVE_PROJECTS;
       if (capacityFull) {
@@ -728,7 +876,7 @@ ${decision.reasoning}
         const cycleMinutes = this.state.getCycleMinutes(stageInfo.agentKey);
         const minutesSince = last ? (Date.now() - new Date(last).getTime()) / 60000 : cycleMinutes;
         const minsLeft = Math.max(0, Math.ceil(cycleMinutes - minutesSince));
-        blocked.push({ project: name, stage, agent: stageInfo.agentKey, minsLeft });
+        blocked.push({ project: name, stage: status.stage, agent: stageInfo.agentKey, minsLeft });
         continue;
       }
 
@@ -784,8 +932,15 @@ ${decision.reasoning}
 
           // Check if LENS approved
           if (output.toLowerCase().includes('needs_changes') || output.toLowerCase().includes('rejected')) {
+            const lensSummary = summarizeLensReview(output);
             log('lens', `⚠ Code issues found in "${projectName}". Sending back to FORGE.`);
-            setProjectStatus(projectName, { stage: 'architecture', lensRejected: true });
+            log('lens', `   Issues: ${lensSummary}`);
+            setProjectStatus(projectName, {
+              stage: 'architecture',
+              lensRejected: true,
+              lensReviewSummary: lensSummary,
+              lensReviewedAt: new Date().toISOString(),
+            });
             this.deadlines.complete(projectName, stageInfo.next);
             return { worked: true, success: true };
           }

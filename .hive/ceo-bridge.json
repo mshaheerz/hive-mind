@@ -1,0 +1,140 @@
+{
+  "messages": [
+    {
+      "id": "ceo_1772183042765_cvtir",
+      "from": "ceo",
+      "message": "hei operator",
+      "at": "2026-02-27T09:04:02.765Z",
+      "handledAt": "2026-02-27T09:07:40.960Z",
+      "handledBy": "apex"
+    },
+    {
+      "id": "ceo_1772183059640_9r0tp",
+      "from": "ceo",
+      "message": "strict wake forge lens",
+      "at": "2026-02-27T09:04:19.640Z",
+      "handledAt": "2026-02-27T09:07:40.960Z",
+      "handledBy": "apex"
+    },
+    {
+      "id": "ceo_1772183141578_x7ca9",
+      "from": "ceo",
+      "message": "why forge not working",
+      "at": "2026-02-27T09:05:41.578Z",
+      "handledAt": "2026-02-27T09:07:40.961Z",
+      "handledBy": "apex"
+    },
+    {
+      "id": "apex_1772183260960_r1tn8",
+      "from": "apex",
+      "message": "Order received. APEX retains full execution control. Use: \"strict wake forge\" or \"why forge not working\".",
+      "at": "2026-02-27T09:07:40.960Z",
+      "inReplyTo": "ceo_1772183042765_cvtir"
+    },
+    {
+      "id": "apex_1772183260960_cx3pe",
+      "from": "apex",
+      "message": "Strict order accepted. Forced wake: FORGE, LENS.",
+      "at": "2026-02-27T09:07:40.960Z",
+      "inReplyTo": "ceo_1772183059640_9r0tp"
+    },
+    {
+      "id": "apex_1772183260961_u603w",
+      "from": "apex",
+      "message": "FORGE status=DUE cycle=120m last=never next=0m assignments=dependency-ghostbuster:architecture, envsync-cli:architecture, git-profile-switcher:architecture, pixel-pulse:architecture, postman-to-sdk:architecture, secret-scout:architecture",
+      "at": "2026-02-27T09:07:40.961Z",
+      "inReplyTo": "ceo_1772183141578_x7ca9"
+    },
+    {
+      "id": "ceo_1772183268479_test",
+      "from": "ceo",
+      "message": "why forge not working",
+      "at": "2026-02-27T09:07:48.479Z",
+      "handledAt": "2026-02-27T09:07:50.971Z",
+      "handledBy": "apex"
+    },
+    {
+      "id": "apex_1772183270971_27ond",
+      "from": "apex",
+      "message": "FORGE status=DUE cycle=120m last=never next=0m assignments=dependency-ghostbuster:architecture, envsync-cli:architecture, git-profile-switcher:architecture, pixel-pulse:architecture, postman-to-sdk:architecture, secret-scout:architecture",
+      "at": "2026-02-27T09:07:50.971Z",
+      "inReplyTo": "ceo_1772183268479_test"
+    },
+    {
+      "id": "ceo_1772183299950_e2vlh",
+      "from": "ceo",
+      "message": "thats good keep going",
+      "at": "2026-02-27T09:08:19.950Z",
+      "handledAt": "2026-02-27T09:08:21.055Z",
+      "handledBy": "apex"
+    },
+    {
+      "id": "apex_1772183301055_dmaqf",
+      "from": "apex",
+      "message": "Order received. APEX retains full execution control. Use: \"strict wake forge\" or \"why forge not working\".",
+      "at": "2026-02-27T09:08:21.055Z",
+      "inReplyTo": "ceo_1772183299950_e2vlh"
+    },
+    {
+      "id": "ceo_1772183363994_a2ppr",
+      "from": "ceo",
+      "message": "strict wake forge",
+      "at": "2026-02-27T09:09:23.994Z",
+      "handledAt": "2026-02-27T09:09:31.146Z",
+      "handledBy": "apex"
+    },
+    {
+      "id": "apex_1772183371146_wrzd4",
+      "from": "apex",
+      "message": "Strict order accepted. Forced wake: FORGE.",
+      "at": "2026-02-27T09:09:31.146Z",
+      "inReplyTo": "ceo_1772183363994_a2ppr"
+    },
+    {
+      "id": "ceo_1772183432976_chat",
+      "from": "ceo",
+      "message": "apex, give me quick summary of what is blocked and what you will do next",
+      "at": "2026-02-27T09:10:32.976Z",
+      "handledAt": "2026-02-27T09:10:50.012Z",
+      "handledBy": "apex"
+    },
+    {
+      "id": "apex_1772183450012_2gyge",
+      "from": "apex",
+      "message": "We’re blocked on three project proposals awaiting my feasibility, scope, risk, and value evaluation. I’ll prioritize the oldest, run the structured assessment, and issue decisions to clear those bottlenecks. Next, I’ll communicate the outcomes and move the approved work into execution.",
+      "at": "2026-02-27T09:10:50.012Z",
+      "inReplyTo": "ceo_1772183432976_chat"
+    },
+    {
+      "id": "ceo_1772183579473_9tbsc",
+      "from": "ceo",
+      "message": "thats good",
+      "at": "2026-02-27T09:12:59.473Z",
+      "handledAt": "2026-02-27T09:13:06.200Z",
+      "handledBy": "apex"
+    },
+    {
+      "id": "apex_1772183586200_iz69r",
+      "from": "apex",
+      "message": "Acknowledged, CEO. I’ll keep evaluations strict, scores transparent, and decisions decisive. Expect concise status updates on each proposal as we move forward.",
+      "at": "2026-02-27T09:13:06.200Z",
+      "inReplyTo": "ceo_1772183579473_9tbsc"
+    },
+    {
+      "id": "ceo_1772183824122_lnpcf",
+      "from": "ceo",
+      "message": "strict wake forge lens",
+      "at": "2026-02-27T09:17:04.122Z",
+      "handledAt": "2026-02-27T09:17:06.265Z",
+      "handledBy": "apex"
+    },
+    {
+      "id": "apex_1772183826265_an1oy",
+      "from": "apex",
+      "message": "Strict order accepted. Forced wake: FORGE, LENS.",
+      "at": "2026-02-27T09:17:06.265Z",
+      "inReplyTo": "ceo_1772183824122_lnpcf"
+    }
+  ],
+  "updatedAt": "2026-02-27T09:17:06.266Z"
+}

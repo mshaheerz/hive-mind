@@ -53,6 +53,7 @@ interface SectionProps {
 }
 
 const AGENT_INFO: Record<string, AgentInfo> = {
+  ceo:   { color: '#fb923c', emoji: '🧭', model: 'Human strategic control', desc: 'Human CEO bridge. Can issue direct operational orders to APEX.' },
   apex:  { color: '#f0b429', emoji: '👁',  model: 'Hermes 3 405B',        desc: 'Reviews all proposals. Never biased. Final authority.' },
   nova:  { color: '#a78bfa', emoji: '💡', model: 'Mistral Small 3.1 24B', desc: 'Generates project ideas autonomously every 60 minutes.' },
   scout: { color: '#34d399', emoji: '🔍', model: 'Mistral Small 3.1 24B', desc: 'Researches every proposal before it reaches APEX.' },
@@ -65,7 +66,7 @@ const AGENT_INFO: Record<string, AgentInfo> = {
 };
 
 const SCHEDULE: Record<string, number> = {
-  nova: 60, scout: 45, apex: 15, atlas: 90,
+  ceo: 15, nova: 60, scout: 45, apex: 15, atlas: 90,
   forge: 120, lens: 60, pulse: 60, sage: 90, echo: 120,
 };
 
@@ -80,7 +81,7 @@ function timeSince(iso?: string | number | Date | null): string {
 }
 
 export default function AgentRoom({ agentName, anchor, hive, agentStatus, onClose }: AgentRoomProps) {
-  const info   = AGENT_INFO[agentName];
+  const info   = AGENT_INFO[agentName] || { color: '#7d9ac3', emoji: '•', model: 'Unknown', desc: 'No profile available.' };
   const status = agentStatus(agentName);
   const last   = hive?.state?.agentLastRun?.[agentName];
   const dynamic = Number(hive?.state?.agentCadenceMinutes?.[agentName]);

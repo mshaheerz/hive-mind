@@ -42,6 +42,7 @@ interface RoomProps {
 
 const AGENTS: Agent[] = [
   { key: 'apex',  label: 'APEX',  role: 'Operations Head', emoji: '👁',  color: '#f0b429', x: 50,  y: 50,  size: 90, isHead: true },
+  { key: 'ceo',   label: 'CEO',   role: 'Human Executive', emoji: '🧭', color: '#fb923c', x: 50,  y: 8,   size: 62 },
   { key: 'nova',  label: 'NOVA',  role: 'Innovation Scout', emoji: '💡', color: '#a78bfa', x: 20,  y: 20,  size: 70 },
   { key: 'scout', label: 'SCOUT', role: 'Researcher',        emoji: '🔍', color: '#34d399', x: 75,  y: 18,  size: 70 },
   { key: 'atlas', label: 'ATLAS', role: 'Architect',          emoji: '🏗', color: '#38bdf8', x: 12,  y: 55,  size: 65 },
@@ -54,6 +55,7 @@ const AGENTS: Agent[] = [
 
 // Which agents communicate with APEX
 const COMM_LINKS: CommLink[] = [
+  ['ceo', 'apex'],
   ['nova', 'apex'], ['scout', 'apex'], ['apex', 'atlas'],
   ['atlas', 'forge'], ['forge', 'lens'], ['lens', 'apex'],
   ['lens', 'pulse'], ['pulse', 'sage'], ['sage', 'echo'],
@@ -142,7 +144,7 @@ export default function SpaceStation({ hive, agentStatus, selected, setSelected,
         </div>
 
         {AGENTS.map(agent => {
-          const status = agentStatus(agent.key);
+          const status = agent.key === 'ceo' ? 'active' : agentStatus(agent.key);
           const isSelected = selected === agent.key;
 
           return (

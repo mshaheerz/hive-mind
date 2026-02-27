@@ -18,7 +18,7 @@ function listRunnerPids() {
         if (!m) return null;
         return { pid: Number(m[1]), cmd: m[2] };
       })
-      .filter((row) => row && /node(\s+|.*\/)run\.js(\s|$)/.test(row.cmd));
+      .filter((row) => row && /^node(\s+|.*\/)run\.js(\s|$)/.test(row.cmd));
   } catch {
     return [];
   }

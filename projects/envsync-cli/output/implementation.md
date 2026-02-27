@@ -1,236 +1,262 @@
-**Implementation Overview**
-
-The EnvSync CLI is written in **Python 3.11** and follows the folder layout described in the brief.  
-Key design decisions:
-
-| Decision | Reason |
-|----------|--------|
-| **`argparse` CLI** | Simple, no extra dependencies. |
-| **Provider classes (`AwsProvider`, `GcpProvider`, `AzureProvider`)** | Encapsulate all SDK‑specific logic, making the sync core provider‑agnostic. |
-| **`python‑dotenv`** | Reads and writes `.env` files as plain dictionaries. |
-| **`deepdiff`** | Gives a clear diff of two dicts (local vs cloud). |
-| **Built‑in `logging`** | Configured once in `logger.py`; all modules import the same logger. |
-| **Constants module** (`src/constants.py`) | No magic numbers/strings – everything is named. |
-| **Error handling** | Every async‑like SDK call (network I/O) is wrapped in `try/except` and re‑raised as a custom `EnvSyncError`. |
-| **Bidirectional sync** | By default cloud values win on conflict; the user can choose `--direction local-to-cloud` or `--direction cloud-to-local`. |
-| **Docstrings** | Every public function/class has a full JSDoc‑style comment (Python triple‑quoted docstring) as required. |
-
-Below are all source files, the test‑stub folder is omitted for brevity but can be added later.
-
----
-
-## 1️⃣ `src/constants.py`
-
+**File: `src/logger.py`**
 ```python
-"""
-constants.py
-------------
-Central place for all string literals, default values and exit codes.
-"""
-
-# CLI defaults
-DEFAULT_ENV_PATH = ".env"
-DEFAULT_CLOUD = "aws"               # one of: aws, gcp, azure
-DEFAULT_DIRECTION = "bidirectional"  # one of: bidirectional, local-to-cloud, cloud-to-local
-
-# Exit codes
-EXIT_SUCCESS = 0
-EXIT_FAILURE = 1
-
-# Provider identifiers
-PROVIDER_AWS = "aws"
-PROVIDER_GCP = "gcp"
-PROVIDER_AZURE = "azure"
-
-# Logging
-LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-```
-
----
-
-## 2️⃣ `src/logger.py`
-
-```python
+#!/usr/bin/env python3
 """
 logger.py
 ---------
-Configures a single, reusable logger for the whole application.
+
+Centralised logger configuration for the EnvSync CLI.  All modules import
+`get_logger()` to obtain a pre‑configured ``logging.Logger`` instance that
+writes to stdout with a consistent format.
 """
 
 import logging
-from .constants import LOG_FORMAT
+import sys
+from typing import Final
+
+# --------------------------------------------------------------------------- #
+# Named constants – avoid magic numbers / strings throughout the code base
+# --------------------------------------------------------------------------- #
+_LOG_FORMAT: Final = "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
+_LOG_LEVEL: Final = logging.INFO
+
 
 def get_logger(name: str = "envsync") -> logging.Logger:
     """
-    Returns a configured logger instance.
-    
-    Args:
-        name: Name of the logger (defaults to "envsync").
-    
-    Returns:
-        logging.Logger: Configured logger.
+    Create (or retrieve) a logger with a standard configuration.
+
+    Parameters
+    ----------
+    name: str
+        Name of the logger.  Child modules typically pass ``__name__``.
+
+    Returns
+    -------
+    logging.Logger
+        Configured logger instance.
     """
     logger = logging.getLogger(name)
-    if not logger.handlers:  # Prevent duplicate handlers on re‑import
-        logger.setLevel(logging.INFO)
-        handler = logging.StreamHandler()
-        handler.setFormatter(logging.Formatter(LOG_FORMAT))
-        logger.addHandler(handler)
+
+    # Prevent adding multiple handlers if `get_logger` is called repeatedly
+    if logger.handlers:
+        return logger
+
+    logger.setLevel(_LOG_LEVEL)
+
+    handler = logging.StreamHandler(stream=sys.stdout)
+    handler.setLevel(_LOG_LEVEL)
+    formatter = logging.Formatter(_LOG_FORMAT)
+    handler.setFormatter(formatter)
+
+    logger.addHandler(handler)
+    logger.propagate = False
     return logger
 ```
 
 ---
 
-## 3️⃣ `src/config_parser.py`
-
+**File: `src/config_parser.py`**
 ```python
+#!/usr/bin/env python3
 """
 config_parser.py
 ----------------
-Utilities for reading and writing .env files using python‑dotenv.
+
+Utilities for reading and writing ``.env`` files using ``python-dotenv``.
+All values are returned as strings because environment variables are
+string‑based.
 """
 
 import os
-from typing import Dict
+from pathlib import Path
+from typing import Dict, Final
+
 from dotenv import dotenv_values, set_key
 from .logger import get_logger
 
-logger = get_logger(__name__)
+LOGGER = get_logger(__name__)
 
-def load_env_file(path: str = ".env") -> Dict[str, str]:
-    """
-    Loads a .env file into a plain dictionary.
-    
-    Args:
-        path: Path to the .env file.
-    
-    Returns:
-        Dict[str, str]: Mapping of variable names to values.
-    
-    Raises:
-        FileNotFoundError: If the .env file does not exist.
-    """
-    if not os.path.isfile(path):
-        raise FileNotFoundError(f".env file not found at {path}")
-    logger.debug("Loading .env from %s", path)
-    return dotenv_values(path)  # returns dict with strings
+# --------------------------------------------------------------------------- #
+# Named constants
+# --------------------------------------------------------------------------- #
+DEFAULT_ENV_PATH: Final[Path] = Path.cwd() / ".env"
 
-def write_env_file(env: Dict[str, str], path: str = ".env") -> None:
+
+def load_env(env_path: Path = DEFAULT_ENV_PATH) -> Dict[str, str]:
     """
-    Writes a dictionary of env variables back to a .env file.
-    
-    Args:
-        env: Mapping of variable names to values.
-        path: Destination .env file.
-    
-    Raises:
-        OSError: If the file cannot be written.
+    Load a ``.env`` file into a plain dictionary.
+
+    Parameters
+    ----------
+    env_path: Path
+        Path to the ``.env`` file.  Defaults to ``./.env`` in the current
+        working directory.
+
+    Returns
+    -------
+    dict[str, str]
+        Mapping of variable names to their values.  Missing file returns an
+        empty dict.
     """
-    logger.debug("Writing %d variables to %s", len(env), path)
-    # Ensure file exists before we start writing
-    open(path, "a").close()
-    for key, value in env.items():
-        set_key(path, key, value)  # overwrites existing key
-    logger.info("Successfully updated %s", path)
+    if not env_path.is_file():
+        LOGGER.warning("Env file %s not found – returning empty dict", env_path)
+        return {}
+
+    try:
+        data = dotenv_values(dotenv_path=env_path)
+        LOGGER.info("Loaded %d variables from %s", len(data), env_path)
+        return data
+    except Exception as exc:  # pragma: no cover – defensive
+        LOGGER.error("Failed to read .env file %s: %s", env_path, exc)
+        raise
+
+
+def write_env(
+    data: Dict[str, str],
+    env_path: Path = DEFAULT_ENV_PATH,
+) -> None:
+    """
+    Write a dictionary of environment variables back to a ``.env`` file.
+    Existing keys are overwritten; new keys are appended.
+
+    Parameters
+    ----------
+    data: dict[str, str]
+        Variables to write.
+    env_path: Path
+        Destination file.  Parent directories are created if missing.
+    """
+    try:
+        env_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # ``set_key`` writes a single key; we use it in a loop to preserve
+        # ordering and comments (if any) as much as possible.
+        for key, value in data.items():
+            set_key(env_path, key, value, quote_mode="auto")
+        LOGGER.info("Wrote %d variables to %s", len(data), env_path)
+    except Exception as exc:  # pragma: no cover – defensive
+        LOGGER.error("Failed to write .env file %s: %s", env_path, exc)
+        raise
 ```
 
 ---
 
-## 4️⃣ `src/cloud_providers/aws.py`
-
+**File: `src/cloud_providers/aws.py`**
 ```python
+#!/usr/bin/env python3
 """
 aws.py
-------
-AWS Secrets Manager integration using boto3.
+-------
+
+Minimal wrapper around ``boto3`` for AWS Secrets Manager.  The wrapper
+exposes only the operations required by the CLI: fetching all secrets
+under a given *path* (prefix) and upserting a secret value.
 """
 
-import json
-from typing import Dict
+import os
+from typing import Dict, Final
+
 import boto3
 from botocore.exceptions import BotoCoreError, ClientError
+
 from ..logger import get_logger
-from ..exceptions import EnvSyncError
 
-logger = get_logger(__name__)
+LOGGER = get_logger(__name__)
 
-class AwsProvider:
+# --------------------------------------------------------------------------- #
+# Named constants
+# --------------------------------------------------------------------------- #
+AWS_REGION_ENV: Final = "AWS_REGION"
+DEFAULT_AWS_REGION: Final = "us-east-1"
+SECRETS_PREFIX_ENV: Final = "ENV_SYNC_AWS_PREFIX"
+DEFAULT_PREFIX: Final = ""  # empty string means fetch all secrets
+
+
+class AwsSecretsManager:
     """
-    Wrapper around boto3 Secrets Manager client.
-    
-    All secrets are stored in a single AWS secret (JSON string) whose name
-    is supplied by the user.
+    Helper class to interact with AWS Secrets Manager.
     """
 
-    def __init__(self, secret_name: str, region_name: str = "us-east-1"):
+    def __init__(self, region_name: str = None, prefix: str = None):
         """
-        Initialise the provider.
-        
-        Args:
-            secret_name: Name of the AWS Secrets Manager secret.
-            region_name: AWS region (default us-east-1).
-        """
-        self.secret_name = secret_name
-        self.region_name = region_name
-        self.client = boto3.client("secretsmanager", region_name=self.region_name)
+        Initialise the client.
 
-    def fetch_secrets(self) -> Dict[str, str]:
+        Parameters
+        ----------
+        region_name: str | None
+            AWS region.  If ``None`` the value is read from the environment
+            variable ``AWS_REGION`` or defaults to ``us-east-1``.
+        prefix: str | None
+            Optional secret name prefix used to filter secrets.
         """
-        Retrieves the secret JSON from AWS and returns it as a dict.
-        
-        Returns:
-            Dict[str, str]: Secrets key/value pairs.
-        
-        Raises:
-            EnvSyncError: On any AWS SDK failure.
-        """
+        self.region = region_name or os.getenv(AWS_REGION_ENV, DEFAULT_AWS_REGION)
+        self.prefix = prefix or os.getenv(SECRETS_PREFIX_ENV, DEFAULT_PREFIX)
+
         try:
-            logger.debug("Fetching secret %s from AWS", self.secret_name)
-            response = self.client.get_secret_value(SecretId=self.secret_name)
-            secret_string = response.get("SecretString", "{}")
-            return json.loads(secret_string)
+            self.client = boto3.client("secretsmanager", region_name=self.region)
+            LOGGER.info("Initialized AWS Secrets Manager client (region=%s)", self.region)
         except (BotoCoreError, ClientError) as exc:
-            raise EnvSyncError(f"AWS fetch failed: {exc}") from exc
+            LOGGER.error("Failed to create AWS client: %s", exc)
+            raise
 
-    def upsert_secrets(self, secrets: Dict[str, str]) -> None:
+    def _list_secret_arns(self) -> Dict[str, str]:
         """
-        Creates or updates the AWS secret with the supplied dictionary.
-        
-        Args:
-            secrets: Mapping of secret keys to values.
-        
-        Raises:
-            EnvSyncError: On any AWS SDK failure.
+        Retrieve a mapping of secret name → ARN for all secrets that match
+        the configured prefix.
+
+        Returns
+        -------
+        dict[str, str]
+            Secret name to ARN.
         """
+        paginator = self.client.get_paginator("list_secrets")
+        secret_map: Dict[str, str] = {}
+
         try:
-            payload = json.dumps(secrets)
-            logger.debug("Putting secret %s to AWS (payload size %d)", self.secret_name, len(payload))
-            # Try to update first; if it doesn't exist we create it.
-            self.client.put_secret_value(SecretId=self.secret_name, SecretString=payload)
-        except self.client.exceptions.ResourceNotFoundException:
-            # Secret does not exist – create it.
+            for page in paginator.paginate():
+                for secret in page.get("SecretList", []):
+                    name = secret["Name"]
+                    if name.startswith(self.prefix):
+                        secret_map[name] = secret["ARN"]
+        except (BotoCoreError, ClientError) as exc:
+            LOGGER.error("Error listing AWS secrets: %s", exc)
+            raise
+
+        LOGGER.debug("Discovered %d AWS secrets with prefix '%s'", len(secret_map), self.prefix)
+        return secret_map
+
+    def get_secrets(self) -> Dict[str, str]:
+        """
+        Fetch all secrets (as plain text key/value pairs) that match the
+        configured prefix.
+
+        Returns
+        -------
+        dict[str, str]
+            Mapping of secret name (without prefix) → secret string.
+        """
+        secrets: Dict[str, str] = {}
+        secret_map = self._list_secret_arns()
+
+        for full_name, arn in secret_map.items():
             try:
-                self.client.create_secret(Name=self.secret_name, SecretString=payload)
-                logger.info("Created new AWS secret %s", self.secret_name)
+                response = self.client.get_secret_value(SecretId=arn)
+                secret_string = response.get("SecretString", "")
+                # Strip the prefix for a clean key name
+                key = full_name[len(self.prefix) :] if self.prefix else full_name
+                secrets[key] = secret_string
             except (BotoCoreError, ClientError) as exc:
-                raise EnvSyncError(f"AWS create secret failed: {exc}") from exc
-        except (BotoCoreError, ClientError) as exc:
-            raise EnvSyncError(f"AWS upsert failed: {exc}") from exc
-```
+                LOGGER.error("Failed to retrieve secret %s: %s", full_name, exc)
+                continue
 
----
+        LOGGER.info("Fetched %d secrets from AWS", len(secrets))
+        return secrets
 
-## 5️⃣ `src/cloud_providers/gcp.py`
+    def put_secret(self, key: str, value: str) -> None:
+        """
+        Create or update a secret in AWS Secrets Manager.
 
-```python
-"""
-gcp.py
-------
-Google Cloud Secret Manager integration using google‑cloud‑secretmanager.
-"""
-
-import json
-from typing import Dict
-from google.cloud import secretmanager
-from google.api_core.exceptions import GoogleAPIError, NotFound
-from ..logger import
+        Parameters
+        ----------
+        key: str
+           
