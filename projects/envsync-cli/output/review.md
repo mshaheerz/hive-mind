@@ -2,47 +2,35 @@
 
 ---
 
-## CRITICAL issues (must be fixed before merge)
+## CRITICAL issues (must fix before merge)
 
-| # | Issue | Why it matters | How to fix |
-|---|-------|----------------|------------|
-| 1 | **Incomplete `BaseProvider` implementation** | The file ends mid‑docstring and the abstract method signature is truncated. This will raise a syntax error during import, breaking the entire package. | Finish the docstring, provide the full method signature (`secret_names: Iterable[str]`) and return type (`Dict[str, str]`). Ensure the method body contains `...` or `raise NotImplementedError`. |
-| 2 | **Missing import of `abc` in `base.py`** | The file imports `abc` but the code is incomplete; if left as is, the import will be unused and may cause linting errors. | Add `import abc` at the top (already present) and keep the file syntactically correct. |
-| 3 | **`get_logger` may create duplicate handlers if called multiple times with the same name** | The guard `if not logger.handlers:` works only on the first call; subsequent calls will skip adding handlers, but if a logger is reused across modules, the first call may have added handlers before the guard, leading to duplicates. | Move handler creation inside the `if name not in _LOGGERS` block and remove the `if not logger.handlers` guard, or always clear existing handlers before adding new ones. |
-| 4 | **`_ensure_log_dir` raises a generic `RuntimeError` without context** | The error message is vague and may not help debugging. | Include the problematic path and original exception in the message: `f"Failed to create log directory {log_dir!s}: {exc}"`. |
-| 5 | **`parse_env_file` silently ignores lines that don’t match the regex** | While this is intentional, it can hide malformed lines or typos. | Log a warning for unmatched lines (use the logger) to aid debugging. |
-| 6 | **`_escape_value` does not escape backslashes** | A value containing a backslash would be written literally, potentially breaking the parser on the next read. | Escape backslashes (`value.replace('\\', '\\\\')`) before quoting. |
-| 7 | **`write_env_file` does not preserve file permissions or ownership** | When replacing the file atomically, the original file’s permissions may be lost, which can be an issue in some environments. | Preserve permissions: `os.chmod(tmp_path, file_path.stat().st_mode)` before `os.replace`. |
-| 8 | **`_LOGGERS` cache is not thread‑safe for logger configuration changes** | If `ENV_SYNC_LOG_LEVEL` changes after a logger is created, the logger’s level will not update. | Allow re‑initialisation of existing loggers when the env var changes, or document that the level is fixed at import time. |
+| # | Issue | Why it matters | Fix |
+|---|-------|----------------|-----|
+| 1 | **`parse_env_file` is incomplete** – the function extracts the key but never extracts or processes the value, never strips quotes, never handles errors, and never returns the parsed dictionary. | The core functionality of the CLI (parsing `.env` files) will never work. | Finish the implementation: <br>• Extract `value = match.group("value")`<br>• Strip surrounding quotes (single or double) and unescape escaped characters.<br>• Handle empty or duplicate keys appropriately.<br>• Return the populated `env` dict. |
+| 2 | **Missing value handling logic** – even if the function were complete, it would need to correctly handle quoted values, escaped quotes, and multiline values. | Incorrect parsing leads to corrupted secrets being sent to cloud stores or lost locally. | Implement a robust unquoting routine, e.g. `shlex.split` or a custom unescape function. |
+| 3 | **No error handling for file I/O** – if the file cannot be opened (permissions, encoding errors), the exception propagates to the caller. | This can crash the CLI and provide no meaningful feedback to the user. | Wrap `file_path.open()` in a try/except block and log/raise a descriptive error. |
+| 4 | **Missing tests** – no unit tests cover `config_parser` or `logger`. | Without tests you cannot guarantee correctness after future changes. | Add a test suite that covers: <br>• Valid lines (quoted, unquoted, comments).<br>• Duplicate keys.<br>• Empty lines, whitespace, and invalid syntax.<br>• Error handling (non‑existent file, permission denied). |
+| 5 | **`get_logger` ignores environment variable changes after first call** – once a logger is created its level cannot be altered by changing `ENV_SYNC_LOG_LEVEL`. | Users may expect runtime log‑level changes to take effect. | Either document that the level is fixed per process, or provide a `reload_logger` helper that reconfigures existing loggers. |
 
 ---
 
-## WARNINGS (should be fixed but not critical)
+## WARNINGS (should fix)
 
-| # | Issue | Why it matters | Suggested fix |
-|---|-------|----------------|---------------|
-| 1 | **Hard‑coded log directory relative to `__file__`** | If the package is installed in a non‑standard location, the logs may end up in an unexpected directory. | Use `Path.home() / ".envsync" / LOG_DIR_NAME` or allow an env var to override. |
-| 2 | **No validation of `ENV_SYNC_LOG_LEVEL`** | An invalid value will cause `logging.getLevelName` to default to `Level.ERROR` silently. | Validate the env var against `logging._nameToLevel` and fallback to default with a warning. |
-| 3 | **`parse_env_file` uses regex that may mis‑parse values containing `=`** | If a value contains `=` and is quoted, the regex still works, but if it’s unquoted, the value will be truncated. | Document that unquoted values cannot contain `=`; consider supporting quoted values with `=`. |
-| 4 | **`_escape_value` returns `""` for empty strings, but the parser will interpret it as empty string** | This is fine, but the representation is ambiguous; some tools expect no quotes. | Keep as is but document the behavior. |
-| 5 | **`write_env_file` uses `sorted(data.items())`** | Sorting keys changes the order of variables, which may be undesirable for readability. | Preserve original order or provide a flag to enable sorting. |
-| 6 | **No unit tests** | Without tests, regressions are hard to catch. | Add tests for parsing/writing, logger creation, and provider interface. |
+| # | Issue | Why it matters | Fix |
+|---|-------|----------------|-----|
+| 6 | **`logger.propagate = False`** – suppresses propagation to the root logger. If the root logger is configured elsewhere, log messages may be lost. | Might make debugging harder if the user expects global logging. | Provide an option to enable propagation or document the behavior clearly. |
+| 7 | **Hard‑coded log directory path** – uses `Path(__file__).resolve().parent.parent / LOG_DIR_NAME`. If the package is installed in a read‑only location (e.g., a virtualenv or a container with a read‑only filesystem), log creation will fail. | The CLI could crash on startup. | Allow overriding the log directory via an environment variable or a configuration parameter. |
+| 8 | **`DEFAULT_LOG_LEVEL` is a string** – `setLevel` expects an integer or a string like `"INFO"`. If the user passes a numeric value (e.g., `10`) the code will raise a `ValueError`. | Unexpected runtime error. | Accept both numeric and string levels: `level = os.getenv(..., DEFAULT_LOG_LEVEL); logger.setLevel(logging.getLevelName(level))`. |
+| 9 | **No type hints for `get_logger`** – the function returns `logging.Logger` but the signature only says `str`. | Reduces type‑checkability. | Add return type: `def get_logger(name: str = "envsync") -> logging.Logger:`. |
+|10 | **`_ensure_log_dir` silently swallows permission errors** – it re‑raises a generic `RuntimeError` without context. | Harder to debug permission issues. | Include the original exception message and the path in the error. |
 
 ---
 
 ## SUGGESTIONS (optional improvements)
 
-1. **Add type annotations for all functions** – e.g., `get_logger(name: str = "envsync") -> logging.Logger`.
-2. **Use `logging.config` to centralise logger configuration** – this simplifies future changes.
-3. **Add a `__all__` in each module** to make public API explicit.
-4. **Implement a `__repr__` for `BaseProvider`** to aid debugging.
-5. **Add a `tests/` directory** with `pytest` tests covering parsing, writing, and logger behaviour.
-6. **Provide a command‑line entry point** (`envsync.cli`) with `argparse` and `click` for easier use.
-7. **Add support for environment variable interpolation** in `.env` files (e.g., `DB_HOST=${HOST}`).
-8. **Document edge cases in the README** (e.g., quoting rules, comment handling).
-
----
-
-## Overall quality score: 5/10
-
-The code demonstrates good intent and a solid structure, but critical syntax errors, missing implementations, and several edge‑case issues prevent it from being merge‑ready. Once the issues above are addressed and basic tests added, the package can be considered production‑ready.
+| # | Suggestion | Benefit |
+|---|------------|---------|
+| 11 | **Add a `write_env_file` helper** – symmetry to parsing. | Enables bidirectional sync without manual editing. |
+| 12 | **Support environment variable interpolation** (e.g., `DB_HOST=${HOST}`) | Matches common `.env` usage patterns. |
+| 13 | **Use `shlex.split` for robust parsing** – handles escaped spaces, comments, and quotes. | Simplifies the regex and reduces edge‑case bugs. |
+| 14 | **Implement a CLI entry point** (`__main__`) with `argparse` and sub‑commands for sync

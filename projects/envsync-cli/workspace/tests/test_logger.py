@@ -1,5 +1,3 @@
-**File: `tests/test_logger.py`**
-```python
 import os
 import logging
 import threading
@@ -170,43 +168,3 @@ def test_logger_propagate_false(clear_loggers):
     """The logger should not propagate messages to root."""
     logger = get_logger("no_propagate")
     assert logger.propagate is False
-```
-
----
-
-**File: `tests/test_config_parser.py`**
-```python
-import os
-import re
-import tempfile
-import pytest
-from pathlib import Path
-
-# Import the function under test
-from src.config_parser import parse_env_file
-
-# --------------------------------------------------------------------------- #
-# Helper fixture for creating temporary .env files
-# --------------------------------------------------------------------------- #
-@pytest.fixture
-def temp_env_file(tmp_path: Path):
-    """Yield a temporary .env file path and helper to write content."""
-    file_path = tmp_path / ".env"
-    def write(content: str):
-        file_path.write_text(content, encoding="utf-8")
-    return file_path, write
-
-# --------------------------------------------------------------------------- #
-# Unit tests
-# --------------------------------------------------------------------------- #
-def test_parse_env_file_empty_file(temp_env_file):
-    """Parsing an empty file yields an empty dict."""
-    file_path, write = temp_env_file
-    write("")  # empty content
-    result = parse_env_file(file_path)
-    assert result == {}
-
-def test_parse_env_file_missing_file():
-    """Missing file should return an empty dict, not raise."""
-    result = parse_env_file(Path("/nonexistent/path/.env"))
-    assert result ==
