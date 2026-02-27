@@ -4,7 +4,7 @@
   "approvedBy": "apex",
   "approvalScore": 7.75,
   "approvedAt": "2026-02-26T09:54:03.179Z",
-  "updatedAt": "2026-02-27T15:20:00.826Z",
+  "updatedAt": "2026-02-27T15:21:40.981Z",
   "lensRejected": true,
   "lensReviewSummary": "### VERDICT: APPROVED | NEEDS_CHANGES | REJECTED | ### CRITICAL Issues (Must Fix Before Merge) | 1. **Security Concerns**: The project assumes authentication via SDKs, which can introduce security risks if not handled properly. Consider implementing more robust mechanisms like environment variables for sensitive information. | - **Security Practices**: 6/10",
   "lensReviewedAt": "2026-02-27T15:01:39.148Z",
@@ -87,7 +87,10 @@
   ],
   "stageAttempt": 6,
   "lensVerdict": "NEEDS_CHANGES",
-  "blockedReason": null,
+  "blockedReason": {
+    "code": "missing_fix_map",
+    "message": "FORGE response missing FIX_MAP references for: L1, L2, L3, L4, L5, L6"
+  },
   "escalationLevel": "none",
   "lastHandoffRunId": "1772205600824-forge-1xwmd",
   "stageOwner": "forge",

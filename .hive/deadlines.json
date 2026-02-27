@@ -14,20 +14,20 @@
     "projectName": "dependency-ghostbuster",
     "stage": "implementation",
     "agent": "forge",
-    "dueAt": "2026-02-27T21:01:39.149Z",
-    "setAt": "2026-02-27T15:01:39.149Z",
+    "dueAt": "2026-02-27T21:21:40.983Z",
+    "setAt": "2026-02-27T15:21:40.983Z",
     "status": "complete",
-    "completedAt": "2026-02-27T15:03:52.907Z"
+    "completedAt": "2026-02-27T15:24:46.428Z"
   },
   {
     "id": "dependency-ghostbuster::review",
     "projectName": "dependency-ghostbuster",
     "stage": "review",
     "agent": "lens",
-    "dueAt": "2026-02-27T17:03:52.908Z",
-    "setAt": "2026-02-27T15:03:52.908Z",
+    "dueAt": "2026-02-27T17:24:46.430Z",
+    "setAt": "2026-02-27T15:24:46.430Z",
     "status": "complete",
-    "completedAt": "2026-02-27T15:04:42.166Z"
+    "completedAt": "2026-02-27T15:25:37.288Z"
   },
   {
     "id": "envsync-cli::implementation",
