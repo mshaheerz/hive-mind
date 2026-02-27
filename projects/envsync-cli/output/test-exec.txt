@@ -1,3 +1,45 @@
-Summary: pytest failed: /usr/bin/python3: No module named pytest
+Summary: npm test failed: > envsync-cli@1.0.0 test | > vitest run --watch=false | RUN  v1.6.1 /home/zaigopc/Desktop/my/hive-mind/projects/envsync-cli/workspace | ❯ tests/logger.test.ts  (0 test) | ❯ tests/unit/envParser.test.ts  (0 test) | ❯ tests/unit/sync.test.ts  (0 test)
 
-/usr/bin/python3: No module named pytest
+> envsync-cli@1.0.0 test
+> vitest run --watch=false
+
+
+ RUN  v1.6.1 /home/zaigopc/Desktop/my/hive-mind/projects/envsync-cli/workspace
+
+ ❯ tests/logger.test.ts  (0 test)
+ ❯ tests/unit/envParser.test.ts  (0 test)
+ ❯ tests/unit/sync.test.ts  (0 test)
+ ❯ tests/unit/awsService.test.ts  (0 test)
+
+ Test Files  4 failed (4)
+      Tests  no tests
+   Start at  17:38:55
+   Duration  1.41s (transform 399ms, setup 91ms, collect 0ms, tests 0ms, environment 2ms, prepare 1.35s)
+
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+⎯⎯⎯⎯⎯⎯ Failed Suites 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/logger.test.ts [ tests/logger.test.ts ]
+Error: Failed to load url ../src/logger (resolved id: ../src/logger) in /home/zaigopc/Desktop/my/hive-mind/projects/envsync-cli/workspace/tests/logger.test.ts. Does the file exist?
+ ❯ loadAndTransform node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51969:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  tests/unit/awsService.test.ts [ tests/unit/awsService.test.ts ]
+Error: Failed to load url ../src/services/awsSecretManager (resolved id: ../src/services/awsSecretManager) in /home/zaigopc/Desktop/my/hive-mind/projects/envsync-cli/workspace/tests/unit/awsService.test.ts. Does the file exist?
+ ❯ loadAndTransform node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51969:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  tests/unit/envParser.test.ts [ tests/unit/envParser.test.ts ]
+Error: Failed to load url ../../src/utils/envParser (resolved id: ../../src/utils/envParser) in /home/zaigopc/Desktop/my/hive-mind/projects/envsync-cli/workspace/tests/unit/envParser.test.ts. Does the file exist?
+ ❯ loadAndTransform node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51969:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  tests/unit/sync.test.ts [ tests/unit/sync.test.ts ]
+Error: Failed to load url ../../src/sync/syncer (resolved id: ../../src/sync/syncer) in /home/zaigopc/Desktop/my/hive-mind/projects/envsync-cli/workspace/tests/unit/sync.test.ts. Does the file exist?
+ ❯ loadAndTransform node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51969:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯

@@ -41,7 +41,7 @@ function printUsage() {
 Starts the autonomous Hive runner.
 
 Options:
-  --provider <provider>  LLM provider (openrouter|groq)
+  --provider <provider>  LLM provider (openrouter|groq|local)
   -h, --help             display help for command`);
 }
 

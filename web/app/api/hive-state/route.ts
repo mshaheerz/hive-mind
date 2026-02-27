@@ -13,7 +13,7 @@ const HIVE_DIR     = path.join(HIVE_ROOT, '.hive');
 const DISCUSS_DIR  = path.join(HIVE_DIR, 'discussions');
 const LOGS_DIR     = path.join(HIVE_ROOT, 'logs');
 const RUNNER_LOCK  = path.join(HIVE_DIR, 'runner.lock.json');
-const SUPPORTED_PROVIDERS = ['openrouter', 'groq'];
+const SUPPORTED_PROVIDERS = ['openrouter', 'groq', 'local'];
 
 function safeRead(file: string, fallback: any): any {
   try {

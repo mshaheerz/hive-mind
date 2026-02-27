@@ -19,7 +19,7 @@ program
   .name('hive')
   .description('Multi-agent AI workspace')
   .version('1.0.0')
-  .option('--provider <provider>', 'LLM provider (openrouter|groq)', process.env.LLM_PROVIDER || 'openrouter');
+  .option('--provider <provider>', 'LLM provider (openrouter|groq|local)', process.env.LLM_PROVIDER || 'openrouter');
 
 const applyProvider = (provider) => {
   const p = String(provider || process.env.LLM_PROVIDER || 'openrouter').toLowerCase();

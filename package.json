@@ -25,7 +25,10 @@
     "dev:autonomous": "nodemon",
     "test:openrouter": "node scripts/test-openrouter.js",
     "test:openrouter:quick": "node scripts/test-openrouter-quick.js --provider openrouter",
-    "test:groq:quick": "node scripts/test-openrouter-quick.js --provider groq"
+    "test:groq:quick": "node scripts/test-openrouter-quick.js --provider groq",
+    "test:local:quick": "node scripts/test-openrouter-quick.js --provider local",
+    "local:advisor": "node scripts/local-model-advisor.js",
+    "local:install": "node scripts/local-model-advisor.js --install"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

@@ -14,29 +14,29 @@
     "projectName": "dependency-ghostbuster",
     "stage": "implementation",
     "agent": "forge",
-    "dueAt": "2026-02-27T16:58:48.075Z",
-    "setAt": "2026-02-27T10:58:48.075Z",
-    "status": "complete",
-    "completedAt": "2026-02-27T10:59:11.899Z"
+    "dueAt": "2026-02-27T18:08:56.663Z",
+    "setAt": "2026-02-27T12:08:56.663Z",
+    "status": "active"
   },
   {
     "id": "dependency-ghostbuster::review",
     "projectName": "dependency-ghostbuster",
     "stage": "review",
     "agent": "lens",
-    "dueAt": "2026-02-27T13:55:42.461Z",
-    "setAt": "2026-02-27T11:55:42.461Z",
-    "status": "active"
+    "dueAt": "2026-02-27T14:00:03.352Z",
+    "setAt": "2026-02-27T12:00:03.352Z",
+    "status": "complete",
+    "completedAt": "2026-02-27T12:02:03.335Z"
   },
   {
     "id": "envsync-cli::implementation",
     "projectName": "envsync-cli",
     "stage": "implementation",
     "agent": "forge",
-    "dueAt": "2026-02-27T17:55:55.623Z",
-    "setAt": "2026-02-27T11:55:55.623Z",
+    "dueAt": "2026-02-27T18:05:44.537Z",
+    "setAt": "2026-02-27T12:05:44.537Z",
     "status": "complete",
-    "completedAt": "2026-02-27T11:57:59.515Z"
+    "completedAt": "2026-02-27T12:07:44.919Z"
   },
   {
     "id": "postman-to-sdk::implementation",
@@ -53,9 +53,10 @@
     "projectName": "envsync-cli",
     "stage": "review",
     "agent": "lens",
-    "dueAt": "2026-02-27T13:57:59.517Z",
-    "setAt": "2026-02-27T11:57:59.517Z",
-    "status": "active"
+    "dueAt": "2026-02-27T14:07:44.921Z",
+    "setAt": "2026-02-27T12:07:44.921Z",
+    "status": "complete",
+    "completedAt": "2026-02-27T12:07:50.282Z"
   },
   {
     "id": "postman-to-sdk::review",
@@ -72,10 +73,10 @@
     "projectName": "envsync-cli",
     "stage": "tests",
     "agent": "pulse",
-    "dueAt": "2026-02-27T13:55:39.341Z",
-    "setAt": "2026-02-27T11:55:39.341Z",
+    "dueAt": "2026-02-27T14:08:36.373Z",
+    "setAt": "2026-02-27T12:08:36.373Z",
     "status": "complete",
-    "completedAt": "2026-02-27T11:55:42.460Z"
+    "completedAt": "2026-02-27T12:08:56.660Z"
   },
   {
     "id": "envsync-cli::docs",

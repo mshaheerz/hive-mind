@@ -8,7 +8,7 @@ const { OpenRouter } = require('@openrouter/sdk');
 const GroqModule = require('groq-sdk');
 const Groq = GroqModule.default || GroqModule;
 
-const SUPPORTED_PROVIDERS = ['openrouter', 'groq'];
+const SUPPORTED_PROVIDERS = ['openrouter', 'groq', 'local'];
 const DEFAULT_PROVIDER = normalizeProvider(process.env.LLM_PROVIDER || 'openrouter');
 
 const PROVIDER_DEFAULT_MODELS = {
@@ -34,6 +34,17 @@ const PROVIDER_DEFAULT_MODELS = {
     sage:  'moonshotai/kimi-k2-instruct',
     echo:  'llama-3.1-8b-instant',
   },
+  local: {
+    apex:  'qwen2.5-coder:3b-instruct',
+    nova:  'qwen2.5-coder:3b-instruct',
+    scout: 'qwen2.5-coder:3b-instruct',
+    atlas: 'qwen2.5-coder:3b-instruct',
+    forge: 'qwen2.5-coder:3b-instruct',
+    lens:  'qwen2.5-coder:3b-instruct',
+    pulse: 'qwen2.5-coder:3b-instruct',
+    sage:  'qwen2.5-coder:3b-instruct',
+    echo:  'qwen2.5-coder:3b-instruct',
+  },
 };
 
 const PROVIDER_FALLBACK_MODELS = {
@@ -48,6 +59,12 @@ const PROVIDER_FALLBACK_MODELS = {
     'openai/gpt-oss-120b',
     'openai/gpt-oss-20b',
     'llama-3.1-8b-instant',
+  ],
+  local: [
+    'qwen2.5-coder:3b-instruct',
+    'qwen2.5-coder:7b-instruct',
+    'qwen2.5:7b-instruct',
+    'llama3.2:3b-instruct',
   ],
 };
 
@@ -86,17 +103,25 @@ class LLMClient {
     this.provider = normalizeProvider(options.provider || process.env.LLM_PROVIDER || DEFAULT_PROVIDER);
     this.agentModels = buildAgentModels(this.provider);
     this.fallbackModels = [...PROVIDER_FALLBACK_MODELS[this.provider]];
+    this.localBaseUrl = String(
+      options.localBaseUrl ||
+      process.env.LOCAL_LLM_BASE_URL ||
+      process.env.OLLAMA_BASE_URL ||
+      'http://localhost:11434'
+    ).replace(/\/+$/, '');
 
-    this.apiKey =
-      options.apiKey ||
-      (this.provider === 'groq' ? process.env.GROQ_API_KEY : process.env.OPENROUTER_API_KEY);
+    this.apiKey = options.apiKey ||
+      (this.provider === 'groq' ? process.env.GROQ_API_KEY :
+      this.provider === 'openrouter' ? process.env.OPENROUTER_API_KEY : '');
 
-    if (!this.apiKey) {
+    if (this.provider !== 'local' && !this.apiKey) {
       const keyName = this.provider === 'groq' ? 'GROQ_API_KEY' : 'OPENROUTER_API_KEY';
       throw new Error(`${keyName} is not set. Check your .env file.`);
     }
 
-    if (this.provider === 'groq') {
+    if (this.provider === 'local') {
+      this.sdk = null;
+    } else if (this.provider === 'groq') {
       this.sdk = new Groq({ apiKey: this.apiKey });
     } else {
       this.sdk = new OpenRouter({ apiKey: this.apiKey });
@@ -133,7 +158,30 @@ class LLMClient {
   async _callWithRetry(model, messages, opts = {}, maxRetries = 3) {
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
-        if (this.provider === 'groq') {
+        if (this.provider === 'local') {
+          const response = await fetch(`${this.localBaseUrl}/api/chat`, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+              model,
+              messages,
+              stream: false,
+              options: {
+                temperature: opts.temperature ?? 0.7,
+                num_predict: opts.maxTokens || 2048,
+                top_p: opts.topP ?? 1,
+              },
+            }),
+          });
+
+          if (!response.ok) {
+            const body = await response.text();
+            throw new Error(`Local API error (${response.status}): ${body.slice(0, 500)}`);
+          }
+
+          const json = await response.json();
+          return json?.message?.content || '';
+        } else if (this.provider === 'groq') {
           const response = await this.sdk.chat.completions.create({
             model,
             messages,
@@ -220,6 +268,9 @@ class LLMClient {
       msg.includes('spend limit') ||
       msg.includes('insufficient credits') ||
       msg.includes('temporarily unavailable') ||
+      msg.includes('connect') ||
+      msg.includes('econnrefused') ||
+      msg.includes('socket hang up') ||
       msg.includes('model') && msg.includes('not found')
     );
   }

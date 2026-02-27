@@ -22,9 +22,12 @@ function normalizeProvider(provider) {
 const provider = normalizeProvider(resolveProviderArg(process.argv.slice(2)));
 const AGENT_MODELS = buildAgentModels(provider);
 
-const sdkClient = provider === 'groq'
-  ? new Groq({ apiKey: process.env.GROQ_API_KEY })
-  : new OpenRouter({ apiKey: process.env.OPENROUTER_API_KEY });
+const sdkClient = provider === 'local'
+  ? null
+  : provider === 'groq'
+    ? new Groq({ apiKey: process.env.GROQ_API_KEY })
+    : new OpenRouter({ apiKey: process.env.OPENROUTER_API_KEY });
+const localBaseUrl = String(process.env.LOCAL_LLM_BASE_URL || process.env.OLLAMA_BASE_URL || 'http://localhost:11434').replace(/\/+$/, '');
 
 if (provider === 'groq' && !process.env.GROQ_API_KEY) {
   console.error('GROQ_API_KEY is required for --provider groq');
@@ -38,7 +41,23 @@ if (provider === 'openrouter' && !process.env.OPENROUTER_API_KEY) {
 
 async function testModel(model){
   try {
-    if (provider === 'groq') {
+    if (provider === 'local') {
+      const r = await fetch(`${localBaseUrl}/api/chat`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: 'user', content: 'Ping' }],
+          stream: false,
+          options: { num_predict: 16, temperature: 0 },
+        }),
+      });
+      if (!r.ok) {
+        const body = await r.text();
+        return { status: r.status, error: body.slice(0, 300) };
+      }
+      return { status: 200, ok: true };
+    } else if (provider === 'groq') {
       await sdkClient.chat.completions.create({
         model,
         messages: [{ role: 'user', content: 'Ping' }],
@@ -66,6 +85,9 @@ async function testModel(model){
 
 (async()=>{
   console.log(`Quick ${provider.toUpperCase()} model probe`);
+  if (provider === 'local') {
+    console.log(`Using local endpoint: ${localBaseUrl}`);
+  }
   for(const [agent, model] of Object.entries(AGENT_MODELS)){
     process.stdout.write(`\n→ ${agent} -> ${model} ... `);
     const r = await testModel(model);

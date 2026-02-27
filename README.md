@@ -61,9 +61,10 @@ hive-mind/
 npm install               # installs dependencies including the official OpenRouter SDK
 cp .env.example .env
 # Configure provider in `.env`:
-# LLM_PROVIDER=openrouter   # or groq
+# LLM_PROVIDER=openrouter   # or groq or local
 # OPENROUTER_API_KEY=...
 # GROQ_API_KEY=...
+# LOCAL_LLM_BASE_URL=http://localhost:11434
 ```
 > **Note:** the client code now leverages the official `@openrouter/sdk` package instead of rolling its own HTTP calls. If you already had an older checkout, run `npm install` to pick up the new dependency.
 
@@ -82,6 +83,7 @@ If you want the agents to run fully autonomously (no human interaction), start t
 ```bash
 node run.js                          # Start autonomous mode — agents run on a schedule
 node run.js --provider groq          # Start autonomous mode on Groq
+node run.js --provider local         # Start autonomous mode on local Ollama
 ```
 The runner checks agents every 5 minutes by default and will autonomously propose, review, and advance projects.
 
@@ -190,6 +192,8 @@ If agents are failing (rate-limited / no endpoints), run a quick probe to see wh
 ```bash
 # fast single-attempt probe (recommended)
 npm run test:openrouter:quick
+npm run test:groq:quick
+npm run test:local:quick
 
 # slower thorough probe with retries (will take longer)
 npm run test:openrouter
@@ -219,6 +223,24 @@ Provider-aware model overrides:
 LLM_PROVIDER=groq
 GROQ_MODEL_NOVA=groq/compound-mini
 MODEL_LENS=openai/gpt-oss-120b        # works across providers
+```
+
+### Local provider (Ollama)
+1. Install Ollama and start it:
+```bash
+ollama serve
+```
+2. Check machine-fit recommendation and installed models:
+```bash
+npm run local:advisor
+```
+3. Auto-install the best recommended local model:
+```bash
+npm run local:install
+```
+4. Probe all agent model mappings on local endpoint:
+```bash
+npm run test:local:quick
 ```
 
 ## 🛠 Development: automatic reload for autonomous runner
