@@ -30,6 +30,7 @@ const PROJECTS_DIR = path.join(__dirname, 'projects');
 const QUEUE_FILE   = path.join(__dirname, '.hive', 'queue.json');
 const RUNNER_ARGS = process.argv.slice(2);
 const MAX_ACTIVE_PROJECTS = 2;
+const RUNNER_LOCK_FILE = path.join(__dirname, '.hive', 'runner.lock.json');
 
 function printUsage() {
   console.log(`Usage: node run.js [options]
@@ -124,6 +125,23 @@ function projectPriorityTs(status = {}) {
   return approved || proposed || updated || 0;
 }
 
+const PIPELINE_STAGE_ORDER = [
+  'approved',
+  'research',
+  'architecture',
+  'implementation',
+  'review',
+  'tests',
+  'docs',
+  'launch',
+  'complete',
+];
+
+function stageRank(stage) {
+  const idx = PIPELINE_STAGE_ORDER.indexOf(String(stage || '').toLowerCase());
+  return idx >= 0 ? idx : -1;
+}
+
 function setProjectStatus(name, updates) {
   const dir = path.join(PROJECTS_DIR, name);
   fs.mkdirSync(dir, { recursive: true });
@@ -143,6 +161,43 @@ function writeOutput(projectName, file, content) {
   const dir = path.join(PROJECTS_DIR, projectName, 'output');
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, file), content);
+}
+
+function isProcessAlive(pid) {
+  if (!pid || pid === process.pid) return false;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function acquireRunnerLock() {
+  fs.mkdirSync(path.dirname(RUNNER_LOCK_FILE), { recursive: true });
+  if (fs.existsSync(RUNNER_LOCK_FILE)) {
+    try {
+      const lock = JSON.parse(fs.readFileSync(RUNNER_LOCK_FILE, 'utf8'));
+      if (isProcessAlive(lock.pid)) {
+        console.log(chalk.yellow(`Another autonomous runner is already active (pid ${lock.pid}). Exiting this instance.`));
+        process.exit(0);
+      }
+    } catch {}
+  }
+
+  fs.writeFileSync(RUNNER_LOCK_FILE, JSON.stringify({
+    pid: process.pid,
+    provider: process.env.LLM_PROVIDER,
+    startedAt: new Date().toISOString(),
+  }, null, 2));
+}
+
+function releaseRunnerLock() {
+  if (!fs.existsSync(RUNNER_LOCK_FILE)) return;
+  try {
+    const lock = JSON.parse(fs.readFileSync(RUNNER_LOCK_FILE, 'utf8'));
+    if (lock.pid === process.pid) fs.unlinkSync(RUNNER_LOCK_FILE);
+  } catch {}
 }
 
 // ─── Main Autonomous Runner ───────────────────────────────────
@@ -185,6 +240,8 @@ class AutonomousRunner {
   // ─── Entry point ────────────────────────────────────────────
 
   async start() {
+    acquireRunnerLock();
+
     console.log(chalk.cyan('\n╔══════════════════════════════════════╗'));
     console.log(chalk.cyan('║') + chalk.bold.yellow('  🦾 HIVE MIND — Autonomous Mode       ') + chalk.cyan('║'));
     console.log(chalk.cyan('╚══════════════════════════════════════╝\n'));
@@ -211,14 +268,45 @@ class AutonomousRunner {
       clearInterval(this.intervalId);
       this.state.state.running = false;
       this.state.save();
+      releaseRunnerLock();
       process.exit(0);
+    });
+
+    process.on('exit', () => {
+      releaseRunnerLock();
     });
   }
 
   // ─── Deadline enforcement ────────────────────────────────────
 
+  _isStaleDeadline(task) {
+    const status = getProjectStatus(task.projectName);
+    const current = String(status.stage || '').toLowerCase();
+    const target = String(task.stage || '').toLowerCase();
+
+    const curRank = stageRank(current);
+    const targetRank = stageRank(target);
+    if (curRank < 0 || targetRank < 0) return false;
+
+    // Deadline stage has already been reached/passed, or is too far ahead after a stage regression.
+    return curRank >= targetRank || targetRank > curRank + 1;
+  }
+
+  _reconcileOverdue(overdue) {
+    const actionable = [];
+    for (const task of overdue) {
+      if (this._isStaleDeadline(task)) {
+        this.deadlines.complete(task.projectName, task.stage);
+        log('system', `Cleared stale deadline: ${task.projectName}::${task.stage} (already reached).`);
+        continue;
+      }
+      actionable.push(task);
+    }
+    return actionable;
+  }
+
   async checkDeadlines() {
-    const overdue = this.deadlines.getOverdue();
+    const overdue = this._reconcileOverdue(this.deadlines.getOverdue());
     if (!overdue.length) return;
 
     log('apex', `⚠ ${overdue.length} overdue task(s) detected`);
@@ -421,9 +509,7 @@ Do NOT propose anything similar to these. Think of genuinely new, useful develop
     const pending = queue.filter(p => p.status === 'pending_apex');
 
     if (!pending.length) {
-      // Check active projects for any blockers
-      log('apex', 'No pending proposals. Checking project health...');
-      await this.apexChecksProjectHealth();
+      log('apex', 'No pending proposals.');
       return;
     }
 
@@ -497,7 +583,7 @@ Do NOT propose anything similar to these. Think of genuinely new, useful develop
   // ─── APEX: Health check on active projects ───────────────────
 
   async apexChecksProjectHealth() {
-    const overdue = this.deadlines.getOverdue();
+    const overdue = this._reconcileOverdue(this.deadlines.getOverdue());
     if (!overdue.length) return;
 
     log('apex', `⚠ Found ${overdue.length} overdue task(s)!`);
