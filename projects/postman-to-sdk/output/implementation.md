@@ -1,196 +1,216 @@
-Below is a **complete, production‑ready implementation** of the **Postman‑to‑SDK** CLI tool written in **TypeScript**.  
-The tool fetches a Postman collection (via API key + collection‑ID **or** a local file), converts it to an OpenAPI 3 definition, and then generates SDKs for the requested languages (TypeScript, Python, Go) using **OpenAPI Generator**.
-
----
-
-## 1️⃣ File: `package.json`
-
+**File: `package.json`**
 ```json
 {
   "name": "postman-to-sdk",
   "version": "1.0.0",
-  "description": "CLI that generates fully‑typed SDKs (TS, Python, Go) from Postman collections",
-  "main": "dist/index.js",
+  "description": "CLI that generates fully‑typed SDKs (TypeScript, Python, Go) from Postman collections.",
+  "main": "dist/cli.js",
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js",
-    "cli": "ts-node src/index.ts"
+    "start": "npm run build && node dist/cli.js",
+    "test": "echo \"No tests yet\""
   },
   "bin": {
-    "postman-to-sdk": "./dist/index.js"
+    "postman-to-sdk": "./dist/cli.js"
   },
-  "author": "Hive Mind – FORGE",
+  "author": "Hive Mind",
   "license": "MIT",
   "dependencies": {
-    "@openapitools/openapi-generator-cli": "^2.13.4",
-    "chalk": "^5.3.0",
-    "commander": "^12.0.0",
+    "axios": "^1.7.2",
+    "commander": "^12.1.0",
     "fs-extra": "^11.2.0",
-    "node-fetch": "^3.3.2",
-    "postman-to-openapi": "^4.2.0"
+    "openapi-generator-cli": "^2.13.0",
+    "postman-collection": "^4.2.0",
+    "postman-to-openapi": "^1.5.2"
   },
   "devDependencies": {
-    "@types/node": "^20.11.17",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.3.3"
+    "@types/node": "^22.5.0",
+    "typescript": "^5.6.2"
   }
 }
 ```
 
-*Key decisions*  
-
-* **Commander** – provides a declarative, well‑tested CLI API.  
-* **postman-to-openapi** – battle‑tested library that converts Postman v2.1 collections to OpenAPI 3.0.  
-* **@openapitools/openapi-generator-cli** – official wrapper around the Java‑based OpenAPI Generator; we invoke it via its programmatic API (which internally spawns a Java process).  
-* **node‑fetch** – lightweight fetch implementation for Node ≥ 18.  
-* **fs‑extra** – convenient promise‑based file utilities.  
-
----
-
-## 2️⃣ File: `tsconfig.json`
-
+**File: `tsconfig.json`**
 ```json
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "ESNext",
+    "module": "ES2022",
     "moduleResolution": "node",
-    "outDir": "dist",
-    "rootDir": "src",
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
     "strict": true,
+    "esModuleInterop": true,
     "skipLibCheck": true,
-    "resolveJsonModule": true,
-    "sourceMap": true
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true
   },
   "include": ["src"]
 }
 ```
 
----
-
-## 3️⃣ Folder: `src/` – source code
-
-### 3.1 `src/index.ts` – CLI entry point  
-
+**File: `src/constants.ts`**
 ```ts
 /**
- * @fileoverview
- * CLI entry point for the Postman‑to‑SDK tool.
- *
- * It parses user arguments, orchestrates fetching/parsing the collection,
- * converts it to OpenAPI, and finally generates SDKs for the requested languages.
+ * @fileoverview Centralised constants used across the CLI.
  */
 
-import { Command } from 'commander';
-import chalk from 'chalk';
-import { fetchCollection } from './postmanClient.js';
-import { convertToOpenApi } from './converter.js';
-import { generateSdk } from './sdkGenerator.js';
-import { readFile, writeFile, ensureDir } from './utils.js';
-import { resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+export const TEMP_OPENAPI_FILE = 'temp_openapi.json';
+export const DEFAULT_OUTPUT_DIR = 'generated-sdk';
+export const SUPPORTED_LANGUAGES = ['typescript', 'python', 'go'] as const;
+export const OPENAPI_GENERATOR_MAP: Record<typeof SUPPORTED_LANGUAGES[number], string> = {
+  typescript: 'typescript-axios',
+  python: 'python',
+  go: 'go',
+};
+export const POSTMAN_API_BASE = 'https://api.postman.com';
+```
 
-// ---------------------------------------------------------------------------
-// Constants (no magic numbers)
-// ---------------------------------------------------------------------------
+**File: `src/utils.ts`**
+```ts
+/**
+ * @fileoverview Utility helpers used by multiple modules.
+ */
 
-/** Default languages to generate when none are supplied */
-const DEFAULT_LANGUAGES = ['typescript', 'python', 'go'] as const;
+import { exec as execCb } from 'child_process';
+import { promisify } from 'util';
+import path from 'path';
+import fs from 'fs-extra';
 
-/** Directory name inside the output folder where the OpenAPI spec will be stored */
-const OPENAPI_SPEC_DIR = 'openapi';
+export const exec = promisify(execCb);
 
-/** File name for the generated OpenAPI JSON */
-const OPENAPI_SPEC_FILE = 'postman-openapi.json';
-
-// ---------------------------------------------------------------------------
-// CLI definition
-// ---------------------------------------------------------------------------
-
-const program = new Command()
-  .name('postman-to-sdk')
-  .description('Generate TypeScript, Python, and Go SDKs from a Postman collection')
-  .version('1.0.0')
-  .requiredOption('-o, --output <dir>', 'Output directory for generated SDKs')
-  .option('-k, --api-key <key>', 'Postman API key (required when using --collection-id)')
-  .option('-c, --collection-id <id>', 'Postman collection ID to fetch from the Postman API')
-  .option('-f, --collection-file <path>', 'Path to a local Postman collection JSON file')
-  .option(
-    '-l, --languages <list>',
-    'Comma‑separated list of languages (typescript,python,go). Default: all three',
-  )
-  .option('-s, --skip-openapi', 'Skip writing the intermediate OpenAPI spec to disk')
-  .parse(process.argv);
-
-interface Options {
-  output: string;
-  apiKey?: string;
-  collectionId?: string;
-  collectionFile?: string;
-  languages?: string;
-  skipOpenapi?: boolean;
+/**
+ * Resolve a path relative to the current working directory.
+ * @param p Relative or absolute path.
+ * @returns Absolute path.
+ */
+export function resolvePath(p: string): string {
+  return path.isAbsolute(p) ? p : path.resolve(process.cwd(), p);
 }
 
-async function main(opts: Options): Promise<void> {
-  const {
-    output,
-    apiKey,
-    collectionId,
-    collectionFile,
-    languages,
-    skipOpenapi = false,
-  } = opts;
+/**
+ * Write JSON data to a file, creating directories if needed.
+ * @param filePath Destination file.
+ * @param data JSON‑serialisable data.
+ */
+export async function writeJsonFile(filePath: string, data: unknown): Promise<void> {
+  await fs.ensureDir(path.dirname(filePath));
+  await fs.writeJson(filePath, data, { spaces: 2 });
+}
 
-  // -----------------------------------------------------------------------
-  // Validate input arguments
-  // -----------------------------------------------------------------------
-  if (!collectionId && !collectionFile) {
-    console.error(chalk.red('❌ Either --collection-id or --collection-file must be provided.'));
-    process.exit(1);
-  }
-
-  if (collectionId && !apiKey) {
-    console.error(chalk.red('❌ --api-key is required when using --collection-id.'));
-    process.exit(1);
-  }
-
-  // -----------------------------------------------------------------------
-  // Resolve target languages
-  // -----------------------------------------------------------------------
-  const targetLanguages = languages
-    ? languages.split(',').map((l) => l.trim().toLowerCase())
-    : DEFAULT_LANGUAGES;
-
-  // Validate language list
-  const supported = new Set(DEFAULT_LANGUAGES);
-  for (const lang of targetLanguages) {
-    if (!supported.has(lang as any)) {
-      console.error(chalk.red(`❌ Unsupported language "${lang}". Supported: ${DEFAULT_LANGUAGES.join(', ')}`));
-      process.exit(1);
-    }
-  }
-
-  // -----------------------------------------------------------------------
-  // Prepare output directories
-  // -----------------------------------------------------------------------
-  const outputDir = resolve(process.cwd(), output);
-  await ensureDir(outputDir);
-  const openapiDir = resolve(outputDir, OPENAPI_SPEC_DIR);
-  await ensureDir(openapiDir);
-  const openapiPath = resolve(openapiDir, OPENAPI_SPEC_FILE);
-
-  // -----------------------------------------------------------------------
-  // Load Postman collection (remote or local)
-  // -----------------------------------------------------------------------
-  let collectionJson: any;
+/**
+ * Delete a file if it exists.
+ * @param filePath Path to the file.
+ */
+export async function safeUnlink(filePath: string): Promise<void> {
   try {
-    if (collectionId) {
-      collectionJson = await fetchCollection(collectionId, apiKey!);
-    } else {
-      const raw = await readFile(collectionFile!);
-      collectionJson = JSON.parse(raw);
+    await fs.unlink(filePath);
+  } catch {
+    // ignore – file may not exist
+  }
+}
+```
+
+**File: `src/postmanClient.ts`**
+```ts
+/**
+ * @fileoverview Minimal client for the Postman API.
+ */
+
+import axios, { AxiosInstance } from 'axios';
+import fs from 'fs-extra';
+import { resolvePath } from './utils';
+import { POSTMAN_API_BASE } from './constants';
+
+/**
+ * Configuration needed to talk to the Postman API.
+ */
+export interface PostmanClientOptions {
+  /** Postman API key – required for remote fetches. */
+  apiKey?: string;
+}
+
+/**
+ * Simple wrapper around the Postman API.
+ */
+export class PostmanClient {
+  private readonly http: AxiosInstance;
+
+  /**
+   * @param options Configuration options.
+   */
+  constructor(private readonly options: PostmanClientOptions) {
+    this.http = axios.create({
+      baseURL: POSTMAN_API_BASE,
+      headers: options.apiKey
+        ? { 'X-Api-Key': options.apiKey }
+        : undefined,
+    });
+  }
+
+  /**
+   * Load a collection either from a local file or from the remote API.
+   *
+   * @param collectionIdOrPath Collection ID (if remote) or a file system path.
+   * @returns The raw collection JSON object.
+   * @throws If the collection cannot be read or fetched.
+   */
+  async loadCollection(collectionIdOrPath: string): Promise<any> {
+    const maybePath = resolvePath(collectionIdOrPath);
+    if (await fs.pathExists(maybePath)) {
+      // Local file path – read directly
+      try {
+        const raw = await fs.readFile(maybePath, 'utf8');
+        return JSON.parse(raw);
+      } catch (err) {
+        throw new Error(`Failed to read collection file "${maybePath}": ${(err as Error).message}`);
+      }
     }
-  } catch (err)
+
+    // Assume it is a remote collection ID
+    if (!this.options.apiKey) {
+      throw new Error('Postman API key is required to fetch a collection by ID.');
+    }
+
+    try {
+      const response = await this.http.get(`/collections/${collectionIdOrPath}`);
+      return response.data.collection;
+    } catch (err) {
+      const msg = (err as any).response?.data?.error?.message ?? (err as Error).message;
+      throw new Error(`Failed to fetch collection "${collectionIdOrPath}" from Postman: ${msg}`);
+    }
+  }
+}
+```
+
+**File: `src/converter.ts`**
+```ts
+/**
+ * @fileoverview Convert a Postman collection to an OpenAPI definition.
+ */
+
+import postmanToOpenApi from 'postman-to-openapi';
+import { writeJsonFile } from './utils';
+import { TEMP_OPENAPI_FILE } from './constants';
+import path from 'path';
+import fs from 'fs-extra';
+
+/**
+ * Convert a Postman collection JSON object into an OpenAPI JSON file.
+ *
+ * @param collection Raw Postman collection object.
+ * @param outputDir Directory where the temporary OpenAPI file will be stored.
+ * @returns Absolute path to the generated OpenAPI JSON file.
+ * @throws If conversion fails.
+ */
+export async function convertCollectionToOpenApi(
+  collection: any,
+  outputDir: string
+): Promise<string> {
+  // postman-to-openapi works with a file path, so we need a temporary file.
+  const tempCollectionPath = path.join(outputDir, 'temp_collection.json');
+  await writeJsonFile(tempCollectionPath, collection);
+
+  try {
+    const
