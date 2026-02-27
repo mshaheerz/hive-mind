@@ -4,38 +4,40 @@
 
 ## CRITICAL issues (must be fixed before merge)
 
-| # | File / Area | Issue | Why it matters | Fix / Recommendation |
-|---|-------------|-------|----------------|----------------------|
-| 1 | `src/cloud_providers/aws.py` – **missing import** | `json` is used but never imported. | The module will raise a `NameError` at runtime, breaking the whole CLI. | Add `import json` at the top of the file. |
-| 2 | `src/cloud_providers/aws.py` – **exposing secrets in logs** | `set_key` in `config_parser.write_env` logs the full `value` (`LOGGER.debug("Set key %s=%s …")`). In the AWS provider we also log the number of entries but never the values, which is good, but the `.env` writer logs the raw secret. | Debug logs may be captured in CI logs, log‑aggregation services, or local terminal history, leaking production secrets. | Replace the debug line with a redacted message, e.g. `LOGGER.debug("Set key %s=<redacted>", key)`. If you need to audit values, add a `--verbose-secrets` flag that must be explicitly enabled. |
-| 3 | `src/cloud_providers/gcp.py` – **incomplete implementation** | The file ends after imports and a logger declaration; no `GCPProvider` class, no methods, no docstrings. | The CLI will import this module (e.g. `from .gcp import GCPProvider`) and crash with `ImportError`. The feature set is advertised as “supports GCP”, so the omission is a functional blocker. | Implement the provider (list, upsert, delete) using the Google Secret Manager client, mirroring the AWS design. At minimum provide a stub that raises `NotImplementedError` with a clear message, and add unit tests that assert the stub is present. |
-| 4 | `src/config_parser.py` – **generic `except Exception`** | Catch‑all blocks mask the real exception type and make debugging harder. | In production you may swallow a `PermissionError`, `UnicodeDecodeError`, etc., and only see a generic log line, hindering root‑cause analysis. | Catch specific exceptions (`OSError`, `IOError`, `dotenv.ParseError` if available) and re‑raise or wrap them with a custom `EnvSyncError`. Keep a generic fallback only if you add a comment explaining why. |
-| 5 | `src/logger.py` – **handler duplication risk in library usage** | `get_logger` checks `if logger.handlers:` but does not verify that the existing handler is the one we intend (e.g. if another library added a handler earlier). This can lead to duplicate handlers when the CLI is used as a library. | Duplicate log lines clutter output and may cause performance degradation. | Change the guard to check for a handler of the same type/formatter, or make the function idempotent by adding a custom attribute (`logger._envsync_configured = True`). |
-| 6 | **Credential handling** (across providers) | The code relies on SDK default credential discovery (`boto3`, `google.cloud.secretmanager`). No explicit validation or warning if credentials are missing. | Users may run the CLI and get cryptic “Unable to locate credentials” errors. | Add a small helper that checks `boto3.session.Session().get_credentials()` and `google.auth.default()` early, logging a clear error and exiting with a non‑zero status if no credentials are found. |
+| # | File / Area | Issue | Why it matters | How to fix |
+|---|-------------|-------|----------------|------------|
+| 1 | `src/config_parser.py` – `write_env` | **Non‑atomic, inefficient file write** – the file is cleared, then `set_key` is called once per entry, opening/closing the file each time. If the process crashes mid‑loop you end up with a partially written `.env` (loss of secrets) and the I/O cost is O(n) file opens. | - Build the full `.env` content in memory (`lines = [f"{k}={quote(v)}" …]`). <br>- Write atomically using a temporary file (`temp = env_path.with_suffix('.env.tmp')`) then `temp.replace(env_path)`. <br>- Remove the per‑key `set_key` calls. |
+| 2 | `src/cloud_providers/gcp.py` | **Truncated / syntactically invalid file** – the class definition ends abruptly (`project` line is incomplete) which will raise a `SyntaxError` and block the whole package. | Complete the implementation (or at least provide a stub that raises `NotImplementedError`). Ensure the file can be imported. |
+| 3 | `src/aws.py` – `put_secret` | **Potential unhandled `ResourceExistsException`** – if the secret already exists but the `update_secret` call fails for another reason (e.g., access denied), the fallback `create_secret` will raise `ResourceExistsException`, leaking a confusing error. | Catch `self.client.exceptions.ResourceExistsException` separately and re‑raise a clear error, or only call `create_secret` when the caught exception is exactly `ResourceNotFoundException`. |
+| 4 | Overall – **Missing unit / integration tests** | No test suite means regressions (e.g., breaking the atomic write) can slip through. | Add pytest tests for: <br>• `load_env` (file missing, malformed lines). <br>• `write_env` (atomicity, correct quoting). <br>• AWS & GCP wrappers (use `moto` / `google-cloud-testutils` mocks). |
+| 5 | `src/logger.py` – `get_logger` | **Potential duplicate handlers** when the same logger name is requested from different modules after the root logger has already been configured elsewhere. This can cause duplicated log lines. | After adding a handler, set `logger.propagate = False`. Optionally expose a `configure_root_logger` function to be called once by the CLI entry‑point. |
 
 ---
 
-## WARNINGS (should be addressed)
+## WARNINGS (should be fixed)
 
-| # | File / Area | Issue | Why it matters | Fix / Recommendation |
-|---|-------------|-------|----------------|----------------------|
-| 1 | `src/config_parser.py` – **`env_path.touch(exist_ok=True)`** | Touching the file creates an empty `.env` if it does not exist. | May unintentionally create a file in the wrong directory (e.g. when a user runs the CLI from a sub‑folder). | Resolve `env_path` to an absolute path (`env_path = env_path.resolve()`) and optionally ask for confirmation before creating a new file. |
-| 2 | `src/cloud_providers/aws.py` – **hard‑coded default secret name** | `DEFAULT_SECRET_NAME` defaults to `"envsync-secrets"` and is read from `AWS_SECRET_NAME` env var. | If a user forgets to set the env var, the CLI will silently read/write the generic secret, potentially overwriting another team’s secret. | Require the secret name to be passed explicitly via a CLI flag or configuration file; fall back to `None` and raise a clear error if not provided. |
-| 3 | `src/cloud_providers/aws.py` – **single‑secret JSON design** | All secrets are stored in one JSON blob. | Large numbers of secrets cause the whole blob to be read/written each time, leading to performance and size limits (AWS limit 64 KB per secret). | Document the limitation, and optionally add a fallback that splits into multiple secrets when size > 60 KB. |
-| 4 | Overall – **lack of unit/integration tests** | No test files are shown. | Without tests, regressions are likely, especially for edge‑cases (missing env file, permission errors, secret not found). | Add a `tests/` package with pytest fixtures that mock `boto3` and `google.cloud.secretmanager` (using `moto` and `unittest.mock`). Test `load_env`, `write_env`, and provider upserts. |
-| 5 | Overall – **type hinting not exhaustive** | Functions return `Dict[str, str]` but may also return `None` on error (due to `raise`). | Minor, but static analysis tools will flag mismatches. | Keep the signatures as is; just ensure all code paths either return the declared type or raise. |
-| 6 | Overall – **CLI entry point not shown** | No `argparse`/`click` implementation provided. | Hard to assess argument validation, help messages, and error exit codes. | Ensure the CLI validates mutually exclusive options (`--to-cloud`, `--to-local`, `--bidirectional`) and returns proper exit codes (`0` on success, `>0` on failure). |
+| # | File / Area | Issue | Impact | Suggested fix |
+|---|-------------|-------|--------|---------------|
+| 1 | `src/logger.py` | No explicit `type` hint on return (`logging.Logger`). | Minor readability issue. | Add `-> logging.Logger` to the function signature (already present, but keep). |
+| 2 | `src/config_parser.py` | `load_env` catches generic `Exception` and re‑raises – stack trace is preserved but the log may contain sensitive info (e.g., file paths). | Could leak internal paths in logs. | Log only the exception class/message, avoid printing the full traceback unless in debug mode (`log.exception`). |
+| 3 | `src/aws.py` | `DEFAULT_REGION` falls back to `"us-east-1"` if env var missing – may unintentionally target the wrong region. | Unexpected region usage. | Raise a clear error if `AWS_DEFAULT_REGION` is not set, or require the caller to pass the region explicitly. |
+| 4 | `src/aws.py` – `__init__` | No explicit handling for missing AWS credentials; boto3 will lazily load them and may raise at first API call, making the error source ambiguous. | Delayed failure. | Validate credentials early (`boto3.session.Session().get_credentials()`) and raise a helpful error if absent. |
+| 5 | `src/gcp.py` (once completed) | No explicit handling for missing `GOOGLE_APPLICATION_CREDENTIALS` or default credentials. | Same delayed failure as AWS. | Perform a quick `client = secretmanager.SecretManagerServiceClient()` inside a try/except and surface credential errors. |
+| 6 | `src/config_parser.py` – `write_env` | `env_path.touch(exist_ok=True)` may create an empty file with default permissions (e.g., 0o666). Secrets could be readable by other users. | Security risk on multi‑user systems. | Use `env_path.touch(mode=0o600, exist_ok=True)` or explicitly set file permissions after write (`os.chmod(env_path, 0o600)`). |
+| 7 | All modules | No `__all__` definitions – public API is implicit. | Slightly harder to understand what is exported. | Add `__all__ = [...]` where appropriate. |
 
 ---
 
 ## SUGGESTIONS (optional improvements)
 
-| # | Area | Suggestion |
-|---|------|------------|
-| 1 | Logging | Use structured logging (JSON) when `--json-logs` flag is set; makes log parsing easier for CI pipelines. |
-| 2 | Configuration | Add a small YAML/JSON config file (`envsync.yaml`) that can store default cloud provider, secret names, and region, reducing reliance on many environment variables. |
-| 3 | Diff algorithm | `deepdiff` is powerful but heavy; for flat key/value pairs a simple set‑difference (`dict_keys`) is faster and has a smaller dependency footprint. |
-| 4 | Concurrency | If the CLI ever supports syncing to multiple clouds in one run, consider async/await with `aioboto3` and `google-cloud-secret-manager` async client to speed up network calls. |
-| 5 | Documentation | The README should include a “Prerequisites” section that explains required IAM permissions (e.g., `secretsmanager:GetSecretValue`, `secretsmanager:PutSecretValue`, `secretmanager.versions.access`, `secretmanager.secrets.create`). |
-| 6 | Security hardening | Add an optional `--mask-values` flag that replaces secret values with `"***"` in any output (including diff output). |
-| 7 | Packaging | Provide a `pyproject.toml` with `[project.optional-dependencies]` for each cloud provider (`aws = ["boto3"]`,
+| # | Area | Idea |
+|---|------|------|
+| 1 | Logging | Add a CLI flag `--verbose` that sets the logger level to `DEBUG`. |
+| 2 | Config parsing | Provide a helper `merge_envs(base: dict, overlay: dict) -> dict` to compute the diff for bidirectional sync. |
+| 3 | AWS wrapper | Allow the caller to specify a KMS key for encryption (`client.update_secret(..., KmsKeyId=...)`). |
+| 4 | GCP wrapper | Implement pagination handling for listing secrets (future feature). |
+| 5 | Packaging | Add entry‑point in `setup.cfg`/`pyproject.toml` (`[project.scripts] envsync = "envsync.__main__:main"`). |
+| 6 | Documentation | Add a `README.md` section with example usage and required IAM permissions for each cloud provider. |
+| 7 | Type safety | Use `TypedDict` for secret payloads (`class SecretPayload(TypedDict): ...`) to make the expected shape explicit. |
+| 8 | Security | Ensure that any exception that may contain secret values (e.g., `ClientError` response) is logged with `exc_info=False` to avoid dumping the full response payload. |
+| 9 |

@@ -33,39 +33,38 @@
     "projectName": "envsync-cli",
     "stage": "implementation",
     "agent": "forge",
-    "dueAt": "2026-02-27T16:05:39.598Z",
-    "setAt": "2026-02-27T10:05:39.598Z",
+    "dueAt": "2026-02-27T16:11:26.613Z",
+    "setAt": "2026-02-27T10:11:26.613Z",
     "status": "complete",
-    "completedAt": "2026-02-27T10:05:44.442Z"
+    "completedAt": "2026-02-27T10:11:32.411Z"
   },
   {
     "id": "postman-to-sdk::implementation",
     "projectName": "postman-to-sdk",
     "stage": "implementation",
     "agent": "forge",
-    "dueAt": "2026-02-27T16:06:07.098Z",
-    "setAt": "2026-02-27T10:06:07.098Z",
-    "status": "complete",
-    "completedAt": "2026-02-27T10:06:26.562Z"
+    "dueAt": "2026-02-27T16:11:51.765Z",
+    "setAt": "2026-02-27T10:11:51.765Z",
+    "status": "active"
   },
   {
     "id": "envsync-cli::review",
     "projectName": "envsync-cli",
     "stage": "review",
     "agent": "lens",
-    "dueAt": "2026-02-27T12:05:44.445Z",
-    "setAt": "2026-02-27T10:05:44.445Z",
+    "dueAt": "2026-02-27T12:11:32.412Z",
+    "setAt": "2026-02-27T10:11:32.412Z",
     "status": "complete",
-    "completedAt": "2026-02-27T10:05:49.240Z"
+    "completedAt": "2026-02-27T10:11:37.307Z"
   },
   {
     "id": "postman-to-sdk::review",
     "projectName": "postman-to-sdk",
     "stage": "review",
     "agent": "lens",
-    "dueAt": "2026-02-27T12:05:49.241Z",
-    "setAt": "2026-02-27T10:05:49.241Z",
+    "dueAt": "2026-02-27T12:11:37.308Z",
+    "setAt": "2026-02-27T10:11:37.308Z",
     "status": "complete",
-    "completedAt": "2026-02-27T10:06:07.097Z"
+    "completedAt": "2026-02-27T10:11:51.764Z"
   }
 ]

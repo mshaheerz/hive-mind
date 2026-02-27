@@ -164,7 +164,22 @@
       "message": "Strict order accepted. Forced wake: FORGE.",
       "at": "2026-02-27T09:37:00.605Z",
       "inReplyTo": "ceo_1772185015684_p1kht"
+    },
+    {
+      "id": "ceo_1772187007065_8jxek",
+      "from": "ceo",
+      "message": "strict wake forge lens",
+      "at": "2026-02-27T10:10:07.065Z",
+      "handledAt": "2026-02-27T10:10:17.008Z",
+      "handledBy": "apex"
+    },
+    {
+      "id": "apex_1772187017007_ki12j",
+      "from": "apex",
+      "message": "Strict order accepted. Forced wake: FORGE, LENS.",
+      "at": "2026-02-27T10:10:17.007Z",
+      "inReplyTo": "ceo_1772187007065_8jxek"
     }
   ],
-  "updatedAt": "2026-02-27T09:37:00.605Z"
+  "updatedAt": "2026-02-27T10:10:17.008Z"
 }
