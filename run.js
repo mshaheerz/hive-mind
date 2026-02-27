@@ -1094,7 +1094,23 @@ class AutonomousRunner {
 
   _mentionedAgents(text = '') {
     const msg = String(text || '').toLowerCase();
-    return Object.keys(AGENT_SCHEDULE).filter((name) => msg.includes(name));
+    const aliases = {
+      lens: ['lens', 'lense', 'lese'],
+      forge: ['forge', 'forg'],
+      atlas: ['atlas'],
+      pulse: ['pulse'],
+      sage: ['sage'],
+      echo: ['echo'],
+      apex: ['apex'],
+      scout: ['scout'],
+      nova: ['nova'],
+    };
+    const found = [];
+    for (const name of Object.keys(AGENT_SCHEDULE)) {
+      const keys = aliases[name] || [name];
+      if (keys.some((k) => msg.includes(k))) found.push(name);
+    }
+    return found;
   }
 
   _agentOpsSummary(agent) {
@@ -1158,18 +1174,24 @@ class AutonomousRunner {
         lower.includes('stop resting') ||
         lower.includes('wake') ||
         lower.includes('immediate');
+      const wakeAll =
+        /\ball\b/.test(lower) ||
+        lower.includes('everyone') ||
+        lower.includes('every agent') ||
+        lower.includes('all agents');
       const asksWhy = lower.includes('why') || lower.includes('status') || lower.includes('not working');
       const asksOps =
         /progress|priority|priorit|which project|most priority|blocked|overdue|deadline|stuck|current stage|what is going on|what's going on|what is the progress|taken/i.test(lower);
 
       const responseParts = [];
 
-      if (strictOrder && mentioned.length) {
-        for (const agent of mentioned) {
+      const wakeTargets = wakeAll ? Object.keys(AGENT_SCHEDULE) : mentioned;
+      if (strictOrder && wakeTargets.length) {
+        for (const agent of wakeTargets) {
           delete this.state.state.agentLastRun[agent];
         }
         this.state.save();
-        responseParts.push(`Strict order accepted. Forced wake: ${mentioned.map((a) => a.toUpperCase()).join(', ')}.`);
+        responseParts.push(`Strict order accepted. Forced wake: ${wakeTargets.map((a) => a.toUpperCase()).join(', ')}.`);
       }
 
       if (asksWhy) {
@@ -1390,7 +1412,7 @@ Do NOT propose anything similar to these. Think of genuinely new, useful develop
 
   async scoutValidatesProposals() {
     const queue    = loadQueue();
-    const pending  = queue.filter(p => p.status === 'pending_scout');
+    const pending  = queue.filter((p) => p.status === 'pending_scout' || p.status === 'needs_revision');
 
     if (!pending.length) {
       log('scout', 'No proposals to validate. Resting.');
@@ -1400,6 +1422,10 @@ Do NOT propose anything similar to these. Think of genuinely new, useful develop
     log('scout', `Validating ${pending.length} proposal(s)...`);
 
     for (const proposal of pending) {
+      if (proposal.status === 'needs_revision') {
+        const idx = queue.findIndex((p) => p.id === proposal.id);
+        if (idx >= 0) queue[idx].status = 'pending_scout';
+      }
       log('scout', `Researching: "${proposal.title}"`);
 
       try {
@@ -1495,11 +1521,20 @@ Do NOT propose anything similar to these. Think of genuinely new, useful develop
           log('apex', `❌ REJECTED: "${proposal.title}" — ${decision.reasoning}`);
 
         } else {
-          // REVISION_REQUESTED — NOVA will see this and resubmit
-          queue[idx].status          = 'needs_revision';
+          // REVISION_REQUESTED — re-queue for SCOUT immediately.
+          // "needs_revision" is display metadata; scheduler consumes pending_scout.
+          queue[idx].status          = 'pending_scout';
+          queue[idx].revisionRequested = true;
+          queue[idx].revisionRound   = Number(queue[idx].revisionRound || 0) + 1;
+          queue[idx].revisionRequestedAt = new Date().toISOString();
           queue[idx].revisionFeedback = decision.feedback;
           this.discussion.post(proposal.id, 'apex', `Revision needed: ${decision.feedback}`);
           log('apex', `🔄 REVISION REQUESTED: "${proposal.title}"`);
+
+          // Wake SCOUT right now so revision does not wait on cadence.
+          delete this.state.state.agentLastRun.scout;
+          this.state.save();
+          log('apex', '→ Waking SCOUT immediately for revision follow-up');
         }
 
       } catch (err) {

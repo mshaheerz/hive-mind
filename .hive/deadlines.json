@@ -1,1 +1,32 @@
-[]
+[
+  {
+    "id": "web-app-for-real-time-stream-analysis::research",
+    "projectName": "web-app-for-real-time-stream-analysis",
+    "stage": "research",
+    "agent": "scout",
+    "dueAt": "2026-02-27T21:17:49.773Z",
+    "setAt": "2026-02-27T19:17:49.773Z",
+    "status": "complete",
+    "completedAt": "2026-02-27T19:18:25.385Z"
+  },
+  {
+    "id": "web-app-for-real-time-stream-analysis::architecture",
+    "projectName": "web-app-for-real-time-stream-analysis",
+    "stage": "architecture",
+    "agent": "atlas",
+    "dueAt": "2026-02-27T22:18:25.388Z",
+    "setAt": "2026-02-27T19:18:25.388Z",
+    "status": "complete",
+    "completedAt": "2026-02-27T19:19:20.106Z"
+  },
+  {
+    "id": "web-app-for-real-time-stream-analysis::implementation",
+    "projectName": "web-app-for-real-time-stream-analysis",
+    "stage": "implementation",
+    "agent": "forge",
+    "dueAt": "2026-02-28T01:19:20.109Z",
+    "setAt": "2026-02-27T19:19:20.109Z",
+    "status": "complete",
+    "completedAt": "2026-02-27T19:21:30.295Z"
+  }
+]

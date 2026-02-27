@@ -69,16 +69,16 @@ export default function AgentConversations({ discussions }: AgentConversationsPr
   if (!safe.length) return null;
 
   return (
-    <section className="mt-6 overflow-hidden rounded-2xl border border-(--border-dim) bg-[rgba(8,16,28,0.88)]">
-      <div className="flex items-center justify-between border-b border-(--border-dim) px-5 py-4">
-        <h3 className="font-display text-[0.78rem] font-bold tracking-[0.16em] text-(--text-secondary)">
+    <section className="mt-8 overflow-hidden rounded-2xl border border-(--border-dim) bg-[rgba(8,16,28,0.92)]">
+      <div className="flex items-center justify-between border-b border-(--border-dim) px-6 py-4">
+        <h3 className="font-display text-[0.95rem] font-bold tracking-[0.12em] text-(--text-secondary)">
           LIVE AGENT CONVERSATIONS
         </h3>
-        <span className="text-[0.62rem] tracking-[0.12em] text-(--text-dim)">{safe.length} THREADS</span>
+        <span className="text-[0.78rem] tracking-[0.08em] text-(--text-dim)">{safe.length} THREADS</span>
       </div>
 
-      <div className="grid md:grid-cols-[320px_1fr]">
-        <aside className="max-h-[420px] overflow-y-auto border-b border-(--border-dim) md:border-b-0 md:border-r">
+      <div className="grid md:grid-cols-[360px_1fr]">
+        <aside className="max-h-[500px] overflow-y-auto border-b border-(--border-dim) md:border-b-0 md:border-r">
           {safe.map((d, idx) => {
             const picked = idx === active;
             const msgs = d.messages || [];
@@ -87,41 +87,41 @@ export default function AgentConversations({ discussions }: AgentConversationsPr
               <button
                 key={d.id || idx}
                 onClick={() => setActive(idx)}
-                className={`block w-full border-b border-(--border-dim) px-4 py-3 text-left transition ${picked ? 'bg-(--echo-color)/12' : 'hover:bg-white/5'}`}
+                className={`block w-full border-b border-(--border-dim) px-5 py-3.5 text-left transition ${picked ? 'bg-(--echo-color)/12' : 'hover:bg-white/5'}`}
               >
-                <div className="truncate font-display text-[0.74rem] font-semibold text-(--text-primary)">{d.topic}</div>
-                <div className="mt-1 flex items-center justify-between">
+                <div className="truncate font-display text-[0.93rem] font-semibold text-(--text-primary)">{d.topic}</div>
+                <div className="mt-1.5 flex items-center justify-between">
                   <div className="flex items-center gap-1">
                     {peers.map((name) => (
                       <span
                         key={name}
-                        className="inline-flex h-4 w-4 items-center justify-center rounded-full text-[0.42rem] font-bold text-black"
+                        className="inline-flex h-5 w-5 items-center justify-center rounded-full text-[0.58rem] font-bold text-black"
                         style={{ background: AGENT_COLORS[name] || '#b3d9ff' }}
                       >
                         {initials(name).slice(0, 1)}
                       </span>
                     ))}
                   </div>
-                  <span className="text-[0.58rem] text-(--text-dim)">{msgs.length} msgs</span>
+                  <span className="text-[0.75rem] text-(--text-dim)">{msgs.length} msgs</span>
                 </div>
               </button>
             );
           })}
         </aside>
 
-        <div className="max-h-[420px] overflow-y-auto px-4 py-4 md:px-6">
+        <div className="max-h-[500px] overflow-y-auto px-5 py-5 md:px-7">
           {thread ? (
             <>
               <div className="mb-4 border-b border-(--border-dim) pb-3">
-                <div className="font-display text-sm font-semibold tracking-wide text-(--text-primary)">{thread.topic}</div>
-                <div className="mt-1 text-[0.62rem] tracking-wide text-(--text-dim)">
+                <div className="font-display text-[1.05rem] font-semibold tracking-wide text-(--text-primary)">{thread.topic}</div>
+                <div className="mt-1 text-[0.8rem] tracking-wide text-(--text-dim)">
                   started {ago(thread.startedAt)} {thread.status ? `· ${thread.status}` : ''}
                 </div>
-                <div className="mt-2 flex flex-wrap gap-1.5">
+                <div className="mt-3 flex flex-wrap gap-2">
                   {participants.map((p) => (
                     <span
                       key={p}
-                      className="rounded-full border px-2 py-0.5 text-[0.58rem] font-semibold tracking-wide"
+                      className="rounded-full border px-2.5 py-1 text-[0.72rem] font-semibold tracking-wide"
                       style={{ borderColor: `${AGENT_COLORS[p] || '#7d9ac3'}66`, color: AGENT_COLORS[p] || '#7d9ac3' }}
                     >
                       {p}
@@ -130,19 +130,19 @@ export default function AgentConversations({ discussions }: AgentConversationsPr
                 </div>
               </div>
 
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-4">
                 {(thread.messages || []).map((msg, i) => {
                   const side = sideMap[msg.from] || 'left';
                   const mine = side === 'right';
                   const color = AGENT_COLORS[msg.from] || '#7d9ac3';
                   return (
                     <div key={`${msg.from}-${i}`} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[88%] rounded-2xl border px-3 py-2 ${mine ? 'rounded-tr-sm' : 'rounded-tl-sm'}`} style={{ borderColor: `${color}66`, background: mine ? `${color}1f` : 'rgba(255,255,255,0.04)' }}>
-                        <div className="mb-1 flex items-center gap-2">
-                          <span className="text-[0.62rem] font-bold tracking-wide" style={{ color }}>{msg.from}</span>
-                          <span className="text-[0.55rem] text-(--text-dim)">{ago(msg.at)}</span>
+                      <div className={`max-w-[90%] rounded-2xl border px-4 py-3 ${mine ? 'rounded-tr-sm' : 'rounded-tl-sm'}`} style={{ borderColor: `${color}66`, background: mine ? `${color}1f` : 'rgba(255,255,255,0.04)' }}>
+                        <div className="mb-1.5 flex items-center gap-2">
+                          <span className="text-[0.78rem] font-bold tracking-wide" style={{ color }}>{msg.from}</span>
+                          <span className="text-[0.7rem] text-(--text-dim)">{ago(msg.at)}</span>
                         </div>
-                        <p className="whitespace-pre-wrap break-words text-[0.72rem] leading-[1.65] text-(--text-secondary)">
+                        <p className="whitespace-pre-wrap break-words text-[0.95rem] leading-[1.6] text-(--text-secondary)">
                           {msg.message}
                         </p>
                       </div>
@@ -152,7 +152,7 @@ export default function AgentConversations({ discussions }: AgentConversationsPr
               </div>
             </>
           ) : (
-            <div className="text-[0.7rem] text-(--text-dim)">Select a thread to view conversation.</div>
+            <div className="text-[0.92rem] text-(--text-dim)">Select a thread to view conversation.</div>
           )}
         </div>
       </div>

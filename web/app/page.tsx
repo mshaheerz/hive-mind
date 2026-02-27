@@ -85,7 +85,7 @@ export default function Home() {
       />
 
       {/* Space Station Visualization */}
-      <div className="px-8 py-8 max-w-[1600px] mx-auto">
+      <div className="mx-auto max-w-[1600px] px-5 py-7 md:px-8 md:py-8">
         <SpaceStation
           hive={hive}
           agentStatus={agentStatus}
@@ -95,7 +95,7 @@ export default function Home() {
         />
 
         {/* Bottom grid */}
-        <div className="grid grid-cols-3 gap-6 mt-6">
+        <div className="mt-7 grid grid-cols-3 gap-5 lg:grid-cols-3 lg:gap-6">
           <ProjectTracker projects={hive?.projects || []} />
           <ProposalQueue queue={hive?.queue || []} />
           <MissionLog logs={hive?.logs || []} />

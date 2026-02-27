@@ -159,22 +159,22 @@ export default function StageConversationFeed({ discussions = [], logs = [] }: S
   }), [entries]);
 
   return (
-    <section className="mt-6 rounded-2xl border border-(--border-dim) bg-[#0a1018] p-4 md:p-5">
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="font-display text-[0.82rem] font-bold tracking-[0.14em] text-(--text-secondary)">
+    <section className="mt-8 rounded-2xl border border-(--border-dim) bg-[#0a1018] p-5 md:p-6">
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="font-display text-[0.95rem] font-bold tracking-[0.12em] text-(--text-secondary)">
           LIVE CONVERSATION FEED
         </h3>
-        <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 text-[0.58rem] font-semibold tracking-[0.1em] text-emerald-300">
+        <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-[0.72rem] font-semibold tracking-[0.08em] text-emerald-300">
           LIVE
         </span>
       </div>
 
-      <div className="mb-3 flex flex-wrap gap-2 text-[0.58rem]">
+      <div className="mb-4 flex flex-wrap gap-2 text-[0.75rem]">
         {(['all', 'chat', 'move', 'system'] as const).map((k) => (
           <button
             key={k}
             onClick={() => setMode(k)}
-            className={`rounded-md border px-2 py-1 transition ${
+            className={`rounded-md border px-3 py-1.5 transition ${
               mode === k
                 ? 'border-white/20 bg-white/10 text-(--text-secondary)'
                 : 'border-white/10 text-(--text-dim) hover:bg-white/5'
@@ -185,11 +185,11 @@ export default function StageConversationFeed({ discussions = [], logs = [] }: S
         ))}
       </div>
 
-      <div className="max-h-[420px] overflow-y-auto rounded-xl border border-cyan-500/25 bg-[linear-gradient(180deg,#041015_0%,#03090f_100%)] p-2 md:p-3">
+      <div className="max-h-[520px] overflow-y-auto rounded-xl border border-cyan-500/25 bg-[linear-gradient(180deg,#041015_0%,#03090f_100%)] p-3 md:p-4">
         {visible.length === 0 ? (
-          <div className="p-4 text-[0.72rem] text-(--text-dim)">No conversation events yet.</div>
+          <div className="p-4 text-[0.95rem] text-(--text-dim)">No conversation events yet.</div>
         ) : (
-          <div className="space-y-1.5">
+          <div className="space-y-2.5">
             {visible.map((entry) => {
               const color = AGENT_COLORS[entry.actor] || '#9aa8c8';
               const emoji = AGENT_EMOJI[entry.actor] || '•';
@@ -199,17 +199,17 @@ export default function StageConversationFeed({ discussions = [], logs = [] }: S
               const long = plainText(entry.text).length > trimmed.length;
               const isOpen = Boolean(expanded[entry.id]);
               return (
-                <div key={entry.id} className="rounded-lg border border-white/8 bg-black/35 p-2.5">
-                  <div className="flex items-center gap-2 text-[0.58rem]">
+                <div key={entry.id} className="rounded-lg border border-white/8 bg-black/35 p-3.5">
+                  <div className="flex items-center gap-2.5 text-[0.76rem]">
                     <span className="text-(--text-dim)">{ago(entry.at)}</span>
                     <span style={{ color }} className="font-semibold">{entry.actor}</span>
-                    <span className="text-[0.68rem]">{emoji}</span>
-                    <span className={`rounded px-1.5 py-0.5 font-semibold ${entry.kind === 'move' ? 'bg-amber-500/15 text-amber-300' : entry.kind === 'chat' ? 'bg-sky-500/15 text-sky-300' : 'bg-white/10 text-(--text-dim)'}`}>
+                    <span className="text-[0.9rem]">{emoji}</span>
+                    <span className={`rounded px-2 py-0.5 font-semibold ${entry.kind === 'move' ? 'bg-amber-500/15 text-amber-300' : entry.kind === 'chat' ? 'bg-sky-500/15 text-sky-300' : 'bg-white/10 text-(--text-dim)'}`}>
                       {label}
                     </span>
                     {entry.topic ? <span className="ml-auto truncate text-(--text-dim)">{entry.topic}</span> : null}
                   </div>
-                  <p className="mt-1 break-words text-[0.73rem] leading-[1.65] text-(--text-primary)">
+                  <p className="mt-2 break-words text-[0.95rem] leading-[1.65] text-(--text-primary)">
                     {isChat && entry.replyTo
                       ? `${entry.actor} → ${entry.replyTo}: ${isOpen ? plainText(entry.text) : trimmed}`
                       : isOpen ? plainText(entry.text) : trimmed}
@@ -217,13 +217,13 @@ export default function StageConversationFeed({ discussions = [], logs = [] }: S
                   {long ? (
                     <button
                       onClick={() => setExpanded((prev) => ({ ...prev, [entry.id]: !isOpen }))}
-                      className="mt-1 text-[0.58rem] text-cyan-300 hover:text-cyan-200"
+                      className="mt-1.5 text-[0.76rem] text-cyan-300 hover:text-cyan-200"
                     >
                       {isOpen ? 'show less' : 'show more'}
                     </button>
                   ) : null}
                   {entry.replyTo ? (
-                    <div className="mt-1 text-[0.58rem] text-amber-300">&crarr; {entry.replyTo} → {entry.actor}</div>
+                    <div className="mt-1.5 text-[0.76rem] text-amber-300">&crarr; {entry.replyTo} → {entry.actor}</div>
                   ) : null}
                 </div>
               );
