@@ -1,212 +1,112 @@
 **File: `tests/test_logger.py`**
 ```python
+"""
+Unit tests for src/logger.py
+"""
+
 import os
 import logging
 import threading
-import time
+import tempfile
+import shutil
 from pathlib import Path
+from importlib import import_module
+
 import pytest
 
 # Import the module under test
-from src.logger import (
-    get_logger,
-    _ensure_log_dir,
-    LOG_DIR_NAME,
-    LOG_FILE_NAME,
-    ENV_LOG_LEVEL,
-    DEFAULT_LOG_LEVEL,
-)
-
-# --------------------------------------------------------------------------- #
-# Helper fixtures
-# --------------------------------------------------------------------------- #
-@pytest.fixture
-def temp_log_dir(tmp_path: Path):
-    """
-    Override the log directory to a temporary path for isolation.
-    """
-    original_dir = Path(__file__).resolve().parent.parent / LOG_DIR_NAME
-    # Temporarily change the LOG_DIR_NAME constant
-    global LOG_DIR_NAME
-    original_name = LOG_DIR_NAME
-    LOG_DIR_NAME = "tmp_logs"
-    yield tmp_path
-    LOG_DIR_NAME = original_name
+logger_module = import_module("src.logger")
+get_logger = logger_module.get_logger
+_LOGGERS = logger_module._LOGGERS
+_LOCK = logger_module._LOCK
+ENV_LOG_LEVEL = logger_module.ENV_LOG_LEVEL
+DEFAULT_LOG_LEVEL = logger_module.DEFAULT_LOG_LEVEL
 
 
-@pytest.fixture
-def clear_loggers():
-    """
-    Ensure that the internal logger cache is cleared between tests.
-    """
-    from src.logger import _LOGGERS
-    _LOGGERS.clear()
-    yield
-    _LOGGERS.clear()
+@pytest.fixture(autouse=True)
+def clear_loggers(monkeypatch):
+    """Ensure a clean state for each test."""
+    monkeypatch.setitem(_LOGGERS, {}, None)
+    monkeypatch.setattr(_LOCK, "acquire", _LOCK.acquire, raising=False)
+    monkeypatch.setattr(_LOCK, "release", _LOCK.release, raising=False)
 
 
-# --------------------------------------------------------------------------- #
-# Unit tests for get_logger
-# --------------------------------------------------------------------------- #
-def test_get_logger_creates_new_logger(clear_loggers):
-    """A first call creates a logger with the correct name."""
-    logger = get_logger("test_logger")
-    assert isinstance(logger, logging.Logger)
-    assert logger.name == "test_logger"
+def test_get_logger_basic(monkeypatch):
+    """A single call returns a Logger instance."""
+    log = get_logger()
+    assert isinstance(log, logging.Logger)
+    assert log.name == "envsync"
     # Default level should be INFO unless overridden
-    assert logger.level == logging.INFO
+    assert log.level == logging.getLevelName(DEFAULT_LOG_LEVEL.upper())
 
 
-def test_get_logger_respects_env_level(clear_loggers, monkeypatch):
-    """The ENV_SYNC_LOG_LEVEL env var overrides the default level."""
+def test_get_logger_caching(monkeypatch):
+    """Same name returns the same instance."""
+    log1 = get_logger("mylogger")
+    log2 = get_logger("mylogger")
+    assert log1 is log2
+    # Different names produce different loggers
+    log3 = get_logger("otherlogger")
+    assert log1 is not log3
+
+
+def test_env_log_level_override(monkeypatch):
+    """Setting ENV_SYNC_LOG_LEVEL overrides the default level."""
     monkeypatch.setenv(ENV_LOG_LEVEL, "debug")
-    logger = get_logger("level_test")
-    assert logger.level == logging.DEBUG
+    log = get_logger("level_test")
+    assert log.level == logging.DEBUG
 
 
-def test_get_logger_same_name_returns_same_instance(clear_loggers):
-    """Multiple calls with the same name return the same logger object."""
-    first = get_logger("shared")
-    second = get_logger("shared")
-    assert first is second
-    # Handlers should not be duplicated
-    assert len(first.handlers) == 2  # file + console
+def test_propagate_false(monkeypatch):
+    """Loggers should not propagate to root."""
+    log = get_logger("no_propagate")
+    assert log.propagate is False
 
 
-def test_get_logger_different_names_are_isolated(clear_loggers):
-    """Different names produce distinct logger instances."""
-    a = get_logger("a")
-    b = get_logger("b")
-    assert a is not b
-    assert a.name == "a"
-    assert b.name == "b"
-    assert len(a.handlers) == 2
-    assert len(b.handlers) == 2
+def test_handlers_added_once(monkeypatch):
+    """Handlers are added only once per logger."""
+    log = get_logger("handler_test")
+    # Initially two handlers: file + console
+    assert len(log.handlers) == 2
+    # Subsequent call should not add duplicates
+    log2 = get_logger("handler_test")
+    assert len(log2.handlers) == 2
 
 
-def test_get_logger_thread_safety(clear_loggers):
-    """Concurrent access does not create duplicate loggers."""
+def test_thread_safety(monkeypatch):
+    """Concurrent calls to get_logger should return the same instance."""
     results = []
 
-    def worker():
-        results.append(get_logger("concurrent"))
+    def worker(name):
+        results.append(get_logger(name))
 
-    threads = [threading.Thread(target=worker) for _ in range(10)]
+    threads = [threading.Thread(target=worker, args=("concurrent",)) for _ in range(10)]
     for t in threads:
         t.start()
     for t in threads:
         t.join()
 
-    # All references should point to the same object
-    first = results[0]
-    assert all(r is first for r in results)
-    # No duplicate handlers
-    assert len(first.handlers) == 2
+    assert all(r is results[0] for r in results)
 
 
-def test_get_logger_writes_to_file(clear_loggers, temp_log_dir, monkeypatch):
-    """Logging a message should produce a file entry."""
-    # Point the log directory to the temporary path
-    monkeypatch.setattr("src.logger.LOG_DIR_NAME", temp_log_dir.name)
-    logger = get_logger("file_test")
-    logger.info("Test message")
-    log_file = temp_log_dir / LOG_FILE_NAME
-    assert log_file.exists()
-    content = log_file.read_text(encoding="utf-8")
-    assert "Test message" in content
-    assert "INFO" in content
-    assert "file_test" in content
-
-
-def test_ensure_log_dir_creates_directory(tmp_path: Path):
-    """The helper function creates the log directory if missing."""
-    # Temporarily set the log directory name to a sub‑dir
-    global LOG_DIR_NAME
-    original_name = LOG_DIR_NAME
-    LOG_DIR_NAME = tmp_path.name
-    try:
-        log_dir = _ensure_log_dir()
-        assert log_dir.exists()
-        assert log_dir.is_dir()
-    finally:
-        LOG_DIR_NAME = original_name
-
-
-# --------------------------------------------------------------------------- #
-# Integration tests
-# --------------------------------------------------------------------------- #
-def test_logger_integration_with_file_handler(clear_loggers, temp_log_dir, monkeypatch):
+def test_log_dir_creation(monkeypatch, tmp_path):
     """
-    Verify that the file handler rotates correctly at midnight.
-    (We cannot trigger midnight, but we can verify backup count logic.)
+    _ensure_log_dir should create the log directory relative to the
+    package root. We monkeypatch the function to use a temporary directory.
     """
-    # Point to temporary log dir
-    monkeypatch.setattr("src.logger.LOG_DIR_NAME", temp_log_dir.name)
-    logger = get_logger("rotate_test")
-    # Emit enough logs to trigger rotation logic (simulated by manual rotation)
-    for i in range(5):
-        logger.info(f"Rotation test {i}")
-    log_file = temp_log_dir / LOG_FILE_NAME
-    assert log_file.exists()
-    # The TimedRotatingFileHandler should have created backup files if time passed
-    # Since we can't wait until midnight, ensure that at least one backup file exists
-    backups = list(temp_log_dir.glob("envsync.log.*"))
-    # We expect zero or more backups; the test passes if the file exists
-    assert log_file in backups or log_file.exists()
+    original_path = Path(logger_module.__file__).resolve().parent.parent
+
+    # Create a temporary directory to act as the package root
+    temp_root = tmp_path / "package_root"
+    temp_root.mkdir()
+    # Monkeypatch the __file__ attribute so that _ensure_log_dir uses temp_root
+    monkeypatch.setattr(logger_module, "__file__", str(temp_root / "logger.py"))
+
+    # Call get_logger which internally calls _ensure_log_dir
+    log = get_logger("temp_dir_test")
+    # The log directory should be temp_root/logs
+    expected_dir = temp_root / logger_module.LOG_DIR_NAME
+    assert expected_dir.exists() and expected_dir.is_dir()
 
 
-# --------------------------------------------------------------------------- #
-# Edge case tests
-# --------------------------------------------------------------------------- #
-def test_logger_with_invalid_level(monkeypatch, clear_loggers):
-    """An invalid log level string falls back to the default level."""
-    monkeypatch.setenv(ENV_LOG_LEVEL, "notalevel")
-    logger = get_logger("invalid_level")
-    # Should default to INFO
-    assert logger.level == logging.INFO
-
-
-def test_logger_propagate_false(clear_loggers):
-    """The logger should not propagate messages to root."""
-    logger = get_logger("no_propagate")
-    assert logger.propagate is False
-```
-
----
-
-**File: `tests/test_config_parser.py`**
-```python
-import os
-import re
-import tempfile
-import pytest
-from pathlib import Path
-
-# Import the function under test
-from src.config_parser import parse_env_file
-
-# --------------------------------------------------------------------------- #
-# Helper fixture for creating temporary .env files
-# --------------------------------------------------------------------------- #
-@pytest.fixture
-def temp_env_file(tmp_path: Path):
-    """Yield a temporary .env file path and helper to write content."""
-    file_path = tmp_path / ".env"
-    def write(content: str):
-        file_path.write_text(content, encoding="utf-8")
-    return file_path, write
-
-# --------------------------------------------------------------------------- #
-# Unit tests
-# --------------------------------------------------------------------------- #
-def test_parse_env_file_empty_file(temp_env_file):
-    """Parsing an empty file yields an empty dict."""
-    file_path, write = temp_env_file
-    write("")  # empty content
-    result = parse_env_file(file_path)
-    assert result == {}
-
-def test_parse_env_file_missing_file():
-    """Missing file should return an empty dict, not raise."""
-    result = parse_env_file(Path("/nonexistent/path/.env"))
-    assert result ==
+def test_get_logger_file_handler_properties

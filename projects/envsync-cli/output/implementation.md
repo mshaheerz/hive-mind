@@ -6,8 +6,6 @@ EnvSync CLI package initializer.
 # No runtime initialisation required.
 ```
 
----
-
 **File: `src/logger.py`**
 ```python
 """
@@ -113,15 +111,12 @@ def get_logger(name: str = "envsync") -> logging.Logger:
         return logger
 ```
 
----
-
 **File: `src/config_parser.py`**
 ```python
 """
 Utilities for parsing and writing .env configuration files.
 """
 
-import os
 import re
 from pathlib import Path
 from typing import Dict
@@ -163,3 +158,53 @@ def parse_env_file(file_path: Path) -> Dict[str, str]:
             match = _ENV_LINE_RE.match(line)
             if match:
                 key = match.group("key")
+                raw_value = match.group("value")
+                # Strip surrounding quotes if present
+                if raw_value.startswith(("'", '"')) and raw_value.endswith(("'", '"')):
+                    value = raw_value[1:-1]
+                else:
+                    value = raw_value
+                env[key] = value
+    return env
+
+
+def write_env_file(env: Dict[str, str], file_path: Path) -> None:
+    """
+    Write a dictionary to a .env file.
+
+    Parameters
+    ----------
+    env : Dict[str, str]
+        Mapping of key to value.
+    file_path : Path
+        Path to the .env file to write.
+    """
+    lines = [f"{key}={value}" for key, value in env.items()]
+    content = "\n".join(lines) + "\n"
+    try:
+        file_path.write_text(content, encoding="utf-8")
+    except OSError as exc:
+        raise RuntimeError(f"Failed to write .env file {file_path}") from exc
+```
+
+**File: `src/cloud_providers/__init__.py`**
+```python
+"""
+Package for cloud provider adapters.
+"""
+# No runtime initialisation required.
+```
+
+**File: `src/cloud_providers/aws.py`**
+```python
+"""
+AWS Secrets Manager adapter.
+
+Provides a simple interface to fetch and store secrets.
+"""
+
+import os
+from typing import Dict
+import boto3
+from botocore.exceptions import BotoCoreError, ClientError
+from ..logger import

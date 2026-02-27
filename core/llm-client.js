@@ -80,7 +80,7 @@ function buildAgentModels(provider) {
   return models;
 }
 
-class OpenRouterClient {
+class LLMClient {
   constructor(opts = {}) {
     const options = typeof opts === 'string' ? { apiKey: opts } : opts;
     this.provider = normalizeProvider(options.provider || process.env.LLM_PROVIDER || DEFAULT_PROVIDER);
@@ -237,7 +237,8 @@ const AGENT_MODELS = buildAgentModels('openrouter');
 const ACTIVE_AGENT_MODELS = buildAgentModels(DEFAULT_PROVIDER);
 
 module.exports = {
-  OpenRouterClient,
+  LLMClient,
+  OpenRouterClient: LLMClient, // Backward-compatible alias
   AGENT_MODELS,
   ACTIVE_AGENT_MODELS,
   buildAgentModels,

@@ -1,1 +1,6 @@
-Checked=4 Passed=4 Failed=0
+Checked=5 Passed=4 Failed=1
+[FAIL] python3 -m py_compile tests/test_logger.py
+File "/home/zaigopc/Desktop/my/hive-mind/projects/envsync-cli/workspace/tests/test_logger.py", line 28
+    global LOG_DIR_NAME
+    ^^^^^^^^^^^^^^^^^^^
+SyntaxError: name 'LOG_DIR_NAME' is used prior to global declaration

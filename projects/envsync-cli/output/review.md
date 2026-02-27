@@ -1,36 +1,32 @@
-**VERDICT:** NEEDS_CHANGES  
+**VERDICT:** **NEEDS_CHANGES**
 
 ---
 
-## CRITICAL issues (must fix before merge)
+## CRITICAL ISSUES (must be fixed before merge)
 
-| # | Issue | Why it matters | Fix |
-|---|-------|----------------|-----|
-| 1 | **`parse_env_file` is incomplete** – the function extracts the key but never extracts or processes the value, never strips quotes, never handles errors, and never returns the parsed dictionary. | The core functionality of the CLI (parsing `.env` files) will never work. | Finish the implementation: <br>• Extract `value = match.group("value")`<br>• Strip surrounding quotes (single or double) and unescape escaped characters.<br>• Handle empty or duplicate keys appropriately.<br>• Return the populated `env` dict. |
-| 2 | **Missing value handling logic** – even if the function were complete, it would need to correctly handle quoted values, escaped quotes, and multiline values. | Incorrect parsing leads to corrupted secrets being sent to cloud stores or lost locally. | Implement a robust unquoting routine, e.g. `shlex.split` or a custom unescape function. |
-| 3 | **No error handling for file I/O** – if the file cannot be opened (permissions, encoding errors), the exception propagates to the caller. | This can crash the CLI and provide no meaningful feedback to the user. | Wrap `file_path.open()` in a try/except block and log/raise a descriptive error. |
-| 4 | **Missing tests** – no unit tests cover `config_parser` or `logger`. | Without tests you cannot guarantee correctness after future changes. | Add a test suite that covers: <br>• Valid lines (quoted, unquoted, comments).<br>• Duplicate keys.<br>• Empty lines, whitespace, and invalid syntax.<br>• Error handling (non‑existent file, permission denied). |
-| 5 | **`get_logger` ignores environment variable changes after first call** – once a logger is created its level cannot be altered by changing `ENV_SYNC_LOG_LEVEL`. | Users may expect runtime log‑level changes to take effect. | Either document that the level is fixed per process, or provide a `reload_logger` helper that reconfigures existing loggers. |
-
----
-
-## WARNINGS (should fix)
-
-| # | Issue | Why it matters | Fix |
-|---|-------|----------------|-----|
-| 6 | **`logger.propagate = False`** – suppresses propagation to the root logger. If the root logger is configured elsewhere, log messages may be lost. | Might make debugging harder if the user expects global logging. | Provide an option to enable propagation or document the behavior clearly. |
-| 7 | **Hard‑coded log directory path** – uses `Path(__file__).resolve().parent.parent / LOG_DIR_NAME`. If the package is installed in a read‑only location (e.g., a virtualenv or a container with a read‑only filesystem), log creation will fail. | The CLI could crash on startup. | Allow overriding the log directory via an environment variable or a configuration parameter. |
-| 8 | **`DEFAULT_LOG_LEVEL` is a string** – `setLevel` expects an integer or a string like `"INFO"`. If the user passes a numeric value (e.g., `10`) the code will raise a `ValueError`. | Unexpected runtime error. | Accept both numeric and string levels: `level = os.getenv(..., DEFAULT_LOG_LEVEL); logger.setLevel(logging.getLevelName(level))`. |
-| 9 | **No type hints for `get_logger`** – the function returns `logging.Logger` but the signature only says `str`. | Reduces type‑checkability. | Add return type: `def get_logger(name: str = "envsync") -> logging.Logger:`. |
-|10 | **`_ensure_log_dir` silently swallows permission errors** – it re‑raises a generic `RuntimeError` without context. | Harder to debug permission issues. | Include the original exception message and the path in the error. |
+| File | Issue | Why it’s a problem | How to fix it |
+|------|-------|--------------------|---------------|
+| **`src/logger.py`** | **Potential invalid log level** – `logger.setLevel(os.getenv(ENV_LOG_LEVEL, DEFAULT_LOG_LEVEL).upper())` will raise a `ValueError` if the environment variable contains a non‑existent level (e.g., `FOO`). | The CLI would crash at start‑up, making the tool unusable. | Validate the level against `logging._nameToLevel` (or use `logging.getLevelName`) and fall back to `DEFAULT_LOG_LEVEL` if invalid. Example: <br>`level_name = os.getenv(ENV_LOG_LEVEL, DEFAULT_LOG_LEVEL).upper()`<br>`level = logging._nameToLevel.get(level_name, logging.INFO)`<br>`logger.setLevel(level)` |
+| **`src/logger.py`** | **Log directory path may be surprising** – `Path(__file__).resolve().parent.parent / LOG_DIR_NAME` creates a `logs` folder two levels up from the module, which can be outside the project root (e.g., when installed as a package). | Logs could be written to an unexpected location, possibly a read‑only directory or a location without proper permissions. | Resolve the log directory relative to the *project root* or allow an override via an environment variable (e.g., `ENV_SYNC_LOG_DIR`). Provide a sensible default such as `Path.cwd() / LOG_DIR_NAME`. |
+| **`src/logger.py`** | **Duplicate handlers on re‑import** – If `get_logger` is called multiple times *after* a process forks (e.g., in multiprocessing), the global `_LOGGERS` dict is not shared, leading to each child process adding handlers to the same underlying `logging.Logger` object. | This results in duplicated log lines and file‑handle leaks. | Use `logger.hasHandlers()` instead of checking `logger.handlers` and always call `logger.addHandler` only when no handlers exist **per process**. Consider clearing handlers on fork via `logging.Logger.manager.loggerDict` or using `logging.getLogger(name).handlers.clear()` in a safe way. |
+| **`src/config_parser.py`** | **`parse_env_file` silently drops malformed lines** – Lines that don’t match the regex are ignored without any warning. | Users may think a secret was loaded when it was actually skipped due to a typo, leading to subtle bugs. | Emit a debug/warning log (using the central logger) for each ignored line, or raise a custom `EnvParseError` after processing the whole file with a summary of problematic lines. |
+| **`src/config_parser.py`** | **`write_env_file` overwrites existing files without backup** – A failure during write (e.g., disk full) leaves the original file partially truncated. | Could destroy a developer’s local `.env` file, a severe data‑loss risk. | Write to a temporary file (`file_path.with_suffix('.tmp')`) and then atomically replace the original using `Path.replace()`. Optionally keep a timestamped backup (`.bak`). |
+| **`src/config_parser.py`** | **Values containing spaces or `#` are not quoted** – The writer does `f"{key}={value}"` regardless of content, producing invalid `.env` files for values that need quoting. | Secrets with spaces or `#` become malformed and break downstream tools. | Detect when a value needs quoting (contains whitespace, `#`, or leading/trailing quotes) and wrap it in double quotes, escaping internal double quotes (`"` → `\"`). |
+| **`src/cloud_providers/aws.py`** | **File is incomplete / syntax error** – The file ends with `from ..logger import` which is a syntax error and missing the actual adapter implementation. | The package will not import; CI will fail. | Finish the import (`from ..logger import get_logger`) and implement the `AWSSecretsManager` class with `get_secret(name: str) -> str` and `set_secret(name: str, value: str) -> None`. Include proper error handling (catch `ClientError`, wrap in a domain‑specific exception). |
+| **`src/cloud_providers/aws.py`** | **Hard‑coded credential handling** – The stub imports `boto3` but does not enforce the use of environment‑based credentials or explicit session configuration. | If a user runs the CLI with wrong AWS credentials, the SDK may fall back to instance metadata or other insecure sources. | Require an explicit `boto3.Session` that respects `AWS_PROFILE`, `AWS_ACCESS_KEY_ID`, etc., and document the required environment variables. Provide a fallback that raises a clear `RuntimeError` when credentials cannot be resolved. |
+| **Overall** | **Missing unit tests** – No test files are present for any module. | Without tests, regressions and edge‑case bugs will go unnoticed. | Add a test suite (e.g., using `pytest`) covering: <br>• Logger creation (level handling, duplicate handlers) <br>• `.env` parsing (valid lines, comments, malformed lines) <br>• `.env` writing (quoting, backup, atomic replace) <br>• Cloud provider adapters (mocked SDK calls, error paths). |
 
 ---
 
-## SUGGESTIONS (optional improvements)
+## WARNINGS (should be addressed)
 
-| # | Suggestion | Benefit |
-|---|------------|---------|
-| 11 | **Add a `write_env_file` helper** – symmetry to parsing. | Enables bidirectional sync without manual editing. |
-| 12 | **Support environment variable interpolation** (e.g., `DB_HOST=${HOST}`) | Matches common `.env` usage patterns. |
-| 13 | **Use `shlex.split` for robust parsing** – handles escaped spaces, comments, and quotes. | Simplifies the regex and reduces edge‑case bugs. |
-| 14 | **Implement a CLI entry point** (`__main__`) with `argparse` and sub‑commands for sync
+| File | Issue | Why it matters | Suggested fix |
+|------|-------|----------------|---------------|
+| **`src/logger.py`** | **Global mutable state (`_LOGGERS`)** – While protected by a lock, global caches make hot‑reloading or test isolation harder. | Tests that import the module multiple times may share state unexpectedly. | Provide a `reset_logger_cache()` helper for test teardown, or avoid caching altogether and rely on `logging.getLogger`’s own caching. |
+| **`src/logger.py`** | **`LOG_ROTATION_INTERVAL` is a string literal** – The `TimedRotatingFileHandler` expects a valid interval (`'S', 'M', 'H', 'D', 'midnight', 'W0'‑'W6'`). Hard‑coding `'midnight'` is fine now but future changes may break. | Future maintainers might change the constant without checking handler docs. | Document the allowed values in a comment or use an Enum for clarity. |
+| **`src/config_parser.py`** | **Regex does not support exported variables (`export KEY=val`)** – Many `.env` files include `export`. | Those lines will be ignored, leading to missing secrets. | Extend the regex to optionally match the `export` keyword (`(?:export\s+)?`). |
+| **`src/config_parser.py`** | **Order of keys is not preserved** – Writing uses `dict.items()`, which respects insertion order but not the original file order. | Users may rely on ordering for readability or for tools that parse sequentially. | Accept an `OrderedDict` or a list of `(key, value, comment)` tuples to preserve order and comments. |
+| **`src/cloud_providers`** | **No abstract base class / interface** – Each provider module will likely have its own API, making it hard to swap them. | Increases coupling and reduces testability. | Define an abstract `SecretStore` base class (e.g., with `get_secret`, `set_secret`, `list_secrets`) and have each provider subclass it. |
+| **`src/cloud_providers/aws.py`** | **Missing handling for pagination / large secret values** – AWS Secrets Manager limits secret size; larger secrets need special handling. | Could cause runtime `ClientError` for big payloads. | Document the limit and raise a clear exception if the payload exceeds `MAX_SECRET_SIZE`. |
+| **General** | **No CLI entry‑point shown** – The README mentions a CLI tool but no `argparse`/`click` wrapper is present. | The package cannot be executed as described. | Add a `src/__main__.py` or a `cli.py` that uses `argparse`/`click` to expose commands (`sync`, `push`, `pull`). |
+| **General** | **Sensitive data

@@ -5,7 +5,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { OpenRouterClient } = require('./llm-client');
+const { LLMClient } = require('./llm-client');
 
 const MEMORY_DIR = path.join(__dirname, '..', 'memory');
 const LOGS_DIR   = path.join(__dirname, '..', 'logs');
@@ -23,7 +23,7 @@ class Agent {
     this.name = name;
     this.displayName = displayName;
     this.systemPrompt = systemPrompt;
-    this.client = new OpenRouterClient();
+    this.client = new LLMClient();
     this.memoryFile = path.join(MEMORY_DIR, `${name}.json`);
     this.memory = this._loadMemory();
   }
