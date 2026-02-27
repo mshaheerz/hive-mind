@@ -1,31 +1,34 @@
-**VERDICT:** NEEDS_CHANGES  
+**VERDICT:** **NEEDS_CHANGES**
 
 ---
 
-## CRITICAL issues (must fix before merge)
+## CRITICAL ISSUES (must be fixed before merge)
 
-| # | File / Area | Issue | Why it’s critical | How to fix |
-|---|-------------|-------|-------------------|-----------|
-| 1 | `src/collectionParser.ts` | **Wrong import** – `resolvePath` is imported from `'path'` instead of the local `utils`. | The code will throw `resolvePath is not a function` at runtime, breaking the whole CLI. | Replace `import { resolvePath } from 'path';` with `import { resolvePath } from './utils';`. |
-| 2 | `src/openapiGenerator.ts` | **Truncated / incomplete implementation** – the function `writeOpenApiFile` is cut off, missing closing brace, return statement, and export. | The project cannot compile; the generator never writes the OpenAPI spec to disk. | Complete the function (see suggestion below). |
-| 3 | `src/collectionParser.ts` | **Temporary file not cleaned up** – a `.tmp‑postman‑collection.json` file is written but never removed. | Leaves stray files on the developer’s machine, possible data leakage of sensitive collection content, and can cause race‑conditions on concurrent runs. | Use `fs.mkdtemp` or a UUID‑based filename in the OS temp directory and delete it with `fs.unlink` in a `finally` block. |
-| 4 | `src/postmanApiClient.ts` | **API key handling** – the key is accepted as a plain string and sent directly in a header. No guidance to read it from environment variables, and the key could be logged accidentally. | Exposes a secret if a developer runs the CLI with `--debug` or if an error prints the request config. | Require the key to be supplied via an environment variable (`POSTMAN_API_KEY`) or a `--api-key` flag that is never echoed. Strip it from any logs. |
-| 5 | Overall project | **No unit / integration tests** – the repository contains no test files. | Without tests regressions will slip in; the “Definition of Done” explicitly lists “PULSE tests passing”. | Add a test suite (e.g., Jest) covering: 1) `PostmanApiClient` remote & local fetch, 2) `convertCollectionToOpenApi` success & failure paths, 3) `writeOpenApiFile` file creation, 4) CLI argument validation. |
-| 6 | `src/openapiGenerator.ts` | **Missing validation of `outDir`** – the function assumes the caller passes a valid path. | If the caller supplies a path like `../../etc` the tool could write files outside the intended workspace, a potential security issue. | Resolve the path, ensure it is inside the current working directory (or a dedicated `generated-sdk` folder), and reject otherwise. |
-| 7 | `src/utils.ts` | **`logError` and `logInfo` are thin wrappers** – they do not prepend timestamps or support log levels. | Harder to debug in production environments; logs may be mixed with other CLI output. | Replace with a small logger (e.g., `pino` or `winston`) or at least include a timestamp: `console.error(\`[${new Date().toISOString()}] ERROR: ${message}\`)`. |
+| # | File / Area | Issue | Why it’s a problem | How to fix it |
+|---|-------------|-------|--------------------|---------------|
+| 1 | `src/sdkGenerator.ts` (incomplete) | The file is truncated – no implementation, no exports, no error handling. | The CLI cannot generate SDKs at all; the core feature is missing. | Complete the module: parse arguments, validate language, invoke `openapi-generator-cli` via a safe wrapper, handle stdout/stderr, return a promise that resolves when generation finishes, and export a function used by the CLI entry point. |
+| 2 | `src/sdkGenerator.ts` – `spawn` usage | Directly interpolates user‑provided values (`outputDir`, `language`) into the command arguments without sanitisation. | **Command‑Injection** risk – a malicious path like `"; rm -rf /"` could be executed. | Use `spawn` with an **array of arguments** (no shell) and validate each argument against a whitelist (`SUPPORTED_LANGUAGES`). Consider using `child_process.execFile` which never invokes a shell. |
+| 3 | `src/utils.ts` – `writeFile` | `await fs.mkdir(resolve(absolutePath, '..'), …)` uses `resolve` on a *file* path to compute the parent directory, which can produce an incorrect path on Windows (`C:\foo\bar.json\..`). | May create a directory named “bar.json” instead of its parent, leading to write failures or unexpected files. | Use `path.dirname(absolutePath)` to compute the target directory: `await fs.mkdir(dirname(absolutePath), { recursive: true });`. |
+| 4 | `src/utils.ts` – `fileExists` | Swallows **all** errors (including permission errors) and returns `false`. | Makes debugging impossible and masks real problems (e.g., EACCES). | At minimum log the error or re‑throw for unexpected error codes. Example: `if (err.code !== 'ENOENT') throw err;` |
+| 5 | `src/postmanClient.ts` – API‑Key handling | API key is passed verbatim in a header; no validation or redaction in error messages. | If a user accidentally supplies an invalid key, the error message may leak it (`Failed to fetch collection …: <msg>`). | Redact the key in logs; validate that the key matches the expected pattern (e.g., 32‑hex chars) before using it. |
+| 6 | Missing **input validation** in the CLI (not shown) | No checks that the collection ID is a valid UID, that the output directory is writable, or that the language argument is among `SUPPORTED_LANGUAGES`. | Leads to runtime crashes, confusing errors, and possible security issues. | Add a validation layer (e.g., using `zod` or manual checks) before proceeding with any network or file‑system operation. |
+| 7 | No **tests** (unit or integration) | `package.json` points to `test/integration_test.js` which does not exist. | Without tests you cannot guarantee correctness, regressions, or security. | Add a test suite (Jest, Vitest, or Mocha) covering: <br>• `readJsonFile` parses valid JSON and throws on malformed JSON.<br>• `writeFile` creates directories correctly.<br>• `PostmanClient.fetchCollection` handles 404/401.<br>• `generateOpenApiSpec` produces a file and propagates errors.<br>• `sdkGenerator` spawns the CLI with correct args and rejects on non‑zero exit. |
+| 8 | **Path Traversal** risk when `outputDir` is supplied by the user (used directly in `resolve`). | An attacker could specify `../../etc/passwd` and cause the CLI to write files outside the intended folder. | Resolve the path against a known base directory and ensure the final resolved path starts with that base. Use `path.resolve(base, userPath)` and verify `finalPath.startsWith(base)`. |
 
 ---
 
-## WARNINGS (should fix, but not blocking)
+## WARNINGS (should be addressed)
 
 | # | File / Area | Issue | Why it matters | Suggested fix |
 |---|-------------|-------|----------------|---------------|
-| 1 | `src/constants.ts` | `OPENAPI_GENERATOR_CLI` assumes the binary is on `PATH`. | On CI or fresh machines the binary may be missing, leading to a cryptic “command not found”. | Add a runtime check (`which openapi-generator-cli`) and give a clear error message with install instructions. |
-| 2 | `src/postmanApiClient.ts` | `fetchRemoteCollection` catches `err` and re‑throws the same object. | Stack trace is preserved, but the error message is logged as plain text, potentially leaking collection IDs. | Log a generic message (`Failed to fetch collection`) and include the ID only in a debug mode. |
-| 3 | `src/collectionParser.ts` | Uses `postman-to-openapi` which returns a **string**; the code parses it without type safety. | If the library changes to return a Buffer or an object, the parser will crash. | Guard the result: `if (typeof result !== 'string') throw new Error('Unexpected conversion output');` |
-| 4 | `src/openapiGenerator.ts` | `path` imported but never used. | Minor lint issue, can hide more serious problems. | Remove the unused import or use it for path resolution. |
-| 5 | `src/utils.ts` | `resolvePath` uses `process.cwd()`. | If the CLI is invoked from a different directory than the project root, relative paths may resolve incorrectly. | Accept an optional `baseDir` argument or document the expected working directory. |
-| 6 | Overall | No `package.json` scripts for linting, formatting, or building. | Consistency and CI checks become harder. | Add scripts: `"lint": "eslint . --ext .ts", "format": "prettier --write .", "build": "tsc"` |
+| 1 | `src/constants.ts` – `POSTMAN_API_BASE` | Hard‑coded to `https://api.getpostman.com`. | Limits testing against mocks or alternative endpoints. | Allow overriding via an environment variable (e.g., `POSTMAN_API_BASE_URL`). |
+| 2 | `src/constants.ts` – `OPENAPI_GENERATOR_CLI` | Assumes the binary is on `$PATH`. | On CI or Windows machines the binary may not be found. | Detect the binary path via `which`/`where`, or ship the npm package `@openapitools/openapi-generator-cli` and invoke it via `npx`. |
+| 3 | `src/collectionParser.ts` – `postman-to-openapi` usage | The library’s API may change; the code passes `input` and `writeFile: false` but does not handle the case where the library falls back to writing a file. | Future breakage. | Add a fallback that writes the returned string to a temporary file if the library writes to disk, and document the required library version. |
+| 4 | `src/postmanClient.ts` – `fetchCollection` error handling | Wraps any error in a generic `Error` losing the original stack and HTTP status. | Harder to debug and to react to specific HTTP codes (e.g., 404 vs 401). | Re‑throw a custom error class that preserves `response?.status` and original stack. |
+| 5 | `src/utils.ts` – generic `any` return type for `readJsonFile<T>` | Caller can misuse the generic and get a false sense of type safety. | Runtime errors if the JSON shape does not match `T`. | Keep the generic but add an optional runtime validator (e.g., `ajv`) or document that callers must validate. |
+| 6 | `src/postmanClient.ts` – `PostmanCollection.item` typed as `any[]`. | Missed opportunity for better type safety. | Future developers may misuse the shape. | Import the official Postman collection schema (`@postman/collection`) and type the collection properly. |
+| 7 | `package.json` – `type: "module"` with `.js` entry points (`dist/main.js`). | Node will treat `dist/main.js` as an ES module, but the compiled output from TypeScript may be CommonJS unless `module` is set to `ES2022`. The current tsconfig uses `module: "ES2022"` which is fine, but ensure the compiled code matches the runtime. | Mismatch leads to “require is not defined” errors on older Node versions. | Verify the target Node version (>= 16) or add a fallback `"main": "./dist/main.cjs"` with appropriate build script. |
+| 8 | `scripts.test` runs a single JS file instead of a test runner. | No reporting, no isolation, no coverage. | Hard to maintain. | Switch to a proper test runner (Jest, Vitest) and update script to `"test": "vitest run"` (or similar). |
 
 ---
 
@@ -33,19 +36,4 @@
 
 | # | Area | Suggestion |
 |---|------|------------|
-| 1 | **CLI (`cli.ts`)** – not shown | Use `commander` with validation (`requiredOption`, `choices` for language). Provide `--output-dir`, `--lang`, `--api-key`, `--collection-id`, `--file`. |
-| 2 | **Progress feedback** | Show a spinner (e.g., `ora`) while converting and generating SDKs; improves UX for large collections. |
-| 3 | **Parallel SDK generation** | After writing the OpenAPI spec, spawn separate processes for each language in parallel (using `Promise.all`). |
-| 4 | **Cache OpenAPI spec** | If the same collection is processed multiple times, skip conversion and reuse the generated `openapi.json`. |
-| 5 | **Documentation generation** | Hook `openapi-generator-cli` with the `-g html2` option to produce API docs alongside the SDKs. |
-| 6 | **Type safety** | Replace `any[]` in `PostmanCollection.item` with a minimal typed interface (or `unknown[]`) to avoid accidental property access. |
-| 7 | **Security hardening** | When writing files, set restrictive permissions (`fs.writeFile(..., { mode: 0o600 })`) for generated SDKs that may contain auth tokens in examples. |
-| 8 | **Error codes** | Exit the process with distinct non‑zero codes (`1` for validation errors, `2` for network errors, etc.) to aid automation scripts. |
-| 9 | **Release pipeline** | Add a GitHub Action that runs `npm ci`, lint, tests, builds, and publishes the binary via `npm publish`. |
-|10 | **README** | Include a quick‑start example, environment variable list, and a note about installing `openapi-generator-cli` (e.g., via `npm i -g @openapitools/openapi-generator-cli`). |
-
----
-
-## Overall quality score: **5 / 10**
-
-*The code demonstrates a solid overall architecture (clear separation of concerns, reusable utilities, and a sensible file layout). However, critical bugs (wrong imports, incomplete function, missing temp‑file cleanup), lack of tests, and insufficient handling of secrets prevent it from being production‑ready. Address the critical issues first, add a test suite, and then polish the warnings and suggestions to raise the quality to an approvable level.*
+| 1 | CLI ergonomics | Use `commander` to define sub‑commands: `generate <collection-id|path>` with options `--lang <ts|py|go>`, `--output <dir>`, `--api-key <key>` (read

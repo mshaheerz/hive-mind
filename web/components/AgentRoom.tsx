@@ -67,7 +67,7 @@ const AGENT_INFO: Record<string, AgentInfo> = {
 
 const SCHEDULE: Record<string, number> = {
   ceo: 15, nova: 60, scout: 45, apex: 15, atlas: 90,
-  forge: 120, lens: 60, pulse: 60, sage: 90, echo: 120,
+  forge: 15, lens: 60, pulse: 60, sage: 90, echo: 120,
 };
 
 function timeSince(iso?: string | number | Date | null): string {

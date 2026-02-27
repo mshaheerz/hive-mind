@@ -68,7 +68,7 @@ function render() {
     { key: 'scout', name: 'SCOUT', role: 'Researcher',         cycle: 45  },
     { key: 'apex',  name: 'APEX',  role: 'Operations Head',    cycle: 15  },
     { key: 'atlas', name: 'ATLAS', role: 'Architect',           cycle: 90  },
-    { key: 'forge', name: 'FORGE', role: 'Developer',           cycle: 120 },
+    { key: 'forge', name: 'FORGE', role: 'Developer',           cycle: 15  },
     { key: 'lens',  name: 'LENS',  role: 'Code Reviewer',       cycle: 60  },
     { key: 'pulse', name: 'PULSE', role: 'Tester',              cycle: 60  },
     { key: 'sage',  name: 'SAGE',  role: 'Documentation',       cycle: 90  },

@@ -1,188 +1,190 @@
-## 📁 Complete implementation (Node + TypeScript)
-
-Below is a **self‑contained** implementation that satisfies the description while keeping the code easy to read, well‑documented and production‑ready.
-
-```
-postman-to-sdk/
-├─ src/
-│  ├─ constants.ts          # shared constants (no magic numbers)
-│  ├─ utils.ts              # small helpers (logging, file I/O)
-│  ├─ postmanApiClient.ts   # fetch a collection from Postman API or local file
-│  ├─ collectionParser.ts   # convert Postman collection → OpenAPI (uses postman-to-openapi)
-│  ├─ openapiGenerator.ts   # writes the OpenAPI JSON/YAML to disk
-│  ├─ sdkGenerator.ts       # runs OpenAPI Generator for TS, Python, Go
-│  └─ cli.ts                # commander‑based CLI entry point
-├─ bin/
-│  └─ postman-to-sdk        # executable shim (npm “bin” entry)
-├─ package.json
-├─ tsconfig.json
-└─ README.md
+**File: `package.json`**
+```json
+{
+  "name": "postman-to-sdk",
+  "version": "1.0.0",
+  "description": "CLI that generates typed SDKs (TS, Python, Go) from Postman collections",
+  "main": "dist/main.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "cli": "npm run build && node dist/main.js"
+  },
+  "bin": {
+    "postman-to-sdk": "./dist/main.js"
+  },
+  "keywords": [
+    "postman",
+    "sdk",
+    "openapi",
+    "codegen"
+  ],
+  "author": "Hive Mind",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.7.2",
+    "commander": "^12.1.0",
+    "postman-to-openapi": "^0.5.0",
+    "openapi-generator-cli": "^2.13.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.5.0",
+    "typescript": "^5.6.2"
+  }
+}
 ```
 
 ---
 
-### 1️⃣ `src/constants.ts`
+**File: `tsconfig.json`**
+```json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "node",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true
+  },
+  "include": ["src"]
+}
+```
 
+---
+
+### Source files (`src/`)
+
+**File: `src/constants.ts`**
 ```ts
 /**
  * @file constants.ts
- * @description Centralised constants used across the project.
+ * @description Centralised constants used across the CLI tool.
  */
 
-export const DEFAULT_OUTPUT_DIR = 'generated-sdk';
-export const SUPPORTED_LANGUAGES = ['typescript', 'python', 'go'] as const;
-export const OPENAPI_GENERATOR_CLI = 'openapi-generator-cli'; // expects the binary to be on PATH
-export const POSTMAN_API_BASE_URL = 'https://api.getpostman.com';
-export const POSTMAN_COLLECTION_ENDPOINT = '/collections/{{id}}';
-export const POSTMAN_API_TIMEOUT_MS = 15_000; // 15 seconds
+export const POSTMAN_API_BASE = 'https://api.getpostman.com';
+export const DEFAULT_OUTPUT_DIR = './generated-sdk';
+export const SUPPORTED_LANGUAGES = {
+  typescript: 'typescript',
+  python: 'python',
+  go: 'go',
+} as const;
+
+export const OPENAPI_GENERATOR_CLI = 'openapi-generator-cli';
 ```
 
 ---
 
-### 2️⃣ `src/utils.ts`
-
+**File: `src/utils.ts`**
 ```ts
 /**
  * @file utils.ts
- * @description Small, reusable utilities (logging, file handling, etc.).
+ * @description Utility helpers used by various modules.
  */
 
-import { promises as fs } from 'fs';
-import path from 'path';
+import { promises as fs } from 'node:fs';
+import * as path from 'node:path';
+import { exec } from 'node:child_process';
+import { promisify } from 'node:util';
+
+export const execAsync = promisify(exec);
 
 /**
- * Logs an informational message to stdout.
- * @param message Message to display
+ * Writes data to a file, creating parent directories if needed.
+ * @param filePath Absolute or relative file path.
+ * @param data Content to write.
  */
-export function logInfo(message: string): void {
-  console.info(`[INFO] ${message}`);
+export async function writeFileEnsuringDir(filePath: string, data: string): Promise<void> {
+  const dir = path.dirname(filePath);
+  await fs.mkdir(dir, { recursive: true });
+  await fs.writeFile(filePath, data, 'utf8');
 }
 
 /**
- * Logs an error message to stderr.
- * @param message Message to display
+ * Reads a JSON file and parses its content.
+ * @param filePath Path to the JSON file.
+ * @returns Parsed JSON object.
  */
-export function logError(message: string): void {
-  console.error(`[ERROR] ${message}`);
+export async function readJsonFile<T>(filePath: string): Promise<T> {
+  const raw = await fs.readFile(filePath, 'utf8');
+  return JSON.parse(raw) as T;
 }
 
 /**
- * Ensures a directory exists (creates it recursively if needed).
- * @param dirPath Path to the directory
+ * Logs an error with a consistent format.
+ * @param err The error object.
  */
-export async function ensureDir(dirPath: string): Promise<void> {
-  await fs.mkdir(dirPath, { recursive: true });
-}
-
-/**
- * Writes JSON data to a file (pretty‑printed).
- * @param filePath Destination file path
- * @param data JSON serialisable data
- */
-export async function writeJsonFile(
-  filePath: string,
-  data: unknown,
-): Promise<void> {
-  const json = JSON.stringify(data, null, 2);
-  await fs.writeFile(filePath, json, 'utf8');
-}
-
-/**
- * Returns the absolute path of a file relative to the project root.
- * @param relativePath Path relative to the cwd
- */
-export function resolvePath(relativePath: string): string {
-  return path.resolve(process.cwd(), relativePath);
+export function logError(err: unknown): void {
+  if (err instanceof Error) {
+    console.error(`❌ ${err.name}: ${err.message}`);
+    if (err.stack) console.error(err.stack);
+  } else {
+    console.error('❌ Unexpected error:', err);
+  }
 }
 ```
 
 ---
 
-### 3️⃣ `src/postmanApiClient.ts`
-
+**File: `src/postmanApiClient.ts`**
 ```ts
 /**
  * @file postmanApiClient.ts
- * @description Fetches a Postman collection either from the Postman API
- *              (requires an API key) or from a local JSON file.
+ * @description Minimal client for fetching a Postman collection via the Postman API.
  */
 
 import axios, { AxiosInstance } from 'axios';
-import { promises as fs } from 'fs';
-import {
-  POSTMAN_API_BASE_URL,
-  POSTMAN_COLLECTION_ENDPOINT,
-  POSTMAN_API_TIMEOUT_MS,
-} from './constants';
-import { logError, logInfo, resolvePath } from './utils';
+import { POSTMAN_API_BASE } from './constants';
+import { logError } from './utils';
 
 /**
- * Minimal representation of a Postman collection (as returned by the API).
+ * Interface describing the shape of a Postman collection response.
  */
-export interface PostmanCollection {
-  info: {
-    name: string;
-    schema: string;
-    version?: string;
-  };
-  item: any[];
-  // ... other fields are ignored for this MVP
+export interface PostmanCollectionResponse {
+  collection: any; // The raw collection JSON (we keep it loosely typed)
 }
 
 /**
- * Client that talks to the Postman API.
+ * Postman API client.
  */
 export class PostmanApiClient {
   private readonly http: AxiosInstance;
 
   /**
-   * @param apiKey Postman API key (optional – required only for remote fetch)
+   * @param apiKey Postman API key (read from env variable POSTMAN_API_KEY)
    */
-  constructor(private readonly apiKey?: string) {
+  constructor(apiKey: string) {
+    if (!apiKey) {
+      throw new Error('POSTMAN_API_KEY environment variable is required for API access.');
+    }
+
     this.http = axios.create({
-      baseURL: POSTMAN_API_BASE_URL,
-      timeout: POSTMAN_API_TIMEOUT_MS,
-      headers: apiKey ? { 'X-Api-Key': apiKey } : undefined,
+      baseURL: POSTMAN_API_BASE,
+      headers: {
+        'X-Api-Key': apiKey,
+        Accept: 'application/json',
+      },
+      timeout: 15_000,
     });
   }
 
   /**
-   * Fetches a collection by its ID from the Postman cloud.
-   * @param collectionId The Postman collection ID
-   * @returns Parsed collection JSON
-   * @throws on network or API errors
+   * Fetches a collection by its ID.
+   * @param collectionId The Postman collection UID.
+   * @returns The collection JSON.
    */
-  async fetchRemoteCollection(collectionId: string): Promise<PostmanCollection> {
-    const endpoint = POSTMAN_COLLECTION_ENDPOINT.replace(
-      '{{id}}',
-      collectionId,
-    );
-
+  async fetchCollection(collectionId: string): Promise<any> {
     try {
-      logInfo(`Fetching collection ${collectionId} from Postman cloud…`);
-      const response = await this.http.get<{ collection: PostmanCollection }>(endpoint);
+      const response = await this.http.get<PostmanCollectionResponse>(`/collections/${collectionId}`);
       return response.data.collection;
     } catch (err) {
-      logError(`Failed to fetch remote collection: ${(err as Error).message}`);
-      throw err;
-    }
-  }
-
-  /**
-   * Reads a collection JSON file from disk.
-   * @param filePath Path to a local .json file
-   * @returns Parsed collection JSON
-   * @throws on file‑system errors or invalid JSON
-   */
-  async readLocalCollection(filePath: string): Promise<PostmanCollection> {
-    const absolute = resolvePath(filePath);
-    try {
-      logInfo(`Reading local collection file ${absolute}…`);
-      const raw = await fs.readFile(absolute, 'utf8');
-      return JSON.parse(raw) as PostmanCollection;
-    } catch (err) {
-      logError(`Failed to read local collection: ${(err as Error).message}`);
-      throw err;
+      logError(err);
+      throw new Error(`Failed to fetch collection ${collectionId} from Postman API.`);
     }
   }
 }
@@ -190,80 +192,74 @@ export class PostmanApiClient {
 
 ---
 
-### 4️⃣ `src/collectionParser.ts`
-
+**File: `src/collectionParser.ts`**
 ```ts
 /**
  * @file collectionParser.ts
- * @description Turns a Postman collection into an OpenAPI 3.0 definition.
- *
- * The heavy lifting is delegated to the community package `postman-to-openapi`,
- * which already knows how to map most Postman features.
+ * @description Converts a Postman collection JSON into an OpenAPI v3 definition.
  */
 
-import { PostmanCollection } from './postmanApiClient';
-import { writeJsonFile } from './utils';
-import postmanToOpenApi from 'postman-to-openapi';
-import { resolvePath } from 'path';
+import { convert } from 'postman-to-openapi';
+import { writeFileEnsuringDir } from './utils';
+import * as path from 'node:path';
 
 /**
- * Result of the conversion – an OpenAPI JSON object.
- */
-export type OpenApiSpec = Record<string, unknown>;
-
-/**
- * Converts a Postman collection into an OpenAPI spec.
+ * Generates an OpenAPI spec file from a Postman collection.
  *
- * @param collection The collection object (already parsed)
- * @returns OpenAPI JSON representation
- * @throws on conversion errors
+ * @param collectionJson The raw Postman collection object.
+ * @param outputDir Directory where the generated openapi.yaml will be stored.
+ * @returns Absolute path to the generated OpenAPI file.
  */
-export async function convertCollectionToOpenApi(
-  collection: PostmanCollection,
-): Promise<OpenApiSpec> {
+export async function generateOpenApiSpec(
+  collectionJson: any,
+  outputDir: string,
+): Promise<string> {
+  // The postman-to-openapi library works with file paths, so we write a temporary file first.
+  const tempCollectionPath = path.join(outputDir, 'temp-collection.json');
+  await writeFileEnsuringDir(tempCollectionPath, JSON.stringify(collectionJson, null, 2));
+
+  const openapiPath = path.join(outputDir, 'openapi.yaml');
+
   try {
-    // `postman-to-openapi` works with a file path, so we write a temporary file.
-    const tmpPath = resolvePath('.tmp-postman-collection.json');
-    await writeJsonFile(tmpPath, collection);
-
-    // The library returns a stringified JSON (or YAML). We request JSON.
-    const result = await postmanToOpenApi(tmpPath, {
-      outputFile: undefined, // we want the string result, not a file
-      yaml: false,
+    await convert(tempCollectionPath, openapiPath, {
+      // Options: keep request examples, include auth, etc.
+      defaultTag: 'default',
+      info: {
+        title: collectionJson.info?.name ?? 'Generated API',
+        version: collectionJson.info?.version ?? '1.0.0',
+      },
     });
-
-    // `result` is a JSON string – parse it.
-    return JSON.parse(result) as OpenApiSpec;
   } catch (err) {
-    throw new Error(`OpenAPI conversion failed: ${(err as Error).message}`);
+    throw new Error(`Failed to convert Postman collection to OpenAPI: ${err instanceof Error ? err.message : String(err)}`);
   }
+
+  return openapiPath;
 }
 ```
 
 ---
 
-### 5️⃣ `src/openapiGenerator.ts`
-
+**File: `src/sdkGenerator.ts`**
 ```ts
 /**
- * @file openapiGenerator.ts
- * @description Persists the OpenAPI spec to disk (JSON file) so that the
- *              downstream code‑generator can consume it.
+ * @file sdkGenerator.ts
+ * @description Generates language SDKs from an OpenAPI definition using OpenAPI Generator CLI.
  */
 
-import { OpenApiSpec } from './collectionParser';
-import { ensureDir, writeJsonFile, resolvePath } from './utils';
-import path from 'path';
-
-export const OPENAPI_FILE_NAME = 'openapi.json';
+import { execAsync, logError } from './utils';
+import { SUPPORTED_LANGUAGES, OPENAPI_GENERATOR_CLI } from './constants';
+import * as path from 'node:path';
 
 /**
- * Writes the OpenAPI definition to the given output directory.
+ * Generates an SDK for a specific language.
  *
- * @param spec OpenAPI spec object
- * @param outDir Destination directory (will be created if missing)
- * @returns Absolute path to the generated OpenAPI file
+ * @param openApiPath Absolute path to the OpenAPI yaml/json file.
+ * @param language Target language (typescript | python | go).
+ * @param outputRoot Root directory where the SDK folder will be created.
  */
-export async function writeOpenApiFile(
-  spec: OpenApiSpec,
-  outDir: string
+export async function generateSdk(
+  openApiPath: string,
+  language: keyof typeof SUPPORTED_LANGUAGES,
+  outputRoot: string,
+): Promise<void> {
+  const languageName = SUPPORTED_LANGUAGES[

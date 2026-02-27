@@ -29,7 +29,7 @@ const AGENT_SCHEDULE = {
   scout: { cycleMinutes: 45,  role: 'researches & validates' },
   apex:  { cycleMinutes: 15,  role: 'reviews & decides' },
   atlas: { cycleMinutes: 90,  role: 'designs approved projects' },
-  forge: { cycleMinutes: 120, role: 'implements designs' },
+  forge: { cycleMinutes: 15,  role: 'implements designs' },
   lens:  { cycleMinutes: 60,  role: 'reviews code' },
   pulse: { cycleMinutes: 60,  role: 'tests code' },
   sage:  { cycleMinutes: 90,  role: 'writes docs' },
@@ -281,6 +281,7 @@ class AutonomousState {
     const base = AGENT_SCHEDULE[agentName]?.cycleMinutes || 60;
     const override = this.state.agentCadenceMinutes?.[agentName];
     const candidate = Number.isFinite(override) ? override : base;
+    if (agentName === 'forge') return 15;
     return Math.max(MIN_AGENT_CADENCE_MINUTES, Math.min(MAX_AGENT_CADENCE_MINUTES, candidate));
   }
 
@@ -289,6 +290,12 @@ class AutonomousState {
     this.state.agentLastRun[agentName] = new Date().toISOString();
 
     if (!this.state.agentCadenceMinutes) this.state.agentCadenceMinutes = {};
+    if (agentName === 'forge') {
+      this.state.agentCadenceMinutes[agentName] = 15;
+      this.save();
+      return;
+    }
+
     const current = this.getCycleMinutes(agentName);
 
     if (worked && success) {

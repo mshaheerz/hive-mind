@@ -25,7 +25,7 @@ type HiveState = {
 
 const AGENT_SCHEDULE: Record<string, number> = {
   nova:  60, scout: 45, apex: 15,
-  atlas: 90, forge: 120, lens: 60,
+  atlas: 90, forge: 15, lens: 60,
   pulse: 60, sage:  90, echo: 120,
 };
 

@@ -134,7 +134,37 @@
       "message": "Strict order accepted. Forced wake: FORGE, LENS.",
       "at": "2026-02-27T09:17:06.265Z",
       "inReplyTo": "ceo_1772183824122_lnpcf"
+    },
+    {
+      "id": "ceo_1772184774719_swjn0",
+      "from": "ceo",
+      "message": "why forge not working",
+      "at": "2026-02-27T09:32:54.719Z",
+      "handledAt": "2026-02-27T09:32:59.602Z",
+      "handledBy": "apex"
+    },
+    {
+      "id": "apex_1772184779602_ua72d",
+      "from": "apex",
+      "message": "FORGE status=REST cycle=60m last=12m ago next=48m assignments=dependency-ghostbuster:architecture, envsync-cli:architecture, git-profile-switcher:architecture, pixel-pulse:architecture, postman-to-sdk:architecture, secret-scout:architecture",
+      "at": "2026-02-27T09:32:59.602Z",
+      "inReplyTo": "ceo_1772184774719_swjn0"
+    },
+    {
+      "id": "ceo_1772185015684_p1kht",
+      "from": "ceo",
+      "message": "strict wake forge",
+      "at": "2026-02-27T09:36:55.684Z",
+      "handledAt": "2026-02-27T09:37:00.605Z",
+      "handledBy": "apex"
+    },
+    {
+      "id": "apex_1772185020605_rjbyx",
+      "from": "apex",
+      "message": "Strict order accepted. Forced wake: FORGE.",
+      "at": "2026-02-27T09:37:00.605Z",
+      "inReplyTo": "ceo_1772185015684_p1kht"
     }
   ],
-  "updatedAt": "2026-02-27T09:17:06.266Z"
+  "updatedAt": "2026-02-27T09:37:00.605Z"
 }

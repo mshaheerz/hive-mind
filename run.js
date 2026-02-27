@@ -276,6 +276,8 @@ class AutonomousRunner {
       log('system', `Provider changed (${previous} -> ${current}). Resetting agent schedules for immediate cycle activity.`);
     }
 
+    if (!this.state.state.agentCadenceMinutes) this.state.state.agentCadenceMinutes = {};
+    this.state.state.agentCadenceMinutes.forge = 15;
     this.state.state.llmProvider = current;
     this.state.save();
   }
@@ -838,51 +840,66 @@ ${decision.reasoning}
     const deferred = all.slice(MAX_ACTIVE_PROJECTS);
     const blocked = [];
     let progressed = false;
+    const MAX_STAGE_HOPS_PER_CYCLE = 2;
 
     if (deferred.length) {
       log('system', `Project priority active: processing oldest ${MAX_ACTIVE_PROJECTS}, deferring ${deferred.length} newer project(s).`);
     }
 
     for (const { name, status } of prioritized) {
+      let currentStatus = status;
+      let hops = 0;
 
-      // Skip completed, failed, or projects pending approval
-      if (['complete', 'failed', 'new'].includes(status.stage)) continue;
+      while (hops < MAX_STAGE_HOPS_PER_CYCLE) {
+        // Skip completed, failed, or projects pending approval
+        if (['complete', 'failed', 'new'].includes(currentStatus.stage)) break;
 
-      // Map stages to agents
-      const stageMap = {
-        approved:       { agent: 'scout',  next: 'research',        agentKey: 'scout' },
-        research:       { agent: 'atlas',  next: 'architecture',    agentKey: 'atlas' },
-        architecture:   { agent: 'forge',  next: 'implementation',  agentKey: 'forge' },
-        implementation: { agent: 'lens',   next: 'review',          agentKey: 'lens'  },
-        review:         { agent: 'pulse',  next: 'tests',           agentKey: 'pulse' },
-        tests:          { agent: 'sage',   next: 'docs',            agentKey: 'sage'  },
-        docs:           { agent: 'echo',   next: 'launch',          agentKey: 'echo'  },
-        launch:         { agent: null,     next: 'complete',        agentKey: null    },
-      };
+        // Map stages to agents
+        const stageMap = {
+          approved:       { agent: 'scout',  next: 'research',        agentKey: 'scout' },
+          research:       { agent: 'atlas',  next: 'architecture',    agentKey: 'atlas' },
+          architecture:   { agent: 'forge',  next: 'implementation',  agentKey: 'forge' },
+          implementation: { agent: 'lens',   next: 'review',          agentKey: 'lens'  },
+          review:         { agent: 'pulse',  next: 'tests',           agentKey: 'pulse' },
+          tests:          { agent: 'sage',   next: 'docs',            agentKey: 'sage'  },
+          docs:           { agent: 'echo',   next: 'launch',          agentKey: 'echo'  },
+          launch:         { agent: null,     next: 'complete',        agentKey: null    },
+        };
 
-      const stageInfo = stageMap[status.stage];
-      if (!stageInfo || !stageInfo.agentKey) {
-        if (status.stage !== 'complete') {
-          setProjectStatus(name, { stage: 'complete' });
-          this.state.increment('completed');
-          log('system', `🎉 Project "${name}" is COMPLETE!`);
+        const stageInfo = stageMap[currentStatus.stage];
+        if (!stageInfo || !stageInfo.agentKey) {
+          if (currentStatus.stage !== 'complete') {
+            setProjectStatus(name, { stage: 'complete' });
+            this.state.increment('completed');
+            log('system', `🎉 Project "${name}" is COMPLETE!`);
+          }
+          break;
         }
-        continue;
-      }
 
-      // Only proceed if the responsible agent is due
-      if (!dueSnapshot[stageInfo.agentKey]) {
-        const last = this.state.state.agentLastRun?.[stageInfo.agentKey];
-        const cycleMinutes = this.state.getCycleMinutes(stageInfo.agentKey);
-        const minutesSince = last ? (Date.now() - new Date(last).getTime()) / 60000 : cycleMinutes;
-        const minsLeft = Math.max(0, Math.ceil(cycleMinutes - minutesSince));
-        blocked.push({ project: name, stage: status.stage, agent: stageInfo.agentKey, minsLeft });
-        continue;
-      }
+        // Only proceed if the responsible agent is due
+        if (!dueSnapshot[stageInfo.agentKey]) {
+          const last = this.state.state.agentLastRun?.[stageInfo.agentKey];
+          const cycleMinutes = this.state.getCycleMinutes(stageInfo.agentKey);
+          const minutesSince = last ? (Date.now() - new Date(last).getTime()) / 60000 : cycleMinutes;
+          const minsLeft = Math.max(0, Math.ceil(cycleMinutes - minutesSince));
+          // Operational strict mode: if a prioritized project is blocked, wake and run now.
+          log('apex', `Strict order: waking ${stageInfo.agentKey.toUpperCase()} now for "${name}" (${currentStatus.stage}); skipped wait ${minsLeft}m.`);
+          delete this.state.state.agentLastRun[stageInfo.agentKey];
+          this.state.save();
+          dueSnapshot[stageInfo.agentKey] = true;
+        }
 
-      const run = await this.runProjectStage(name, status.stage, stageInfo, status);
-      this.state.markAgentRun(stageInfo.agentKey, { worked: true, success: run?.success !== false });
-      progressed = progressed || run?.worked !== false;
+        const beforeStage = currentStatus.stage;
+        const run = await this.runProjectStage(name, currentStatus.stage, stageInfo, currentStatus);
+        this.state.markAgentRun(stageInfo.agentKey, { worked: true, success: run?.success !== false });
+        progressed = progressed || run?.worked !== false;
+
+        currentStatus = getProjectStatus(name);
+        hops += 1;
+
+        // If stage didn't change, don't spin.
+        if (currentStatus.stage === beforeStage) break;
+      }
     }
 
     if (!progressed && blocked.length) {
