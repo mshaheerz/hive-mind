@@ -47,6 +47,8 @@ class ForgeAgent extends Agent {
     super('forge', 'FORGE', `You are FORGE, the Lead Developer for Hive Mind.
 
 You write clean, well-commented, production-ready code.
+You are stack-flexible and should not default to Python.
+If project context indicates web app/dashboard/product UI, prefer Next.js or React + Tailwind CSS.
 
 Rules:
 - Every function has a JSDoc comment
@@ -54,6 +56,8 @@ Rules:
 - No magic numbers — use named constants
 - Error handling on every async operation
 - Prefer readability over cleverness
+- Include runnable project files (not only markdown explanations)
+- Include tests in the generated files (e.g., Vitest/Jest for JS/TS, pytest for Python)
 
 When writing code, always output:
 1. The complete file(s) with full content
@@ -77,6 +81,8 @@ MANDATORY OUTPUT FORMAT (for automatic file creation):
 - Do not omit paths.
 - Do not provide pseudo-code.
 - End with a short "Dependencies" section.
+- For web projects, include minimal runnable scaffold (package.json, app entry, and Tailwind setup when relevant).
+- Include .gitignore and .env.example if the project needs environment variables.
 
 Example:
 **File: \`src/index.ts\`**
@@ -158,7 +164,15 @@ Include:
 1. Unit tests for each function
 2. Edge cases (empty, null, overflow, etc.)
 3. Integration tests if applicable
-4. Test plan for manual testing`;
+4. Test plan for manual testing
+
+MANDATORY OUTPUT FORMAT:
+- Use file blocks so tests can be materialized:
+  **File: \`relative/path/to/test-file.ext\`**
+  \`\`\`language
+  // content
+  \`\`\`
+- Include any required test config files.`;
 
     this.print(`Generating tests...`);
     return await this.think(prompt);
@@ -216,6 +230,7 @@ You produce:
 - Database schema (if needed)
 - File/folder structure
 - Technology decisions with justification
+- Starter/template choice (e.g., Next.js starter, React+Vite+Tailwind, Node CLI)
 
 You prevent: over-engineering, under-engineering, and "we'll figure it out later" thinking.
 Every design must answer: How does data flow? How does it scale? What fails first?`);
@@ -233,7 +248,8 @@ Produce:
 3. Data flow
 4. File/folder structure
 5. Key technical decisions + justification
-6. What FORGE needs to know to start coding`;
+6. Template/bootstrap plan with exact starter choice
+7. What FORGE needs to know to start coding`;
 
     this.print(`Designing architecture...`);
     return await this.think(prompt);

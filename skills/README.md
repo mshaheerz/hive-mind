@@ -10,6 +10,8 @@ Think of them as plugins — any agent can use any skill it has access to.
 | Skill | File | Agents | Description |
 |-------|------|--------|-------------|
 | web-search | `web-search.js` | scout, nova | Search the web for information |
+| template-selector | `template-selector.js` | nova, atlas, forge | Pick project starter template and baseline stack |
+| frontend-stack-planner | `frontend-stack-planner.js` | nova, atlas, forge, pulse, sage | Web stack defaults + starter file checklist |
 | file-writer | `file-writer.js` | forge, sage | Write files to disk |
 | code-runner | `code-runner.js` | forge, pulse | Execute code in a sandbox |
 
@@ -67,5 +69,7 @@ module.exports = {
 | Skill | APEX | SCOUT | FORGE | LENS | PULSE | ECHO | ATLAS | SAGE | NOVA |
 |-------|------|-------|-------|------|-------|------|-------|------|------|
 | web-search | ✅ | ✅ | — | — | — | ✅ | ✅ | — | ✅ |
+| template-selector | — | — | ✅ | — | — | — | ✅ | — | ✅ |
+| frontend-stack-planner | — | — | ✅ | — | ✅ | — | ✅ | ✅ | ✅ |
 | file-writer | — | — | ✅ | — | — | — | — | ✅ | — |
 | code-runner | — | — | ✅ | ✅ | ✅ | — | — | — | — |

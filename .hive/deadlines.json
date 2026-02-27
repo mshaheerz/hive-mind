@@ -65,17 +65,17 @@
     "agent": "lens",
     "dueAt": "2026-02-27T13:06:25.477Z",
     "setAt": "2026-02-27T11:06:25.477Z",
-    "status": "active"
+    "status": "complete",
+    "completedAt": "2026-02-27T11:08:24.572Z"
   },
   {
     "id": "envsync-cli::tests",
     "projectName": "envsync-cli",
     "stage": "tests",
     "agent": "pulse",
-    "dueAt": "2026-02-27T12:51:52.641Z",
-    "setAt": "2026-02-27T10:51:52.641Z",
-    "status": "complete",
-    "completedAt": "2026-02-27T10:51:55.462Z"
+    "dueAt": "2026-02-27T13:12:18.849Z",
+    "setAt": "2026-02-27T11:12:18.849Z",
+    "status": "active"
   },
   {
     "id": "envsync-cli::docs",

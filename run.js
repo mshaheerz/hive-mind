@@ -224,6 +224,78 @@ function runWorkspaceChecks(projectName) {
   return { checked, passed, failed, report: `${summary}\n${reportLines.join('\n\n')}`.trim() };
 }
 
+function summarizeExecutionOutput(text = '', maxLines = 6) {
+  const lines = String(text || '')
+    .replace(/\r/g, '\n')
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .slice(0, maxLines);
+  return lines.length ? lines.join(' | ') : 'No output.';
+}
+
+function runProjectTests(projectName) {
+  const root = path.join(PROJECTS_DIR, projectName, 'workspace');
+  if (!fs.existsSync(root)) {
+    return {
+      attempted: false,
+      passed: false,
+      summary: 'No workspace found.',
+      actionItems: ['Workspace missing; FORGE must generate project files first.'],
+      raw: '',
+    };
+  }
+
+  const pkgJson = path.join(root, 'package.json');
+  if (fs.existsSync(pkgJson)) {
+    if (!fs.existsSync(path.join(root, 'node_modules'))) {
+      const install = spawnSync('npm', ['install', '--no-fund', '--no-audit'], { cwd: root, encoding: 'utf8', timeout: 240000 });
+      if (install.status !== 0) {
+        const installOutput = `${install.stdout || ''}\n${install.stderr || ''}`.trim();
+        return {
+          attempted: true,
+          passed: false,
+          summary: `npm install failed: ${summarizeExecutionOutput(installOutput)}`,
+          actionItems: ['Fix dependency installation errors (npm install).', summarizeExecutionOutput(installOutput)],
+          raw: installOutput,
+        };
+      }
+    }
+    const run = spawnSync('npm', ['test', '--', '--watch=false'], { cwd: root, encoding: 'utf8', timeout: 180000 });
+    const output = `${run.stdout || ''}\n${run.stderr || ''}`.trim();
+    if (run.status === 0) return { attempted: true, passed: true, summary: 'npm test passed.', actionItems: [], raw: output };
+    return {
+      attempted: true,
+      passed: false,
+      summary: `npm test failed: ${summarizeExecutionOutput(output)}`,
+      actionItems: ['Fix failing tests reported by npm test.', summarizeExecutionOutput(output)],
+      raw: output,
+    };
+  }
+
+  const hasPyTests = fs.existsSync(path.join(root, 'tests')) || fs.existsSync(path.join(root, 'test'));
+  if (hasPyTests) {
+    const run = spawnSync('python3', ['-m', 'pytest', '-q'], { cwd: root, encoding: 'utf8', timeout: 180000 });
+    const output = `${run.stdout || ''}\n${run.stderr || ''}`.trim();
+    if (run.status === 0) return { attempted: true, passed: true, summary: 'pytest passed.', actionItems: [], raw: output };
+    return {
+      attempted: true,
+      passed: false,
+      summary: `pytest failed: ${summarizeExecutionOutput(output)}`,
+      actionItems: ['Fix failing tests reported by pytest.', summarizeExecutionOutput(output)],
+      raw: output,
+    };
+  }
+
+  return {
+    attempted: false,
+    passed: false,
+    summary: 'No runnable test command detected (expected package.json or pytest tests).',
+    actionItems: ['Create runnable tests and declare how to run them (npm test or pytest).'],
+    raw: '',
+  };
+}
+
 function safeWorkspacePath(projectName, relPath) {
   const clean = String(relPath || '')
     .replace(/\\/g, '/')
@@ -299,11 +371,35 @@ function hasRealProjectFiles(projectName) {
   return files.some((f) => !/\.md$/i.test(f));
 }
 
+function scaffoldGitignore(stack = '') {
+  const s = String(stack || '').toLowerCase();
+  const common = ['.DS_Store', '*.log', '.env', '.env.local', ''];
+  if (s.includes('next')) return [...common, 'node_modules/', '.next/', 'out/', 'coverage/', '.turbo/'].join('\n');
+  if (s.includes('react') || s.includes('vite') || s.includes('node') || s.includes('javascript') || s.includes('typescript')) {
+    return [...common, 'node_modules/', 'dist/', 'build/', 'coverage/'].join('\n');
+  }
+  if (s.includes('python')) return [...common, '__pycache__/', '*.pyc', '.pytest_cache/', '.venv/', 'venv/'].join('\n');
+  return [...common, 'node_modules/', 'dist/', 'build/', '__pycache__/', '*.pyc'].join('\n');
+}
+
+function ensureWorkspaceScaffold(projectName, stack = '') {
+  const root = path.join(PROJECTS_DIR, projectName, 'workspace');
+  fs.mkdirSync(root, { recursive: true });
+  const gitignorePath = path.join(root, '.gitignore');
+  if (!fs.existsSync(gitignorePath)) fs.writeFileSync(gitignorePath, `${scaffoldGitignore(stack)}\n`);
+  const envExamplePath = path.join(root, '.env.example');
+  if (!fs.existsSync(envExamplePath)) fs.writeFileSync(envExamplePath, 'APP_ENV=development\nAPI_BASE_URL=\nAPI_KEY=\n');
+  const envPath = path.join(root, '.env');
+  if (!fs.existsSync(envPath)) fs.writeFileSync(envPath, 'APP_ENV=development\n');
+}
+
 function hydrateWorkspaceFromOutputs(projectName) {
   const impl = readOutput(projectName, 'implementation.md');
   if (!impl.trim()) return 0;
   const written = materializeForgeFiles(projectName, impl);
   if (written.length) {
+    const status = getProjectStatus(projectName);
+    ensureWorkspaceScaffold(projectName, status.preferredStack || status.stack || status.template || '');
     setProjectStatus(projectName, {
       workspaceFiles: written,
       workspaceUpdatedAt: new Date().toISOString(),
@@ -658,6 +754,8 @@ ${text}`
     try {
       // 0.5 Ensure projects have real workspace files and revoke invalid "complete" states.
       for (const name of getProjects()) {
+        const projectStatus = getProjectStatus(name);
+        ensureWorkspaceScaffold(name, projectStatus.preferredStack || projectStatus.stack || projectStatus.template || '');
         if (!hasRealProjectFiles(name)) {
           const count = hydrateWorkspaceFromOutputs(name);
           if (count) log('system', `Backfilled ${count} workspace file(s) for "${name}" from implementation output.`);
@@ -767,6 +865,9 @@ Do NOT propose anything similar to these. Think of genuinely new, useful develop
         audience:    proposal.audience,
         complexity:  proposal.complexity,
         reasoning:   proposal.reasoning,
+        projectType: proposal.projectType || 'tooling',
+        preferredStack: proposal.preferredStack || proposal.stack || '',
+        template: proposal.template || '',
         proposedBy:  'nova',
         proposedAt:  new Date().toISOString(),
         status:      'pending_scout', // SCOUT validates first
@@ -976,6 +1077,14 @@ ${proposal.audience || 'Developers'}
 
 ${proposal.complexity || 'Medium'}
 
+## Project Type
+
+${proposal.projectType || 'tooling'}
+
+## Preferred Stack / Template
+
+${proposal.preferredStack || proposal.stack || proposal.template || 'Agent decides based on feasibility'}
+
 ## Why Build This
 
 ${proposal.reasoning || 'Identified as a valuable addition by the Hive team.'}
@@ -998,11 +1107,15 @@ ${decision.reasoning}
 `;
 
     fs.writeFileSync(path.join(dir, 'README.md'), readme);
+    ensureWorkspaceScaffold(slug, proposal.preferredStack || proposal.stack || proposal.template || '');
     setProjectStatus(slug, {
       stage: 'approved',
       proposedBy: 'nova',
       approvedBy: 'apex',
       approvalScore: decision.overall,
+      projectType: proposal.projectType || 'tooling',
+      preferredStack: proposal.preferredStack || proposal.stack || '',
+      template: proposal.template || '',
       approvedAt: new Date().toISOString(),
     });
 
@@ -1126,9 +1239,12 @@ ${decision.reasoning}
           const arch = readOutput(projectName, 'architecture.md');
           const res  = readOutput(projectName, 'research.md');
           const previousImplementation = readOutput(projectName, 'implementation.md');
-          const remediationItems = Array.isArray(status.lensActionItems) ? status.lensActionItems : [];
+          const remediationItems = [
+            ...(Array.isArray(status.lensActionItems) ? status.lensActionItems : []),
+            ...(Array.isArray(status.pulseActionItems) ? status.pulseActionItems : []),
+          ];
           const remediationBlock = remediationItems.length
-            ? `\n\n## Mandatory Rework From LENS\n${remediationItems.map((x, i) => `${i + 1}. ${x}`).join('\n')}\n`
+            ? `\n\n## Mandatory Rework (LENS/PULSE)\n${remediationItems.map((x, i) => `${i + 1}. ${x}`).join('\n')}\n`
             : '';
           const previousImplBlock = previousImplementation.trim()
             ? `\n\n## Previous Implementation (fix this, do not restart from scratch)\n${previousImplementation.slice(0, 12000)}\n`
@@ -1137,6 +1253,7 @@ ${decision.reasoning}
           output = await this.agents.forge.implement(taskForForge, arch, res);
           writeOutput(projectName, 'implementation.md', output);
           {
+            ensureWorkspaceScaffold(projectName, status.preferredStack || status.stack || status.template || '');
             const written = materializeForgeFiles(projectName, output);
             if (written.length) {
               const check = runWorkspaceChecks(projectName);
@@ -1233,6 +1350,37 @@ ${decision.reasoning}
           const code  = readOutput(projectName, 'implementation.md');
           output = await this.agents.pulse.generateTests(code, readme);
           writeOutput(projectName, 'tests.md', output);
+          {
+            ensureWorkspaceScaffold(projectName, status.preferredStack || status.stack || status.template || '');
+            const generatedTestFiles = materializeForgeFiles(projectName, output);
+            const testRun = runProjectTests(projectName);
+            writeOutput(projectName, 'test-exec.txt', `Summary: ${testRun.summary}\n\n${testRun.raw || ''}`.trim());
+            if (!testRun.passed) {
+              setProjectStatus(projectName, {
+                stage: 'architecture',
+                pulseRejected: true,
+                pulseSummary: testRun.summary,
+                pulseActionItems: testRun.actionItems || [],
+                pulseReviewedAt: new Date().toISOString(),
+                pulseApproved: false,
+                generatedTestFiles,
+              });
+              log('pulse', `⚠ Tests/checks failed for "${projectName}". Sending back to FORGE.`);
+              log('pulse', `   Issues: ${testRun.summary}`);
+              this.deadlines.complete(projectName, stageInfo.next);
+              return { worked: true, success: true, haltProjectThisCycle: true };
+            }
+            setProjectStatus(projectName, {
+              pulseRejected: false,
+              pulseSummary: testRun.summary,
+              pulseActionItems: [],
+              pulseReviewedAt: new Date().toISOString(),
+              pulseApproved: true,
+              pulseAcceptedAt: new Date().toISOString(),
+              generatedTestFiles,
+            });
+            log('pulse', `✓ PULSE accepted "${projectName}" (${testRun.summary}).`);
+          }
           break;
 
         case 'tests':
@@ -1261,6 +1409,11 @@ ${decision.reasoning}
         updates.lensBypassed = false;
         updates.lensBypassReason = null;
         updates.lensBypassedAt = null;
+        updates.pulseRejected = false;
+        updates.pulseApproved = false;
+        updates.pulseAcceptedAt = null;
+        updates.pulseSummary = null;
+        updates.pulseActionItems = [];
       }
       setProjectStatus(projectName, updates);
       log(stageInfo.agentKey, `✓ "${projectName}" → moved to "${stageInfo.next}"`);
