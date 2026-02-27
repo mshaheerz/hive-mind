@@ -14,6 +14,7 @@ require('dotenv').config();
 const fs   = require('fs');
 const path = require('path');
 const chalk = require('chalk');
+const { spawnSync } = require('child_process');
 
 const ApexAgent  = require('./agents/apex');
 const { ScoutAgent, ForgeAgent, LensAgent, PulseAgent,
@@ -183,6 +184,132 @@ function writeOutput(projectName, file, content) {
   const dir = path.join(PROJECTS_DIR, projectName, 'output');
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, file), content);
+}
+
+function runWorkspaceChecks(projectName) {
+  const root = path.join(PROJECTS_DIR, projectName, 'workspace');
+  if (!fs.existsSync(root)) return { checked: 0, passed: 0, failed: 0, report: 'No workspace to validate.' };
+  const files = listWorkspaceFiles(projectName);
+  let checked = 0;
+  let passed = 0;
+  let failed = 0;
+  const reportLines = [];
+
+  for (const rel of files) {
+    const full = path.join(root, rel);
+    if (/\.(js|mjs|cjs)$/i.test(rel)) {
+      checked += 1;
+      const run = spawnSync('node', ['--check', full], { encoding: 'utf8', timeout: 20000 });
+      if (run.status === 0) {
+        passed += 1;
+      } else {
+        failed += 1;
+        reportLines.push(`[FAIL] node --check ${rel}\n${(run.stderr || run.stdout || '').trim()}`);
+      }
+      continue;
+    }
+    if (/\.py$/i.test(rel)) {
+      checked += 1;
+      const run = spawnSync('python3', ['-m', 'py_compile', full], { encoding: 'utf8', timeout: 20000 });
+      if (run.status === 0) {
+        passed += 1;
+      } else {
+        failed += 1;
+        reportLines.push(`[FAIL] python3 -m py_compile ${rel}\n${(run.stderr || run.stdout || '').trim()}`);
+      }
+    }
+  }
+
+  const summary = `Checked=${checked} Passed=${passed} Failed=${failed}`;
+  return { checked, passed, failed, report: `${summary}\n${reportLines.join('\n\n')}`.trim() };
+}
+
+function safeWorkspacePath(projectName, relPath) {
+  const clean = String(relPath || '')
+    .replace(/\\/g, '/')
+    .replace(/^\/+/, '')
+    .trim();
+  if (!clean || clean.includes('..')) return null;
+  const root = path.join(PROJECTS_DIR, projectName, 'workspace');
+  const full = path.resolve(root, clean);
+  if (!full.startsWith(root + path.sep) && full !== root) return null;
+  return full;
+}
+
+function parseFilesFromForgeOutput(text = '') {
+  const source = String(text || '');
+  const items = [];
+  const patterns = [
+    /\*\*File:\s*`([^`]+)`\*\*[\s\S]*?```[^\n]*\n([\s\S]*?)```/g,
+    /(?:^|\n)File:\s*`?([^\n`]+)`?[^\n]*\n```[^\n]*\n([\s\S]*?)```/g,
+    /(?:^|\n)###\s*`?([^\n`]+)`?[^\n]*\n```[^\n]*\n([\s\S]*?)```/g,
+    /(?:^|\n)#{1,6}[^\n`]*`([^`]+\.[^`]+)`[^\n]*\n```[^\n]*\n([\s\S]*?)```/g,
+    /(?:^|\n)\d+\.\s*`([^`]+\.[^`]+)`[^\n]*\n```[^\n]*\n([\s\S]*?)```/g,
+  ];
+
+  for (const pattern of patterns) {
+    let match;
+    while ((match = pattern.exec(source))) {
+      const relPath = String(match[1] || '').trim();
+      const content = String(match[2] || '');
+      if (!relPath || !content.trim()) continue;
+      const existingIdx = items.findIndex((x) => x.path === relPath);
+      if (existingIdx >= 0) {
+        items[existingIdx] = { path: relPath, content };
+      } else {
+        items.push({ path: relPath, content });
+      }
+    }
+  }
+
+  return items;
+}
+
+function materializeForgeFiles(projectName, forgeOutput) {
+  const files = parseFilesFromForgeOutput(forgeOutput);
+  const written = [];
+  for (const item of files) {
+    const target = safeWorkspacePath(projectName, item.path);
+    if (!target) continue;
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, item.content);
+    written.push(item.path);
+  }
+  return written;
+}
+
+function listWorkspaceFiles(projectName) {
+  const root = path.join(PROJECTS_DIR, projectName, 'workspace');
+  if (!fs.existsSync(root)) return [];
+  const out = [];
+  const walk = (dir) => {
+    for (const name of fs.readdirSync(dir)) {
+      const full = path.join(dir, name);
+      const st = fs.statSync(full);
+      if (st.isDirectory()) walk(full);
+      else out.push(path.relative(root, full).replace(/\\/g, '/'));
+    }
+  };
+  walk(root);
+  return out;
+}
+
+function hasRealProjectFiles(projectName) {
+  const files = listWorkspaceFiles(projectName);
+  return files.some((f) => !/\.md$/i.test(f));
+}
+
+function hydrateWorkspaceFromOutputs(projectName) {
+  const impl = readOutput(projectName, 'implementation.md');
+  if (!impl.trim()) return 0;
+  const written = materializeForgeFiles(projectName, impl);
+  if (written.length) {
+    setProjectStatus(projectName, {
+      workspaceFiles: written,
+      workspaceUpdatedAt: new Date().toISOString(),
+    });
+  }
+  return written.length;
 }
 
 function summarizeLensReview(text = '') {
@@ -529,6 +656,24 @@ ${text}`
     }
 
     try {
+      // 0.5 Ensure projects have real workspace files and revoke invalid "complete" states.
+      for (const name of getProjects()) {
+        if (!hasRealProjectFiles(name)) {
+          const count = hydrateWorkspaceFromOutputs(name);
+          if (count) log('system', `Backfilled ${count} workspace file(s) for "${name}" from implementation output.`);
+        }
+        const status = getProjectStatus(name);
+        if (status.stage === 'complete' && !hasRealProjectFiles(name)) {
+          setProjectStatus(name, {
+            stage: 'architecture',
+            completionRevoked: true,
+            completionRevokedAt: new Date().toISOString(),
+            completionRevokedReason: 'No real source files materialized in workspace',
+          });
+          log('system', `Reopened "${name}": completion revoked because no real source files exist.`);
+        }
+      }
+
       // 0. CEO -> APEX bridge commands
       await this.processCeoBridge();
 
@@ -903,8 +1048,13 @@ ${decision.reasoning}
 
         const stageInfo = stageMap[currentStatus.stage];
         if (!stageInfo || !stageInfo.agentKey) {
+          if (currentStatus.stage === 'launch' && !hasRealProjectFiles(name)) {
+            log('system', `Completion blocked for "${name}": no real source files in projects/${name}/workspace`);
+            break;
+          }
           if (currentStatus.stage !== 'complete') {
-            setProjectStatus(name, { stage: 'complete' });
+            const workspaceFiles = listWorkspaceFiles(name);
+            setProjectStatus(name, { stage: 'complete', workspaceFiles });
             this.state.increment('completed');
             log('system', `🎉 Project "${name}" is COMPLETE!`);
           }
@@ -986,6 +1136,26 @@ ${decision.reasoning}
           const taskForForge = `${readme}${remediationBlock}${previousImplBlock}`;
           output = await this.agents.forge.implement(taskForForge, arch, res);
           writeOutput(projectName, 'implementation.md', output);
+          {
+            const written = materializeForgeFiles(projectName, output);
+            if (written.length) {
+              const check = runWorkspaceChecks(projectName);
+              writeOutput(projectName, 'workspace-check.txt', check.report);
+              setProjectStatus(projectName, {
+                workspaceFiles: written,
+                workspaceUpdatedAt: new Date().toISOString(),
+                workspaceCheck: {
+                  checked: check.checked,
+                  passed: check.passed,
+                  failed: check.failed,
+                  ranAt: new Date().toISOString(),
+                },
+              });
+              log('forge', `Materialized ${written.length} code file(s) in projects/${projectName}/workspace (checks: ${check.passed}/${check.checked} passed).`);
+            } else {
+              log('forge', `No file blocks detected. Kept markdown output only for "${projectName}".`);
+            }
+          }
           break;
 
         case 'implementation':

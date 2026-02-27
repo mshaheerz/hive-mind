@@ -1,34 +1,16 @@
-**Key decisions**
-
-* The CLI is written in TypeScript and uses **Commander.js** for argument parsing.  
-* **Axios** + **axios‑retry** handles HTTP communication with the Postman API – only `GET` requests are retried with exponential back‑off.  
-* **Zod** validates the Postman collection JSON against a minimal schema (folders, requests, headers, body).  
-* The collection is turned into a minimal **OpenAPI 3** document – only the parts that are needed for SDK generation are produced.  
-* The OpenAPI document is written to disk and then fed to **@openapitools/openapi-generator-cli** via its bundled CLI (`cli.js`).  
-* SDKs for TypeScript, Python and Go are generated into `generated-sdks/<lang>` directories.  
-* All async operations are wrapped with `try…catch` and errors are wrapped in a `SafeError` that never leaks the Postman API key.  
-* Query strings are stripped from paths before they reach OpenAPI.  
-* Array schemas are explicitly defined with `.min(0)` to avoid silent failures.  
-* The code is heavily commented with JSDoc and every file starts with a module comment.  
-
-Below are the complete files needed for the project.
-
----
-
-## `package.json`
-
+**File: `package.json`**
 ```json
 {
   "name": "postman-to-sdk",
   "version": "0.1.0",
   "description": "CLI that generates fully‑typed SDKs from Postman collections",
-  "main": "dist/cli.js",
+  "main": "dist/index.js",
   "bin": {
-    "postman-to-sdk": "dist/cli.js"
+    "postman-to-sdk": "dist/index.js"
   },
   "scripts": {
     "build": "tsc",
-    "start": "node dist/cli.js",
+    "start": "node dist/index.js",
     "lint": "eslint . --ext .ts",
     "test": "echo \"No tests yet\""
   },
@@ -62,10 +44,7 @@ Below are the complete files needed for the project.
 }
 ```
 
----
-
-## `tsconfig.json`
-
+**File: `tsconfig.json`**
 ```json
 {
   "compilerOptions": {
@@ -82,10 +61,7 @@ Below are the complete files needed for the project.
 }
 ```
 
----
-
-## `.gitignore`
-
+**File: `.gitignore`**
 ```
 /dist
 /node_modules
@@ -93,10 +69,7 @@ Below are the complete files needed for the project.
 .env
 ```
 
----
-
-## `README.md`
-
+**File: `README.md`**
 ```markdown
 # Postman‑to‑SDK
 
@@ -152,10 +125,7 @@ npm start
 MIT
 ```
 
----
-
-## `src/config.ts`
-
+**File: `src/config.ts`**
 ```ts
 /**
  * @file config.ts
@@ -163,7 +133,6 @@ MIT
  */
 
 import path from 'path';
-import { SupportedLanguage } from './types';
 
 /** Supported SDK languages – exported as a readonly tuple for literal union types. */
 export const SUPPORTED_LANGUAGES = ['typescript', 'python', 'go'] as const;
@@ -185,12 +154,16 @@ export const OUTPUT_ROOT = path.resolve(process.cwd(), 'generated-sdks');
 export const OPENAPI_GENERATOR_CLI = require.resolve(
   '@openapitools/openapi-generator-cli/dist/cli.js'
 );
+
+/** Map of language to OpenAPI Generator generator name. */
+export const LANG_MAP: Record<SupportedLanguage, string> = {
+  typescript: 'typescript-axios',
+  python: 'python',
+  go: 'go',
+};
 ```
 
----
-
-## `src/types.ts`
-
+**File: `src/types.ts`**
 ```ts
 /**
  * @file types.ts
@@ -255,4 +228,22 @@ export const ItemSchema = z.object({
   request: RequestSchema.optional(),
   /** If the item has children, it’s a folder. */
   item: z
-   
+    .array(z.lazy(() => ItemSchema))
+    .min(0)
+    .optional(),
+});
+
+/** Minimal collection schema. */
+export const CollectionSchema = z.object({
+  info: z.object({
+    _postman_id: z.string(),
+    name: z.string(),
+    schema: z.string(),
+  }),
+  item: z.array(ItemSchema),
+});
+
+/** TypeScript type for a validated collection. */
+export type Collection = z.infer<typeof CollectionSchema>;
+
+/**

@@ -4,6 +4,12 @@
   "approvedBy": "apex",
   "approvalScore": 7.5,
   "approvedAt": "2026-02-26T15:04:01.707Z",
-  "updatedAt": "2026-02-26T15:24:06.546Z",
-  "lensRejected": true
+  "updatedAt": "2026-02-27T10:59:23.546Z",
+  "lensRejected": true,
+  "workspaceFiles": [
+    "secret_scout/src/utils/logging.py",
+    "secret_scout/config/settings.py",
+    "secret_scout/config/logging_config.py"
+  ],
+  "workspaceUpdatedAt": "2026-02-27T10:59:23.546Z"
 }

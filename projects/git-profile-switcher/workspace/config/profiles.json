@@ -1,0 +1,20 @@
+{
+  "repositories": [
+    {
+      "remote_url": "https://github.com/example/personal-project.git",
+      "profile": {
+        "name": "John Personal",
+        "email": "john.personal@example.com",
+        "signing_key": ""
+      }
+    },
+    {
+      "remote_url": "git@github.com:example/work-project.git",
+      "profile": {
+        "name": "John Work",
+        "email": "john.work@company.com",
+        "signing_key": "ABCDEF1234567890"
+      }
+    }
+  ]
+}

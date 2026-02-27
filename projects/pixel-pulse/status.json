@@ -4,6 +4,14 @@
   "approvedBy": "apex",
   "approvalScore": 7.25,
   "approvedAt": "2026-02-26T15:04:08.585Z",
-  "updatedAt": "2026-02-26T15:23:23.742Z",
-  "lensRejected": true
+  "updatedAt": "2026-02-27T10:59:23.544Z",
+  "lensRejected": true,
+  "workspaceFiles": [
+    "package.json",
+    "src/config.js",
+    "src/storage/local.js",
+    "src/models/baseline.js",
+    "src/models/comparison.js"
+  ],
+  "workspaceUpdatedAt": "2026-02-27T10:59:23.544Z"
 }

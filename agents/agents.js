@@ -68,7 +68,21 @@ When writing code, always output:
 ${architecture ? `**Architecture Notes:** ${architecture}` : ''}
 ${researchNotes ? `**Research Notes (from SCOUT):** ${researchNotes}` : ''}
 
-Write the complete implementation. Include all files needed.`;
+Write the complete implementation. Include all files needed.
+
+MANDATORY OUTPUT FORMAT (for automatic file creation):
+- For every file, use exactly this header line:
+  **File: \`relative/path/to/file.ext\`**
+- Immediately after header, include a fenced code block with only file content.
+- Do not omit paths.
+- Do not provide pseudo-code.
+- End with a short "Dependencies" section.
+
+Example:
+**File: \`src/index.ts\`**
+\`\`\`ts
+// file content
+\`\`\``;
 
     this.print(`Implementing: ${task}`);
     return await this.think(prompt);

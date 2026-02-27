@@ -1,21 +1,37 @@
 {
-  "stage": "complete",
+  "stage": "review",
   "proposedBy": "nova",
   "approvedBy": "apex",
   "approvalScore": 7.75,
   "approvedAt": "2026-02-26T09:54:03.179Z",
-  "updatedAt": "2026-02-27T10:54:23.994Z",
+  "updatedAt": "2026-02-27T11:04:21.592Z",
   "lensRejected": false,
   "lensReviewSummary": null,
-  "lensReviewedAt": "2026-02-27T10:43:33.949Z",
+  "lensReviewedAt": "2026-02-27T11:04:21.592Z",
   "lensActionItems": [],
-  "lensRejectCount": 5,
+  "lensRejectCount": 6,
   "escalationNeeded": true,
   "escalationReason": "Repeated LENS rejections",
-  "escalatedAt": "2026-02-27T10:43:33.949Z",
+  "escalatedAt": "2026-02-27T11:04:21.592Z",
   "lensApproved": false,
   "lensAcceptedAt": null,
   "lensBypassed": true,
-  "lensBypassReason": "LENS rejected 5 times. Auto-advanced to unblock pipeline.",
-  "lensBypassedAt": "2026-02-27T10:43:33.948Z"
+  "lensBypassReason": "LENS rejected 6 times. Auto-advanced to unblock pipeline.",
+  "lensBypassedAt": "2026-02-27T11:04:21.592Z",
+  "completionRevoked": true,
+  "completionRevokedAt": "2026-02-27T10:59:23.540Z",
+  "completionRevokedReason": "No real source files materialized in workspace",
+  "workspaceFiles": [
+    "src/__init__.py",
+    "src/logger.py",
+    "src/config_parser.py",
+    "src/cloud_providers/__init__.py"
+  ],
+  "workspaceUpdatedAt": "2026-02-27T11:02:17.062Z",
+  "workspaceCheck": {
+    "checked": 4,
+    "passed": 4,
+    "failed": 0,
+    "ranAt": "2026-02-27T11:02:17.062Z"
+  }
 }

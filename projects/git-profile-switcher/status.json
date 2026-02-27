@@ -4,6 +4,11 @@
   "approvedBy": "apex",
   "approvalScore": 8.5,
   "approvedAt": "2026-02-26T15:03:56.242Z",
-  "updatedAt": "2026-02-26T15:23:01.727Z",
-  "lensRejected": true
+  "updatedAt": "2026-02-27T10:59:23.542Z",
+  "lensRejected": true,
+  "workspaceFiles": [
+    "config/profiles.json",
+    "src/profile.py"
+  ],
+  "workspaceUpdatedAt": "2026-02-27T10:59:23.542Z"
 }

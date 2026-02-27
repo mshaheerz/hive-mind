@@ -1,44 +1,4 @@
-**Key Decisions**
-
-| Decision | Reason |
-|----------|--------|
-| **Per‑name logger cache** | Avoids the global singleton bug and allows callers to obtain independent loggers. |
-| **Thread‑safe creation** | Uses a `threading.Lock` to guarantee only one instance per name is created even in multi‑threaded scenarios. |
-| **TimedRotatingFileHandler** | Prevents unbounded log growth by rotating logs daily and keeping a limited number of backups. |
-| **Proper escaping of `.env` values** | Wraps values containing spaces, newlines, `#`, or quotes in double quotes and escapes internal quotes, ensuring a syntactically valid file. |
-| **Atomic write with `os.replace`** | Guarantees that the file is either fully written or not at all, even on Windows. |
-| **Tests for logger, parser, and provider** | Covers singleton behaviour, handler duplication, log level override, atomic writes, special‑character handling, and abstract‑class enforcement. |
-| **Minimal CLI (`src/main.py`)** | Provides a usable entry point for future expansion without adding unnecessary complexity. |
-
----
-
-## File list
-
-```
-src/
-├── __init__.py
-├── logger.py
-├── config_parser.py
-├── cloud_providers/
-│   ├── __init__.py
-│   ├── base.py
-│   ├── aws.py
-│   ├── gcp.py
-│   └── azure.py
-├── sync_mechanism.py
-├── main.py
-tests/
-├── conftest.py
-├── test_logger.py
-├── test_config_parser.py
-└── test_base_provider.py
-requirements.txt
-```
-
----
-
-### `src/__init__.py`
-
+**File: `src/__init__.py`**
 ```python
 """
 EnvSync CLI package initializer.
@@ -48,8 +8,7 @@ EnvSync CLI package initializer.
 
 ---
 
-### `src/logger.py`
-
+**File: `src/logger.py`**
 ```python
 """
 Centralised logger creation for EnvSync CLI.
@@ -64,7 +23,7 @@ import logging.handlers
 import os
 import threading
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict
 
 # --------------------------------------------------------------------------- #
 # Constants – no magic numbers
@@ -146,4 +105,146 @@ def get_logger(name: str = "envsync") -> logging.Logger:
         )
 
         # Guard against duplicate handlers
-        if not
+        if not logger.handlers:
+            logger.addHandler(file_handler)
+            logger.addHandler(console_handler)
+
+        _LOGGERS[name] = logger
+        return logger
+```
+
+---
+
+**File: `src/config_parser.py`**
+```python
+"""
+Utilities for parsing and writing .env configuration files.
+"""
+
+import os
+import re
+from pathlib import Path
+from typing import Dict
+
+# Regular expression for parsing a single .env line
+_ENV_LINE_RE = re.compile(r"""
+    ^\s*
+    (?P<key>[A-Za-z_][A-Za-z0-9_]*)          # key
+    \s*=\s*
+    (?P<value>                               # value
+        (?:'[^']*') |                         # single quoted
+        (?:"[^"]*") |                         # double quoted
+        [^\s#]+                               # unquoted
+    )
+    \s*(?:#.*)?$                              # optional comment
+""", re.VERBOSE)
+
+
+def parse_env_file(file_path: Path) -> Dict[str, str]:
+    """
+    Parse a .env file into a dictionary.
+
+    Parameters
+    ----------
+    file_path : Path
+        Path to the .env file.
+
+    Returns
+    -------
+    Dict[str, str]
+        Mapping of key to value.
+    """
+    env: Dict[str, str] = {}
+    if not file_path.exists():
+        return env
+
+    with file_path.open("r", encoding="utf-8") as fh:
+        for line in fh:
+            match = _ENV_LINE_RE.match(line)
+            if match:
+                key = match.group("key")
+                raw_value = match.group("value")
+                # Strip surrounding quotes if present
+                if raw_value[0] in ("'", '"') and raw_value[-1] == raw_value[0]:
+                    value = raw_value[1:-1]
+                else:
+                    value = raw_value
+                env[key] = value
+    return env
+
+
+def _escape_value(value: str) -> str:
+    """
+    Escape a value so that it is syntactically valid in a .env file.
+    """
+    if not value:
+        return '""'
+    # If the value contains spaces, newlines, #, or quotes, wrap in double quotes
+    if any(c in value for c in " \n\t#\"'"):
+        escaped = value.replace('"', r'\"')
+        return f'"{escaped}"'
+    return value
+
+
+def write_env_file(file_path: Path, data: Dict[str, str]) -> None:
+    """
+    Atomically write a dictionary to a .env file.
+
+    Parameters
+    ----------
+    file_path : Path
+        Destination .env file.
+    data : Dict[str, str]
+        Key/value mapping to write.
+
+    Raises
+    ------
+    RuntimeError
+        If the file could not be written.
+    """
+    tmp_path = file_path.with_suffix(".tmp")
+    try:
+        with tmp_path.open("w", encoding="utf-8") as fh:
+            for key, value in sorted(data.items()):
+                fh.write(f"{key}={_escape_value(value)}\n")
+        # Atomic replace
+        os.replace(tmp_path, file_path)
+    except Exception as exc:
+        raise RuntimeError(f"Failed to write .env file {file_path}") from exc
+```
+
+---
+
+**File: `src/cloud_providers/__init__.py`**
+```python
+"""
+Cloud provider package.
+"""
+# No runtime initialisation required.
+```
+
+---
+
+**File: `src/cloud_providers/base.py`**
+```python
+"""
+Abstract base class for cloud secret providers.
+"""
+
+import abc
+from typing import Dict, Iterable
+
+
+class BaseProvider(abc.ABC):
+    """
+    Abstract interface for cloud secret providers.
+    """
+
+    @abc.abstractmethod
+    def get_secrets(self, secret_names: Iterable[str]) -> Dict[str, str]:
+        """
+        Retrieve the values of the specified secrets.
+
+        Parameters
+        ----------
+        secret
