@@ -76,16 +76,17 @@ function render() {
   ];
 
   for (const a of agents) {
+    const cycleMinutes = Number(state.agentCadenceMinutes?.[a.key]) || a.cycle;
     const lastRun = state.agentLastRun?.[a.key];
     const minsSince = lastRun ? (Date.now() - new Date(lastRun)) / 60000 : Infinity;
-    const isDue = minsSince >= a.cycle;
+    const isDue = minsSince >= cycleMinutes;
     const statusDot = isDue ? chalk.yellow('◉ DUE') : chalk.green('◎ REST');
     const lastStr = lastRun ? timeSince(lastRun) : 'never run';
     const nextStr = lastRun
-      ? chalk.gray(`next in ${Math.max(0, a.cycle - Math.floor(minsSince))}m`)
+      ? chalk.gray(`next in ${Math.max(0, cycleMinutes - Math.floor(minsSince))}m`)
       : chalk.gray('next cycle');
 
-    console.log(`  ${statusDot} ${chalk.bold(a.name.padEnd(6))} ${chalk.gray(a.role.padEnd(18))} last: ${lastStr.padEnd(10)} ${nextStr}`);
+    console.log(`  ${statusDot} ${chalk.bold(a.name.padEnd(6))} ${chalk.gray(a.role.padEnd(18))} last: ${lastStr.padEnd(10)} ${nextStr} ${chalk.gray(`cycle ${cycleMinutes}m`)}`);
   }
 
   // ─── Proposal Queue ───────────────────────────────────────

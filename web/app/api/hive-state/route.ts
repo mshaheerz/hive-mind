@@ -12,6 +12,7 @@ const PROJECTS_DIR = path.join(HIVE_ROOT, 'projects');
 const HIVE_DIR     = path.join(HIVE_ROOT, '.hive');
 const DISCUSS_DIR  = path.join(HIVE_DIR, 'discussions');
 const LOGS_DIR     = path.join(HIVE_ROOT, 'logs');
+const RUNNER_LOCK  = path.join(HIVE_DIR, 'runner.lock.json');
 const SUPPORTED_PROVIDERS = ['openrouter', 'groq'];
 
 function safeRead(file: string, fallback: any): any {
@@ -77,25 +78,61 @@ function inferProviderFromLogs(logs: string[]): string | null {
   return null;
 }
 
+function isPidAlive(pid: number): boolean {
+  if (!Number.isFinite(pid) || pid <= 0) return false;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function resolveRunningFlag(stateRunning: boolean): boolean {
+  if (!fs.existsSync(RUNNER_LOCK)) return false;
+  try {
+    const lock = JSON.parse(fs.readFileSync(RUNNER_LOCK, 'utf8'));
+    return isPidAlive(Number(lock?.pid));
+  } catch {
+    return Boolean(stateRunning);
+  }
+}
+
+function deriveStats(queue: any[], projects: any[]) {
+  const approved = queue.filter((p) => p?.status === 'approved').length;
+  const rejected = queue.filter((p) => p?.status === 'rejected').length;
+  const completed = projects.filter((p) => p?.status?.stage === 'complete').length;
+  const active = projects.filter((p) => {
+    const s = p?.status?.stage;
+    return s && s !== 'new' && s !== 'failed' && s !== 'complete';
+  }).length;
+  return { approved, rejected, completed, active };
+}
+
 export async function GET() {
   const state     = safeRead(path.join(HIVE_DIR, 'autonomous-state.json'), {
     running: false, cycleCount: 0, agentLastRun: {}, stats: {}
   });
+  const running = resolveRunningFlag(Boolean(state.running));
+  const stateWithRuntime = { ...state, running };
   const queue     = safeRead(path.join(HIVE_DIR, 'queue.json'), []);
   const deadlines = safeRead(path.join(HIVE_DIR, 'deadlines.json'), []);
   const ideaIndex = safeRead(path.join(HIVE_DIR, 'idea-index.json'), { ideas: [], projects: [] });
   const projects  = getProjects();
   const discussions = getDiscussions();
   const logs      = getRecentLogs();
+  const stats = deriveStats(queue, projects);
   const providerFromLogs = inferProviderFromLogs(logs);
   const provider = normalizeProvider(
+    state.llmProvider ||
     providerFromLogs ||
     process.env.LLM_PROVIDER ||
     'openrouter'
   );
 
   return NextResponse.json({
-    state,
+    state: stateWithRuntime,
+    stats,
     provider,
     queue,
     deadlines,

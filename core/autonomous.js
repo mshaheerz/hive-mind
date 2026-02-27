@@ -36,6 +36,9 @@ const AGENT_SCHEDULE = {
   echo:  { cycleMinutes: 120, role: 'creates launch content' },
 };
 
+const MIN_AGENT_CADENCE_MINUTES = 15;
+const MAX_AGENT_CADENCE_MINUTES = 120;
+
 // ─── Duplicate Detection ──────────────────────────────────────
 class DuplicateDetector {
   constructor() {
@@ -264,6 +267,7 @@ class AutonomousState {
       lastCycle: null,
       cycleCount: 0,
       agentLastRun: {},
+      agentCadenceMinutes: {},
       stats: { proposed: 0, approved: 0, rejected: 0, completed: 0, duplicatesBlocked: 0 },
     };
   }
@@ -273,18 +277,37 @@ class AutonomousState {
     fs.writeFileSync(STATE_FILE, JSON.stringify(this.state, null, 2));
   }
 
-  markAgentRun(agentName) {
+  getCycleMinutes(agentName) {
+    const base = AGENT_SCHEDULE[agentName]?.cycleMinutes || 60;
+    const override = this.state.agentCadenceMinutes?.[agentName];
+    const candidate = Number.isFinite(override) ? override : base;
+    return Math.max(MIN_AGENT_CADENCE_MINUTES, Math.min(MAX_AGENT_CADENCE_MINUTES, candidate));
+  }
+
+  markAgentRun(agentName, meta = {}) {
+    const { worked = false, success = true } = meta;
     this.state.agentLastRun[agentName] = new Date().toISOString();
+
+    if (!this.state.agentCadenceMinutes) this.state.agentCadenceMinutes = {};
+    const current = this.getCycleMinutes(agentName);
+
+    if (worked && success) {
+      this.state.agentCadenceMinutes[agentName] = Math.max(MIN_AGENT_CADENCE_MINUTES, current - 15);
+    } else if (worked && !success) {
+      this.state.agentCadenceMinutes[agentName] = Math.min(MAX_AGENT_CADENCE_MINUTES, current + 15);
+    } else if (!Number.isFinite(this.state.agentCadenceMinutes[agentName])) {
+      this.state.agentCadenceMinutes[agentName] = current;
+    }
+
     this.save();
   }
 
   isAgentDue(agentName) {
     const last = this.state.agentLastRun[agentName];
     if (!last) return true;
-    const schedule = AGENT_SCHEDULE[agentName];
-    if (!schedule) return false;
+    const cycleMinutes = this.getCycleMinutes(agentName);
     const minutesSince = (Date.now() - new Date(last)) / 60000;
-    return minutesSince >= schedule.cycleMinutes;
+    return minutesSince >= cycleMinutes;
   }
 
   increment(stat) {

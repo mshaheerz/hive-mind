@@ -29,7 +29,10 @@ type Deadline = {
 };
 
 type Hive = {
-  state?: { agentLastRun?: Record<string, string | number | Date> };
+  state?: {
+    agentLastRun?: Record<string, string | number | Date>;
+    agentCadenceMinutes?: Record<string, number>;
+  };
   projects?: Project[];
   discussions?: Discussion[];
   deadlines?: Deadline[];
@@ -37,6 +40,7 @@ type Hive = {
 
 interface AgentRoomProps {
   agentName: string;
+  anchor: { x: number; y: number };
   hive?: Hive | null;
   agentStatus: (name: string) => AgentStatus;
   onClose: () => void;
@@ -75,11 +79,12 @@ function timeSince(iso?: string | number | Date | null): string {
   return `${Math.floor(m / 60)}h ago`;
 }
 
-export default function AgentRoom({ agentName, hive, agentStatus, onClose }: AgentRoomProps) {
+export default function AgentRoom({ agentName, anchor, hive, agentStatus, onClose }: AgentRoomProps) {
   const info   = AGENT_INFO[agentName];
   const status = agentStatus(agentName);
   const last   = hive?.state?.agentLastRun?.[agentName];
-  const cycle  = SCHEDULE[agentName];
+  const dynamic = Number(hive?.state?.agentCadenceMinutes?.[agentName]);
+  const cycle  = Number.isFinite(dynamic) && dynamic > 0 ? dynamic : SCHEDULE[agentName];
   const minsSince = last ? (Date.now() - (typeof last === 'number' ? last : new Date(last).getTime())) / 60000 : null;
   const progress = minsSince !== null ? Math.min(1, minsSince / cycle) : 0;
 
@@ -106,9 +111,27 @@ export default function AgentRoom({ agentName, hive, agentStatus, onClose }: Age
     active:  '#4ade80', due: '#ffd93d', resting: '#60a5fa', idle: '#7d9ac3',
   };
 
+  const panelWidth = 560;
+  const margin = 12;
+  const vw = typeof window !== 'undefined' ? window.innerWidth : 1280;
+  const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+  const clampedWidth = Math.min(panelWidth, vw - margin * 2);
+  const placeRight = anchor.x + 20 + clampedWidth <= vw - margin;
+  const desiredLeft = placeRight ? anchor.x + 20 : anchor.x - clampedWidth - 20;
+  const left = Math.max(margin, Math.min(vw - clampedWidth - margin, desiredLeft));
+  const top = Math.max(72, Math.min(vh - 120, anchor.y - 160));
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm animate-[fadeSlideUp_0.2s_ease]" onClick={onClose}>
-      <div className="bg-gradient-to-br from-[#142d45] to-[#0f1725] rounded-2xl p-8 w-full max-w-[560px] border" style={{ borderColor: `${info.color}66`, boxShadow: `0 0 60px ${info.color}25, 0 20px 60px rgba(0,0,0,0.9)` }} onClick={e => e.stopPropagation()}>
+    <div
+      className="fixed z-50 animate-[fadeSlideUp_0.2s_ease]"
+      style={{
+        left,
+        top,
+        width: clampedWidth,
+        maxHeight: vh - top - margin,
+      }}
+    >
+      <div className="h-full overflow-y-auto bg-gradient-to-br from-[#142d45] to-[#0f1725] rounded-2xl p-8 border" style={{ borderColor: `${info.color}66`, boxShadow: `0 0 60px ${info.color}25, 0 20px 60px rgba(0,0,0,0.9)` }}>
 
         {/* Close */}
         <button onClick={onClose} className="absolute top-4 right-4 bg-none border-none text-(--text-dim) cursor-pointer text-lg leading-none hover:text-(--text-primary) transition-colors">✕</button>

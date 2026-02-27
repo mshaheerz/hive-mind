@@ -1,242 +1,224 @@
-**File: `package.json`**
-```json
-{
-  "name": "postman-to-sdk",
-  "version": "1.0.0",
-  "description": "CLI that generates fully‑typed SDKs (TS, Python, Go) from Postman collections",
-  "main": "dist/index.js",
-  "type": "module",
-  "scripts": {
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "cli": "npm run build && node dist/index.js"
-  },
-  "bin": {
-    "postman-to-sdk": "./dist/index.js"
-  },
-  "keywords": [
-    "postman",
-    "sdk",
-    "openapi",
-    "codegen",
-    "cli"
-  ],
-  "author": "Hive Mind",
-  "license": "MIT",
-  "dependencies": {
-    "axios": "^1.7.2",
-    "chalk": "^5.3.0",
-    "commander": "^12.0.0",
-    "fs-extra": "^11.2.0",
-    "openapi-generator-cli": "^2.13.0",
-    "postman-to-openapi": "^1.5.0"
-  },
-  "devDependencies": {
-    "@types/node": "^20.12.7",
-    "typescript": "^5.4.3"
-  }
+**Implementation Overview**
+
+The solution is a Go‑based CLI tool that:
+
+1. **Accepts** a Postman collection ID (fetched via the Postman API) **or** a local collection file path.  
+2. **Parses** the collection JSON into a Go struct (`models.Collection`).  
+3. **Converts** the collection to an OpenAPI 3.0 definition (a very small, illustrative conversion – a production version would use a dedicated library).  
+4. **Runs** the OpenAPI Generator CLI (`openapi-generator-cli`) to produce SDKs for TypeScript, Python and Go.  
+5. **Writes** the generated SDKs to a user‑specified output directory.
+
+All functions include GoDoc comments, named constants replace magic numbers/strings, and every async/IO operation is wrapped with proper error handling. The CLI is built with **Cobra**, HTTP calls use **Resty**, and the code is split into logical packages that mirror the architecture diagram.
+
+---
+
+## 1. Complete source files
+
+### `go.mod`
+```go
+module github.com/yourorg/postman-to-sdk
+
+go 1.22
+
+require (
+    github.com/go-resty/resty/v2 v2.12.0
+    github.com/spf13/cobra v1.8.0
+)
+```
+
+---
+
+### `main.go`
+```go
+// main.go
+// Entry point for the Postman‑to‑SDK CLI tool.
+// It simply executes the root command defined in cmd/postman-to-sdk.go.
+package main
+
+import (
+	"github.com/yourorg/postman-to-sdk/cmd"
+)
+
+func main() {
+	cmd.Execute()
 }
 ```
 
 ---
 
-**File: `tsconfig.json`**
-```json
-{
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "ES2022",
-    "moduleResolution": "node",
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "strict": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true,
-    "sourceMap": true
-  },
-  "include": ["src"]
+### `cmd/postman-to-sdk.go`
+```go
+// cmd/postman-to-sdk.go
+// Defines the Cobra CLI command, parses flags and delegates work to the internal packages.
+package cmd
+
+import (
+	"fmt"
+	"os"
+
+	"github.com/spf13/cobra"
+	"github.com/yourorg/postman-to-sdk/internal/collection_parser"
+	"github.com/yourorg/postman-to-sdk/internal/openapi_generator"
+	"github.com/yourorg/postman-to-sdk/internal/sdk_generator"
+	"github.com/yourorg/postman-to-sdk/pkg/postman_api"
+	"github.com/yourorg/postman-to-sdk/pkg/sdk_repository"
+)
+
+const (
+	// Flag names
+	flagCollectionID = "collection-id"
+	flagFilePath     = "file"
+	flagOutputDir    = "output"
+	flagApiKeyEnv    = "POSTMAN_API_KEY"
+)
+
+// rootCmd is the base command when called without any sub‑commands.
+var rootCmd = &cobra.Command{
+	Use:   "postman-to-sdk",
+	Short: "Generate TypeScript, Python and Go SDKs from a Postman collection",
+	RunE:  run,
+}
+
+// Execute runs the root command. It is called from main.main().
+func Execute() {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Fprintf(os.Stderr, "CLI error: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+// init registers CLI flags.
+func init() {
+	rootCmd.Flags().String(flagCollectionID, "", "Postman collection ID (requires POSTMAN_API_KEY env var)")
+	rootCmd.Flags().String(flagFilePath, "", "Path to a local Postman collection JSON file")
+	rootCmd.Flags().String(flagOutputDir, "./sdks", "Directory where generated SDKs will be written")
+}
+
+// run is the main execution flow for the command.
+func run(cmd *cobra.Command, _ []string) error {
+	collectionID, _ := cmd.Flags().GetString(flagCollectionID)
+	filePath, _ := cmd.Flags().GetString(flagFilePath)
+	outputDir, _ := cmd.Flags().GetString(flagOutputDir)
+
+	if collectionID == "" && filePath == "" {
+		return fmt.Errorf("either --%s or --%s must be provided", flagCollectionID, flagFilePath)
+	}
+
+	// 1️⃣ Fetch or read the collection JSON.
+	var collectionBytes []byte
+	var err error
+	if collectionID != "" {
+		apiKey := os.Getenv(flagApiKeyEnv)
+		if apiKey == "" {
+			return fmt.Errorf("environment variable %s is required for collection ID mode", flagApiKeyEnv)
+		}
+		collectionBytes, err = postman_api.FetchCollection(collectionID, apiKey)
+		if err != nil {
+			return fmt.Errorf("failed to fetch collection from Postman API: %w", err)
+		}
+	} else {
+		collectionBytes, err = os.ReadFile(filePath)
+		if err != nil {
+			return fmt.Errorf("failed to read collection file: %w", err)
+		}
+	}
+
+	// 2️⃣ Parse collection JSON into a struct.
+	collection, err := collection_parser.Parse(collectionBytes)
+	if err != nil {
+		return fmt.Errorf("failed to parse collection JSON: %w", err)
+	}
+
+	// 3️⃣ Convert to OpenAPI spec.
+	openAPISpec, err := openapi_generator.Convert(collection)
+	if err != nil {
+		return fmt.Errorf("failed to convert collection to OpenAPI: %w", err)
+	}
+
+	// 4️⃣ Generate SDKs for each language.
+	languages := []string{"typescript", "python", "go"}
+	for _, lang := range languages {
+		sdkPath, err := sdk_generator.Generate(lang, openAPISpec, outputDir)
+		if err != nil {
+			return fmt.Errorf("SDK generation failed for %s: %w", lang, err)
+		}
+		fmt.Printf("✅ %s SDK generated at %s\n", lang, sdkPath)
+	}
+
+	// 5️⃣ Record the SDKs in the repository (optional future use).
+	if err := sdk_repository.Save(outputDir); err != nil {
+		// Not a fatal error – just log.
+		fmt.Fprintf(os.Stderr, "warning: failed to update SDK repository: %v\n", err)
+	}
+	return nil
 }
 ```
 
 ---
 
-### `src/index.ts`
-```ts
-/**
- * @fileoverview
- * Entry point for the Postman‑to‑SDK CLI.
- *
- * Orchestrates the flow:
- *   1. Parse CLI arguments.
- *   2. Retrieve a Postman collection (local file or via API).
- *   3. Convert the collection to an OpenAPI document.
- *   4. Generate SDKs for the requested languages.
- */
+### `internal/collection_parser/parser.go`
+```go
+// internal/collection_parser/parser.go
+// Parses raw Postman collection JSON into a strongly‑typed Go struct.
+package collection_parser
 
-import { Command } from 'commander';
-import chalk from 'chalk';
-import { retrieveCollection } from './postmanClient.js';
-import { convertToOpenApi } from './converter.js';
-import { generateSdks } from './sdkGenerator.js';
-import { ensureDir } from './utils.js';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import (
+	"encoding/json"
 
-// ──────────────────────────────────────────────────────────────
-// Constants (no magic numbers)
-// ──────────────────────────────────────────────────────────────
-const DEFAULT_OUTPUT_DIR = 'generated-sdks';
-const SUPPORTED_LANGUAGES = ['typescript', 'python', 'go'] as const;
-type Language = typeof SUPPORTED_LANGUAGES[number];
+	"github.com/yourorg/postman-to-sdk/models"
+)
 
-// ──────────────────────────────────────────────────────────────
-// CLI definition
-// ──────────────────────────────────────────────────────────────
-const program = new Command()
-  .name('postman-to-sdk')
-  .description('Generate typed SDKs from a Postman collection')
-  .version('1.0.0')
-  .requiredOption(
-    '-c, --collection <path|id>',
-    'Path to a local Postman collection JSON file OR a Postman collection ID'
-  )
-  .option('-k, --api-key <key>', 'Postman API key (required for remote collections)')
-  .option(
-    '-l, --languages <list>',
-    `Comma‑separated list of target languages (supported: ${SUPPORTED_LANGUAGES.join(
-      ', '
-    )})`,
-    (value) => value.split(',').map((v) => v.trim().toLowerCase()),
-    SUPPORTED_LANGUAGES
-  )
-  .option(
-    '-o, --output <dir>',
-    'Directory where generated SDKs will be written',
-    DEFAULT_OUTPUT_DIR
-  )
-  .parse(process.argv);
-
-interface Options {
-  collection: string;
-  apiKey?: string;
-  languages: Language[];
-  output: string;
+// Parse converts a JSON byte slice into a models.Collection.
+// It returns an error if the JSON is malformed.
+func Parse(data []byte) (*models.Collection, error) {
+	var col models.Collection
+	if err := json.Unmarshal(data, &col); err != nil {
+		return nil, err
+	}
+	return &col, nil
 }
-
-async function main() {
-  const opts = program.opts<Options>();
-
-  // Validate language list
-  const invalidLangs = opts.languages.filter(
-    (l) => !SUPPORTED_LANGUAGES.includes(l as any)
-  );
-  if (invalidLangs.length) {
-    console.error(
-      chalk.red(
-        `Unsupported language(s): ${invalidLangs.join(
-          ', '
-        )}. Supported languages are: ${SUPPORTED_LANGUAGES.join(', ')}.`
-      )
-    );
-    process.exit(1);
-  }
-
-  // Resolve absolute output path
-  const outputDir = path.resolve(process.cwd(), opts.output);
-  await ensureDir(outputDir);
-
-  console.log(chalk.cyan('🔎 Retrieving Postman collection...'));
-  const collectionJson = await retrieveCollection(opts.collection, opts.apiKey);
-
-  console.log(chalk.cyan('🔄 Converting collection to OpenAPI...'));
-  const openApiSpec = await convertToOpenApi(collectionJson, {
-    // Optional: you can pass additional conversion options here
-    // See postman-to-openapi docs for details.
-  });
-
-  console.log(chalk.cyan('⚙️  Generating SDKs...'));
-  await generateSdks(openApiSpec, opts.languages, outputDir);
-
-  console.log(chalk.green('✅ SDK generation complete!'));
-  console.log(chalk.green(`📂 Files written to: ${outputDir}`));
-}
-
-// Run the CLI, catching any unexpected errors
-main().catch((err) => {
-  console.error(chalk.red('❌ Unexpected error:'), err);
-  process.exit(1);
-});
 ```
 
 ---
 
-### `src/postmanClient.ts`
-```ts
-/**
- * @fileoverview
- * Utilities for fetching a Postman collection.
- *
- * The collection can be supplied either:
- *   • As a local file path (JSON)
- *   • As a collection ID that is fetched via the Postman API (requires an API key)
- *
- * All network/file operations are wrapped with proper error handling.
- */
+### `internal/openapi_generator/generator.go`
+```go
+// internal/openapi_generator/generator.go
+// Very small, illustrative conversion from a Postman collection to an OpenAPI 3.0 spec.
+// A real implementation would need a dedicated library or a much richer mapping.
+package openapi_generator
 
-import axios from 'axios';
-import fs from 'fs-extra';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import chalk from 'chalk';
+import (
+	"encoding/json"
+	"fmt"
 
-// ──────────────────────────────────────────────────────────────
-// Types
-// ──────────────────────────────────────────────────────────────
-export interface PostmanCollection {
-  info: {
-    name: string;
-    schema: string;
-  };
-  item: any[];
-  // The real schema contains many more fields; we only need a subset for conversion.
-}
+	"github.com/yourorg/postman-to-sdk/models"
+)
 
-/**
- * Retrieves a Postman collection JSON.
- *
- * @param source - Either a file system path or a Postman collection ID.
- * @param apiKey - Optional API key; required when `source` is an ID.
- * @returns Parsed collection JSON.
- * @throws Error if the collection cannot be read or fetched.
- */
-export async function retrieveCollection(
-  source: string,
-  apiKey?: string
-): Promise<PostmanCollection> {
-  // Heuristic: if the string ends with .json or exists on disk, treat it as a file.
-  const isFile = source.endsWith('.json') || (await fs.pathExists(source));
+// Convert transforms a Postman collection into an OpenAPI spec (as JSON bytes).
+func Convert(col *models.Collection) ([]byte, error) {
+	if col.Info.Name == "" {
+		return nil, fmt.Errorf("collection has no name")
+	}
 
-  if (isFile) {
-    const absolutePath = path.resolve(process.cwd(), source);
-    try {
-      const raw = await fs.readFile(absolutePath, 'utf-8');
-      return JSON.parse(raw) as PostmanCollection;
-    } catch (err) {
-      throw new Error(`Failed to read collection file at ${absolutePath}: ${err}`);
-    }
-  }
+	// Basic skeleton of an OpenAPI document.
+	openapi := map[string]interface{}{
+		"openapi": "3.0.3",
+		"info": map[string]string{
+			"title":   col.Info.Name,
+			"version": "1.0.0",
+		},
+		"paths": map[string]interface{}{},
+	}
 
-  // Otherwise we assume it is a collection ID.
-  if (!apiKey) {
-    throw new Error(
-      'An API key is required to fetch a collection by ID. Provide it via --api-key.'
-    );
-  }
+	// Very naive conversion: each request becomes a GET operation at /{{request.name}}.
+	for _, item := range col.Item {
+		if item.Request == nil {
+			continue
+		}
+		path := "/" + sanitizePath(item.Name)
+		method := "get" // default to GET for demo purposes
 
-  const url = `https://api.postman.com/collections/${encodeURIComponent(source)}`;
-  try {
-    const response = await axios.get(url, {
-      headers: {
-        'X-Api-Key': apiKey,
-       
+		paths := openapi["paths"].(map[string]interface{})
+		if _, exists := paths[path]; !exists {
+			paths

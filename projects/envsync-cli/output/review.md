@@ -2,33 +2,43 @@
 
 ---
 
-### CRITICAL issues (must be fixed before merge)
+## CRITICAL issues (must be fixed before merge)
 
-| # | Issue | Why it’s a problem | How to fix |
-|---|-------|--------------------|------------|
-| 1 | **Syntax error / incomplete implementation in `AwsProvider.put_secrets`** – the `try` statement is missing a colon and the body is truncated. | The module will not even import, causing the entire CLI to crash. | Complete the method: add the missing colon, build the payload, call `client.put_secret_value` (or `create_secret` if it does not exist), handle `ClientError`/`BotoCoreError`, and return/raise appropriate exceptions. |
-| 2 | **No handling for secret creation vs. update** – `put_secrets` assumes the secret already exists. | If the user runs `envsync push` on a brand‑new secret, the call will fail with `ResourceNotFoundException`. | Detect `ResourceNotFoundException` and call `client.create_secret` with the same payload; otherwise call `client.update_secret` (or `put_secret_value`). |
-| 3 | **Missing imports / unused imports** – `json` is imported but never used after the truncated code, and `typing.Dict` is imported in several modules but not always needed. | Linting warnings and potential confusion. | Clean up imports after final implementation; keep only what is used. |
-| 4 | **No unit / integration tests** – the repository promises a “minimal test suite” but none are provided. | Without tests the core functionality cannot be validated automatically; regressions will slip through. | Add a `tests/` package with pytest tests covering: loading/writing `.env`, AWS/GCP/Azure provider get/put, diff logic, CLI argument parsing, error paths. Use `moto` for AWS, `google-cloud-secret-manager` test utilities, and Azure mock libraries. |
-| 5 | **Potential secret leakage in logs** – `LOGGER.debug("Fetched secret from AWS: %s", self.secret_name)` is fine, but elsewhere (e.g., future debug logs) there is a risk of printing secret values. | Accidentally logging secret payloads can expose credentials in CI logs or stdout. | Adopt a policy: never log secret **values**. If debugging is needed, log only keys or hash of payload. Add a helper `mask_secret(value)` if you ever need to include partial info. |
-| 6 | **Missing configuration for AWS region / credentials** – `boto3.client("secretsmanager")` relies on environment/default config. | In environments without proper AWS config the client will raise a `NoCredentialsError` at runtime. | Accept optional `region_name` and `aws_access_key_id`/`aws_secret_access_key` parameters (or read from env) and pass them to `boto3.client`. Provide clear error messages when credentials are missing. |
-| 7 | **`write_env_file` writes each key individually with `set_key`** – this results in multiple file opens/closes and can scramble comment ordering. | Poor performance for large `.env` files and possible loss of user‑added comments/ordering. | Build the full file content in memory (preserving existing lines/comments) and write it once, or use `dotenv.set_key` only after collecting all changes. Consider using a dedicated `.env` writer that respects ordering. |
-| 8 | **No handling of edge‑case env values** – values containing newlines, `=` characters, or leading/trailing spaces are not escaped correctly by `set_key`. | Corrupted `.env` files and runtime errors when the application reads them. | Use `dotenv.set_key(..., quote_mode="always")` or manually escape such values. Add unit tests for these edge cases. |
-| 9 | **Missing `__init__.py` in package directories** – without it the relative imports (`from ..logger import get_logger`) may fail when the package is installed as a module. | Import errors when the CLI is executed via `python -m envsync`. | Add an empty `src/__init__.py` and `src/cloud_providers/__init__.py`. |
-|10| **No entry‑point / CLI wiring** – the README mentions a CLI but there is no `main.py` or `setup.cfg` entry point. | Users cannot actually run the tool. | Add a `src/__main__.py` (or `cli.py`) that uses `argparse` to dispatch `push`, `pull`, `sync` commands, and expose it via `entry_points={'console_scripts': ['envsync=src.cli:main']}` in `setup.cfg`/`pyproject.toml`. |
+| # | File / Area | Issue | Why it’s a problem | How to fix it |
+|---|-------------|-------|--------------------|---------------|
+| 1 | `src/cloud_providers/aws.py` – `upsert_secrets` | **Potential secret leakage in logs** – `logger.debug("Putting secret %s … payload size %d", self.secret_name, len(payload))` is fine, but elsewhere (e.g., in `fetch_secrets`) the raw secret JSON could be logged if a developer changes the log level to DEBUG. | Logging secret material violates the principle of least privilege and can end up in CI logs, stdout, or log aggregation services. | Never log the secret payload itself. Keep only metadata (e.g., secret name, size). If you must log for debugging, mask values (`***`). |
+| 2 | `src/cloud_providers/aws.py` – client creation | **No explicit credential handling / region validation** – `boto3.client` will silently fall back to the default credential chain, which may lead to accidental use of the wrong AWS account. | Accidental secret read/write to a production account is a severe security incident. | Require the caller to pass a `boto3.Session` or explicit `aws_access_key_id`, `aws_secret_access_key`, and validate `region_name` against a whitelist or config. Raise a clear `EnvSyncError` if credentials are missing. |
+| 3 | `src/config_parser.py` – `write_env_file` | **Inefficient & non‑atomic file writes** – Calls `set_key` for every variable, which rewrites the file repeatedly and can corrupt the file if the process is interrupted. | Performance hit for large env files and risk of a partially‑written `.env` (loss of data). | Build a full string representation of the env file in memory and write it **once** using a temporary file (`tempfile.NamedTemporaryFile`) then `os.replace` for atomic replace. |
+| 4 | `src/config_parser.py` – `load_env_file` | **No handling for malformed lines** – `dotenv_values` silently drops malformed entries, which can hide configuration errors. | Users may think a variable is loaded when it is silently ignored, causing runtime failures. | After loading, verify that the number of keys matches expectations (or at least log a warning for any lines that were ignored). |
+| 5 | `src/cloud_providers/gcp.py` – **File is truncated / incomplete** | **Missing implementation** – The file ends abruptly after `from ..logger import`. The GCP provider is unusable. | The CLI cannot sync with GCP, breaking the core promise of “AWS, GCP, Azure”. | Complete the module: import logger, define `GcpProvider` with `fetch_secrets` and `upsert_secrets` using `google-cloud-secretmanager`, handle `NotFound`, wrap errors in `EnvSyncError`, and add proper docstrings. |
+| 6 | Overall project – **Missing Azure provider** | **Feature gap** – The constants list Azure as a supported provider, but no implementation exists. | Users selecting Azure will hit a `ImportError` or `NotImplementedError`. | Add `src/cloud_providers/azure.py` mirroring the pattern of AWS/GCP, using `azure-keyvault-secrets`. |
+| 7 | `src/logger.py` – Handler duplication risk in multi‑process / multi‑threaded contexts | **Potential duplicate log entries** – The guard `if not logger.handlers:` works per‑process but not when the logger is imported in child processes (e.g., `multiprocessing`). | Duplicate logs clutter output and can cause performance overhead. | Use `logger.propagate = False` and configure the logger in a dedicated `setup_logging()` called once from the CLI entry point, or use `logging.getLogger().addHandler` only in the main module. |
+| 8 | `src/constants.py` – Hard‑coded defaults | **No configurability** – `DEFAULT_CLOUD = "aws"` and `DEFAULT_DIRECTION = "bidirectional"` are baked in, making it hard to change defaults without code changes. | Limits flexibility for teams that prefer a different default cloud. | Load defaults from environment variables (e.g., `ENV_DEFAULT_CLOUD = os.getenv("ENVSYNC_DEFAULT_CLOUD", "aws")`). |
 
 ---
 
-### WARNINGS (should be fixed)
+## WARNINGS (should be addressed)
 
 | # | Issue | Why it matters | Suggested fix |
 |---|-------|----------------|---------------|
-| 1 | **Hard‑coded constant names** (`DEFAULT_SECRET_NAME = "envsync-secrets"`). | Users may want a different default; changing it requires code change. | Allow overriding via CLI flag or environment variable (`ENV_SYNC_DEFAULT_SECRET`). |
-| 2 | **Logging level fixed to INFO** – no way to enable DEBUG from CLI. | Developers troubleshooting may need more detail. | Add a `--verbose` / `-v` flag that sets `logger.setLevel(logging.DEBUG)`. |
-| 3 | **`load_env_file` raises `FileNotFoundError` but the CLI may treat it as fatal** – sometimes you want to start from an empty env. | Reduces usability for first‑time pushes. | Provide a `--create-if-missing` flag or catch the exception in CLI and treat it as empty dict. |
-| 4 | **`constants.DEEPCMP_IGNORE_ORDER` is defined but never used**. | Dead code adds maintenance overhead. | Either use it in the diff logic or remove it. |
-| 5 | **Type hints are inconsistent** – some functions return `None` but lack `-> None`. | Reduces static analysis quality. | Add explicit `-> None` where appropriate. |
-| 6 | **`logger.get_logger` adds a handler each call if none exist, but multiple imports may add duplicate handlers**. | Can cause duplicate log lines. | Use `logger.propagate = False` or check `if not logger.handlers:` is fine, but ensure the function is called only once per module; alternatively, configure logging in a single central place. |
-| 7 | **No explicit handling of network timeouts** for cloud SDK calls. | In flaky networks the CLI could hang indefinitely. | Pass `Config(connect_timeout=5, read_timeout=15)` to boto3 client; similar for GCP/Azure. |
-| 8 | **Missing `requirements.txt` content** – the README mentions it but it's not shown. | Users cannot install dependencies easily. | Add a `requirements.txt` with exact package versions (e.g., `boto3>=1.28.0`, `python-dotenv>=1.0.0`, `deepdiff>=6.2.0`, etc.). |
-| 9 | **No documentation for environment variables used for cloud credentials**. | Users may be confused about how to authenticate. | Add a section in README listing required env vars (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `GOOGLE_APPLICATION_C
+| 1 | **Missing type hints on many public functions** (e.g., `write_env_file` returns `None` but not annotated). | Reduces static analysis benefits and IDE support. | Add full type hints (`def write_env_file(env: Mapping[str, str], path: str = DEFAULT_ENV_PATH) -> None:`). |
+| 2 | **Docstrings use JSDoc‑style phrasing** (`@param`, `@returns`) but are plain triple‑quoted strings. | Inconsistent with Python conventions (PEP 257). | Convert to proper reST or Google style docstrings. |
+| 3 | **`DEFAULT_ENV_PATH` defined as ".env"** but `load_env_file`/`write_env_file` default to the literal string `".env"` instead of the constant. | Hard‑coded literals bypass the constant, leading to mismatched defaults if the constant changes. | Use the constant (`DEFAULT_ENV_PATH`) as the default argument value. |
+| 4 | **No unit or integration tests** – the README mentions a “test‑stub folder” but none are provided. | Unverified behavior, higher risk of regressions. | Add a `tests/` package with pytest fixtures: mock AWS/GCP SDKs (`moto`, `google-cloud-secretmanager` test doubles), test load/write env, diff generation, and conflict resolution logic. |
+| 5 | **Error handling in `AwsProvider.upsert_secrets`** – catches `self.client.exceptions.ResourceNotFoundException` but other AWS errors like `AccessDeniedException` bubble up as generic `EnvSyncError`. | Might hide actionable information. | Preserve the original exception type in the message (e.g., `"AWS access denied: {exc}"`). |
+| 6 | **Logging level is hard‑coded to INFO** in `get_logger`. Users may want DEBUG for troubleshooting. | Inflexible logging. | Allow an environment variable `ENVSYNC_LOG_LEVEL` or CLI flag to set the level. |
+| 7 | **`deepdiff` listed as a dependency but never used** in the provided snippets. | Unnecessary dependency bloat. | Either integrate `deepdiff` for showing diff to the user or remove it from `requirements.txt`. |
+| 8 | **Potential race condition** if multiple instances of the CLI run concurrently on the same `.env` file. | Could corrupt the file. | Document that the tool is not safe for concurrent runs, or implement file locking (`portalocker`). |
+
+---
+
+## SUGGESTIONS (optional improvements)
+
+| # | Idea | Benefit |
+|---|------|---------|
+| 1 | **Add a CLI entry point (`setup.py`/`pyproject.toml` console_scripts)** | Users can install with `pip install envsync` and run `envsync` directly. |
+| 2 | **Introduce a `SyncEngine` class** that orchestrates the diff, conflict resolution, and provider calls. Keeps the CLI thin and improves testability. |
+| 3 | **Support secret versioning** – keep a local history of `.env` snapshots (e.g., in `.env.backup.{timestamp}`) before overwriting. |
+| 4 | **Implement a `--dry-run` flag** that shows the diff without applying changes. |
+| 5 | **Mask secret values in console output** (e.g., show `API_KEY=****`) when printing diffs. |
+| 6 | **Add CI pipeline

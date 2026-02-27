@@ -29,7 +29,7 @@ interface SpaceStationProps {
   hive?: Hive | null;
   agentStatus: (key: string) => AgentStatus;
   selected: string | null;
-  setSelected: Dispatch<SetStateAction<string | null>>;
+  setSelected: Dispatch<SetStateAction<{ name: string; anchor: { x: number; y: number } } | null>>;
   tick: number;
 }
 
@@ -82,57 +82,65 @@ export default function SpaceStation({ hive, agentStatus, selected, setSelected,
         ◈ STATION OVERVIEW — CLICK AN AGENT TO INSPECT
       </div>
 
-      {/* SVG canvas for connections */}
-      <svg
-        ref={svgRef}
-        viewBox="0 0 100 100"
-        preserveAspectRatio="xMidYMid meet"
-        className="absolute inset-0 w-full h-full pointer-events-none"
-      >
-        <defs>
-          {AGENTS.map(a => (
-            <radialGradient key={a.key} id={`grad-${a.key}`} cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor={a.color} stopOpacity="0.3" />
-              <stop offset="100%" stopColor={a.color} stopOpacity="0" />
-            </radialGradient>
-          ))}
-        </defs>
+      {/* Scene container: keep SVG + rooms in the same coordinate space */}
+      <div className="relative h-[560px] w-full md:h-[640px]">
+        <svg
+          ref={svgRef}
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          className="absolute inset-0 h-full w-full pointer-events-none"
+        >
+          <defs>
+            {AGENTS.map(a => (
+              <radialGradient key={a.key} id={`grad-${a.key}`} cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor={a.color} stopOpacity="0.3" />
+                <stop offset="100%" stopColor={a.color} stopOpacity="0" />
+              </radialGradient>
+            ))}
+          </defs>
 
-        {/* Comm lines */}
-        {COMM_LINKS.map(([from, to], i) => {
-          const f = AGENTS.find(a => a.key === from);
-          const t = AGENTS.find(a => a.key === to);
-          if (!f || !t) return null;
-          const fromActive = agentStatus(from) === 'active';
-          return (
-            <line
-              key={i}
-              x1={f.x} y1={f.y} x2={t.x} y2={t.y}
-              stroke={fromActive ? f.color : 'rgba(255,255,255,0.04)'}
-              strokeWidth={fromActive ? '0.3' : '0.15'}
-              strokeDasharray={fromActive ? '1 1.5' : '0.5 2'}
-              className="transition-all duration-500"
+          {/* Comm lines */}
+          {COMM_LINKS.map(([from, to], i) => {
+            const f = AGENTS.find(a => a.key === from);
+            const t = AGENTS.find(a => a.key === to);
+            if (!f || !t) return null;
+            const fromActive = agentStatus(from) === 'active';
+            return (
+              <line
+                key={i}
+                x1={f.x} y1={f.y} x2={t.x} y2={t.y}
+                stroke={fromActive ? f.color : 'rgba(255,255,255,0.07)'}
+                strokeWidth={fromActive ? '0.42' : '0.2'}
+                strokeDasharray={fromActive ? '1 1.3' : '0.8 2'}
+                className="transition-all duration-500"
+              />
+            );
+          })}
+
+          {/* Nebula rings around APEX */}
+          <circle cx="50" cy="50" r="18" fill="none" stroke="rgba(240,180,40,0.05)" strokeWidth="0.5" />
+          <circle cx="50" cy="50" r="28" fill="none" stroke="rgba(240,180,40,0.03)" strokeWidth="0.3" />
+        </svg>
+
+        {/* Data packets travelling (HTML dots stay perfectly round) */}
+        <div className="absolute inset-0 pointer-events-none">
+          {packets.map(p => p.visible && (
+            <span
+              key={p.i}
+              className="absolute block rounded-full"
+              style={{
+                left: `${p.px}%`,
+                top: `${p.py}%`,
+                width: 8,
+                height: 8,
+                transform: 'translate(-50%, -50%)',
+                background: p.color,
+                boxShadow: `0 0 8px ${p.color}`,
+              }}
             />
-          );
-        })}
+          ))}
+        </div>
 
-        {/* Data packets travelling */}
-        {packets.map(p => p.visible && (
-          <circle
-            key={p.i}
-            cx={p.px} cy={p.py} r="0.7"
-            fill={p.color}
-            style={{ filter: `drop-shadow(0 0 1.5px ${p.color})` }}
-          />
-        ))}
-
-        {/* Nebula rings around APEX */}
-        <circle cx="50" cy="50" r="18" fill="none" stroke="rgba(240,180,40,0.05)" strokeWidth="0.5" />
-        <circle cx="50" cy="50" r="28" fill="none" stroke="rgba(240,180,40,0.03)" strokeWidth="0.3" />
-      </svg>
-
-      {/* Agent rooms - positioned absolutely using % coordinates */}
-      <div className="relative w-full pb-[56%]">
         {AGENTS.map(agent => {
           const status = agentStatus(agent.key);
           const isSelected = selected === agent.key;
@@ -140,7 +148,20 @@ export default function SpaceStation({ hive, agentStatus, selected, setSelected,
           return (
             <button
               key={agent.key}
-              onClick={() => setSelected(isSelected ? null : agent.key)}
+              onClick={(e) => {
+                if (isSelected) {
+                  setSelected(null);
+                  return;
+                }
+                const rect = e.currentTarget.getBoundingClientRect();
+                setSelected({
+                  name: agent.key,
+                  anchor: {
+                    x: rect.left + rect.width / 2,
+                    y: rect.top + rect.height / 2,
+                  },
+                });
+              }}
               className="absolute border-0 bg-transparent cursor-pointer p-0 -translate-x-1/2 -translate-y-1/2"
               style={{
                 left: `${agent.x}%`,
@@ -169,7 +190,7 @@ function Room({ agent, status, isSelected, hive }: RoomProps) {
   const isDue    = status === 'due';
 
   // Current project this agent is working on
-  const activeProject = hive?.projects?.find(p => {
+  const activeProjects = (hive?.projects || []).filter(p => {
     if (!p.status?.stage) return false;
     const stageAgentMap = {
       approved: 'scout', research: 'atlas', architecture: 'forge',
@@ -257,11 +278,11 @@ function Room({ agent, status, isSelected, hive }: RoomProps) {
         </div>
 
         {/* Active project tag */}
-        {activeProject && (
+        {activeProjects.length > 0 && (
           <div className="absolute bottom-1 max-w-[80%] overflow-hidden text-ellipsis whitespace-nowrap text-[0.4rem] tracking-[0.05em] opacity-70" style={{
             color: agent.color,
           }}>
-            ▶ {activeProject.name}
+            ▶ {activeProjects[0].name}
           </div>
         )}
       </div>

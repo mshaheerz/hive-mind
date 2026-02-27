@@ -358,17 +358,17 @@ class AutonomousRunner {
 
       // 2. NOVA generates new ideas (if due)
       if (dueSnapshot.nova && !capacityFull) {
-        await this.novaGeneratesIdeas();
-        this.state.markAgentRun('nova');
+        const ok = await this.novaGeneratesIdeas();
+        this.state.markAgentRun('nova', { worked: true, success: ok !== false });
       } else if (dueSnapshot.nova && capacityFull) {
         log('nova', `Skipping idea generation: active project limit reached (${activeProjects.length}/${MAX_ACTIVE_PROJECTS}).`);
-        this.state.markAgentRun('nova');
+        this.state.markAgentRun('nova', { worked: false });
       }
 
       // 3. SCOUT validates pending proposals (if due)
       if (dueSnapshot.scout && !capacityFull) {
-        await this.scoutValidatesProposals();
-        this.state.markAgentRun('scout');
+        const ok = await this.scoutValidatesProposals();
+        this.state.markAgentRun('scout', { worked: true, success: ok !== false });
       } else if (dueSnapshot.scout && capacityFull) {
         const pendingScout = loadQueue().filter((p) => p.status === 'pending_scout').length;
         if (pendingScout) {
@@ -376,13 +376,13 @@ class AutonomousRunner {
         } else {
           log('scout', 'No proposal intake while capacity gate is active.');
         }
-        this.state.markAgentRun('scout');
+        this.state.markAgentRun('scout', { worked: false });
       }
 
       // 4. APEX reviews validated proposals (if due)
       if (dueSnapshot.apex) {
-        await this.apexReviewsAndDecides({ blockApprovals: capacityFull, activeCount: activeProjects.length });
-        this.state.markAgentRun('apex');
+        const ok = await this.apexReviewsAndDecides({ blockApprovals: capacityFull, activeCount: activeProjects.length });
+        this.state.markAgentRun('apex', { worked: ok === true, success: ok !== false });
       }
 
       // 5. Advance active projects through pipeline
@@ -411,7 +411,7 @@ Do NOT propose anything similar to these. Think of genuinely new, useful develop
       if (!Array.isArray(proposals)) throw new Error('Invalid response format');
     } catch (err) {
       log('nova', `Failed to generate proposals: ${err.message}`);
-      return;
+      return false;
     }
 
     let newCount = 0;
@@ -454,6 +454,7 @@ Do NOT propose anything similar to these. Think of genuinely new, useful develop
     } else {
       log('nova', `✓ Submitted ${newCount} new proposal(s) for SCOUT review. Going to rest.`);
     }
+    return true;
   }
 
   // ─── SCOUT: Validate & research proposals ───────────────────
@@ -464,7 +465,7 @@ Do NOT propose anything similar to these. Think of genuinely new, useful develop
 
     if (!pending.length) {
       log('scout', 'No proposals to validate. Resting.');
-      return;
+      return false;
     }
 
     log('scout', `Validating ${pending.length} proposal(s)...`);
@@ -499,6 +500,7 @@ Do NOT propose anything similar to these. Think of genuinely new, useful develop
 
     saveQueue(queue);
     log('scout', 'Done validating. Going to rest.');
+    return true;
   }
 
   // ─── APEX: Review, discuss, decide ──────────────────────────
@@ -510,12 +512,12 @@ Do NOT propose anything similar to these. Think of genuinely new, useful develop
 
     if (!pending.length) {
       log('apex', 'No pending proposals.');
-      return;
+      return false;
     }
 
     if (blockApprovals) {
       log('apex', `Capacity gate active (${activeCount}/${MAX_ACTIVE_PROJECTS} active). Holding ${pending.length} pending APEX decision(s).`);
-      return;
+      return false;
     }
 
     log('apex', `Reviewing ${pending.length} proposal(s)...`);
@@ -578,6 +580,7 @@ Do NOT propose anything similar to these. Think of genuinely new, useful develop
 
     saveQueue(queue);
     log('apex', 'Reviews complete. Going to rest.');
+    return true;
   }
 
   // ─── APEX: Health check on active projects ───────────────────
@@ -685,6 +688,8 @@ ${decision.reasoning}
       .sort((a, b) => projectPriorityTs(a.status) - projectPriorityTs(b.status));
     const prioritized = all.slice(0, MAX_ACTIVE_PROJECTS);
     const deferred = all.slice(MAX_ACTIVE_PROJECTS);
+    const blocked = [];
+    let progressed = false;
 
     if (deferred.length) {
       log('system', `Project priority active: processing oldest ${MAX_ACTIVE_PROJECTS}, deferring ${deferred.length} newer project(s).`);
@@ -718,10 +723,25 @@ ${decision.reasoning}
       }
 
       // Only proceed if the responsible agent is due
-      if (!dueSnapshot[stageInfo.agentKey]) continue;
+      if (!dueSnapshot[stageInfo.agentKey]) {
+        const last = this.state.state.agentLastRun?.[stageInfo.agentKey];
+        const cycleMinutes = this.state.getCycleMinutes(stageInfo.agentKey);
+        const minutesSince = last ? (Date.now() - new Date(last).getTime()) / 60000 : cycleMinutes;
+        const minsLeft = Math.max(0, Math.ceil(cycleMinutes - minutesSince));
+        blocked.push({ project: name, stage, agent: stageInfo.agentKey, minsLeft });
+        continue;
+      }
 
-      await this.runProjectStage(name, status.stage, stageInfo, status);
-      this.state.markAgentRun(stageInfo.agentKey);
+      const run = await this.runProjectStage(name, status.stage, stageInfo, status);
+      this.state.markAgentRun(stageInfo.agentKey, { worked: true, success: run?.success !== false });
+      progressed = progressed || run?.worked !== false;
+    }
+
+    if (!progressed && blocked.length) {
+      const lines = blocked
+        .map((b) => `${b.project}:${b.stage} waiting for ${b.agent.toUpperCase()} (${b.minsLeft}m)`)
+        .join(' | ');
+      log('system', `No stage advancement this cycle: ${lines}`);
     }
   }
 
@@ -767,7 +787,7 @@ ${decision.reasoning}
             log('lens', `⚠ Code issues found in "${projectName}". Sending back to FORGE.`);
             setProjectStatus(projectName, { stage: 'architecture', lensRejected: true });
             this.deadlines.complete(projectName, stageInfo.next);
-            return;
+            return { worked: true, success: true };
           }
           break;
 
@@ -795,9 +815,11 @@ ${decision.reasoning}
       this.deadlines.complete(projectName, stageInfo.next);
       setProjectStatus(projectName, { stage: stageInfo.next });
       log(stageInfo.agentKey, `✓ "${projectName}" → moved to "${stageInfo.next}"`);
+      return { worked: true, success: true };
 
     } catch (err) {
       log(stageInfo.agentKey, `✗ Error on "${projectName}" at ${stage}: ${err.message}`);
+      return { worked: true, success: false };
     }
   }
 }

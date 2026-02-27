@@ -17,6 +17,7 @@
     "human": "node hive.js",
     "status": "node hive.js status",
     "review": "node hive.js review",
+    "runner:status": "node scripts/runner-status.js",
     "web:dev": "npm --prefix web run dev",
     "web:build": "npm --prefix web run build",
     "web:start": "npm --prefix web run start",

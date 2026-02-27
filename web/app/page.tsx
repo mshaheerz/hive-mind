@@ -13,7 +13,7 @@ type HiveState = {
   provider?: string;
   running?: boolean;
   cycleCount?: number;
-  stats?: { approved?: number; completed?: number; duplicatesBlocked?: number };
+  stats?: { approved?: number; rejected?: number; completed?: number; active?: number; duplicatesBlocked?: number };
   agentLastRun?: Record<string, string | number | Date>;
   projects?: Array<{ name: string; status?: { stage?: string } }>;
   queue?: any[];
@@ -31,7 +31,7 @@ const AGENT_SCHEDULE: Record<string, number> = {
 export default function Home() {
   const [hive, setHive] = useState<HiveState | null>(null);
   const [tick, setTick] = useState<number>(0);
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<{ name: string; anchor: { x: number; y: number } } | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
   // Poll hive state every 5 seconds
@@ -64,7 +64,8 @@ export default function Home() {
     if (!last) return 'idle';
     const lastTime = typeof last === 'number' ? last : new Date(last).getTime();
     const mins = (Date.now() - lastTime) / 60000;
-    const cycle = AGENT_SCHEDULE[agentName] || 60;
+    const dynamic = Number(hive?.state?.agentCadenceMinutes?.[agentName]);
+    const cycle = Number.isFinite(dynamic) && dynamic > 0 ? dynamic : (AGENT_SCHEDULE[agentName] || 60);
     if (mins < 2)       return 'active';
     if (mins < cycle)   return 'resting';
     return 'due';
@@ -78,7 +79,7 @@ export default function Home() {
         running={hive?.state?.running}
         provider={hive?.provider}
         cycleCount={hive?.state?.cycleCount}
-        stats={hive?.state?.stats}
+        stats={hive?.stats || hive?.state?.stats}
       />
 
       {/* Space Station Visualization */}
@@ -86,7 +87,7 @@ export default function Home() {
         <SpaceStation
           hive={hive}
           agentStatus={agentStatus}
-          selected={selected}
+          selected={selected?.name || null}
           setSelected={setSelected}
           tick={tick}
         />
@@ -101,7 +102,8 @@ export default function Home() {
         {/* Agent detail panel */}
         {selected && (
           <AgentRoom
-            agentName={selected}
+            agentName={selected.name}
+            anchor={selected.anchor}
             hive={hive}
             agentStatus={agentStatus}
             onClose={() => setSelected(null)}
