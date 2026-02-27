@@ -9,6 +9,7 @@ import CommsBus from '../components/commsBus';
 import AgentConversations from '../components/AgentConversations';
 import CeoBridgeRoom from '../components/CeoBridgeRoom';
 import TopNav from '../components/TopNav';
+import StageConversationFeed from '../components/StageConversationFeed';
 
 type HiveState = {
   provider?: string;
@@ -113,6 +114,7 @@ export default function Home() {
 
         {/* Communication bus */}
         <CommsBus discussions={hive?.discussions || []} />
+        <StageConversationFeed discussions={hive?.discussions || []} logs={hive?.logs || []} />
         <AgentConversations discussions={hive?.discussions || []} />
         <CeoBridgeRoom />
       </div>

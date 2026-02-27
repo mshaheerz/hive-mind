@@ -251,6 +251,7 @@ Skills registry commands:
 ```bash
 npm run skills:sync   # regenerate skills README + manifest
 npm run skills:lint   # validate skill metadata + contracts
+npm run docs:sync     # regenerate docs/skills-catalog.md from skills manifest
 ```
 
 ### Quick model probe & fixes

@@ -1,0 +1,71 @@
+{
+  "project": "dependency-ghostbuster",
+  "stage": "architecture",
+  "agent": "forge",
+  "runId": "1772217057928-forge-o518m",
+  "parentRunId": "1772216162805-pulse-4q7ci",
+  "startedAt": "2026-02-27T18:30:57.928Z",
+  "provider": "local",
+  "model": "qwen2.5:1.5b-instruct",
+  "statusSnapshot": {
+    "stage": "architecture",
+    "proposedBy": "nova",
+    "approvedBy": "apex",
+    "approvalScore": 7.5,
+    "approvedAt": "2026-02-26T09:58:37.620Z",
+    "updatedAt": "2026-02-27T18:17:01.506Z",
+    "lensRejected": false,
+    "deadlineMissed": true,
+    "missedStage": "review",
+    "missedAgent": "lens",
+    "missedAt": "2026-02-27T07:10:42.450Z",
+    "workspaceFiles": [
+      "# package.json",
+      "dependency-ghostbuster/src/analyzer/analyzeDependencies.integration.test.ts"
+    ],
+    "workspaceUpdatedAt": "2026-02-27T18:10:48.591Z",
+    "lensApproved": true,
+    "lensAcceptedAt": "2026-02-27T18:11:17.766Z",
+    "lensReviewSummary": null,
+    "lensActionItems": [],
+    "lensBypassed": false,
+    "lensBypassReason": null,
+    "lensBypassedAt": null,
+    "lensRejectCount": 0,
+    "lensReviewedAt": "2026-02-27T18:11:17.766Z",
+    "workspaceCheck": {
+      "checked": 2,
+      "passed": 2,
+      "failed": 0,
+      "ranAt": "2026-02-27T18:10:48.591Z"
+    },
+    "pulseRejected": true,
+    "pulseApproved": false,
+    "pulseAcceptedAt": null,
+    "pulseSummary": "npm test failed: > dependency-ghostbuster@1.0.0 test | > jest --watch=false | FAIL src/analyzer/analyzeDependencies.integration.test.ts | ● Test suite failed to run | Jest encountered an unexpected token | Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.",
+    "pulseActionItems": [
+      "Fix failing tests reported by npm test.",
+      "> dependency-ghostbuster@1.0.0 test | > jest --watch=false | FAIL src/analyzer/analyzeDependencies.integration.test.ts | ● Test suite failed to run | Jest encountered an unexpected token | Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax."
+    ],
+    "escalationNeeded": false,
+    "escalationReason": null,
+    "escalatedAt": "2026-02-27T14:11:45.800Z",
+    "pulseReviewedAt": "2026-02-27T18:17:01.506Z",
+    "generatedTestFiles": [],
+    "bootstrapTemplate": "node-cli",
+    "bootstrapNotes": [
+      "Bootstrap already present."
+    ],
+    "stageAttempt": 3,
+    "lensVerdict": "APPROVED",
+    "blockedReason": {
+      "code": "tests_failed",
+      "message": "npm test failed: > dependency-ghostbuster@1.0.0 test | > jest --watch=false | FAIL src/analyzer/analyzeDependencies.integration.test.ts | ● Test suite failed to run | Jest encountered an unexpected token | Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax."
+    },
+    "escalationLevel": "none",
+    "lastHandoffRunId": "1772216162805-pulse-4q7ci",
+    "stageOwner": "forge",
+    "lensIssueRepeats": {},
+    "transitionReason": "agent execution started"
+  }
+}

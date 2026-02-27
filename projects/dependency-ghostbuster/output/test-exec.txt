@@ -137,5 +137,5 @@ FAIL src/analyzer/analyzeDependencies.test.ts
 Test Suites: 3 failed, 3 total
 Tests:       0 total
 Snapshots:   0 total
-Time:        0.784 s
+Time:        0.809 s
 Ran all test suites.

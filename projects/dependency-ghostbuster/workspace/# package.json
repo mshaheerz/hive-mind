@@ -1,11 +1,9 @@
 {
   "scripts": {
-    "lint": "eslint .",
-    "test": "jest --watch",
+    "lint": "eslint src/**/*.ts",
+    "test": "jest --watch=false",
     "dev:server": "start-server",
-    "build": "tsc",
-    "start:client": "npm run dev:server && start-client",
-    "start:server": "node server/index.js"
+    "build": "tsc && node dist/server/index.js"
   },
   "devDependencies": {
     "@types/jest": "^26.0",

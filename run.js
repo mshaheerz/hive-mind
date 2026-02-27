@@ -1112,6 +1112,38 @@ class AutonomousRunner {
     return `${agent.toUpperCase()} status=${due ? 'DUE' : 'REST'} cycle=${cycle}m last=${minsSince === null ? 'never' : `${minsSince}m ago`} next=${wait}m assignments=${assigned.length ? assigned.join(', ') : 'none'}`;
   }
 
+  _projectOpsSummary(limit = 2) {
+    const active = getActiveProjectsWithStatus()
+      .sort((a, b) => projectPriorityTs(a.status) - projectPriorityTs(b.status));
+    if (!active.length) return ['No active projects right now.'];
+
+    const prioritized = active.slice(0, Math.max(1, Number(limit) || 2));
+    const deferredCount = Math.max(0, active.length - prioritized.length);
+    const lines = [
+      `Active projects: ${active.length}. Priority lane: ${prioritized.map((p) => p.name).join(', ')}.`,
+    ];
+    if (deferredCount > 0) lines.push(`Deferred projects: ${deferredCount} (capacity gate).`);
+
+    for (const { name, status } of prioritized) {
+      const stage = String(status.stage || 'unknown');
+      const owner = STAGE_RESPONSIBLE_AGENT[stage] || status.stageOwner || 'none';
+      const blocked = status.blockedReason?.message ? `blocked=${status.blockedReason.message}` : 'blocked=none';
+      lines.push(`${name}: stage=${stage} owner=${String(owner).toUpperCase()} ${blocked}`);
+    }
+    return lines;
+  }
+
+  _overdueOpsSummary() {
+    const overdue = this._reconcileOverdue(this.deadlines.getOverdue());
+    if (!overdue.length) return ['Overdue tasks: 0.'];
+    const lines = [`Overdue tasks: ${overdue.length}.`];
+    for (const task of overdue.slice(0, 4)) {
+      const hoursLate = ((Date.now() - new Date(task.dueAt)) / 3600000).toFixed(1);
+      lines.push(`${task.projectName}:${task.stage} owner=${task.agent.toUpperCase()} late=${hoursLate}h`);
+    }
+    return lines;
+  }
+
   async processCeoBridge() {
     const bridge = loadCeoBridge();
     const pending = bridge.messages.filter((m) => m?.from === 'ceo' && !m.handledAt);
@@ -1127,6 +1159,8 @@ class AutonomousRunner {
         lower.includes('wake') ||
         lower.includes('immediate');
       const asksWhy = lower.includes('why') || lower.includes('status') || lower.includes('not working');
+      const asksOps =
+        /progress|priority|priorit|which project|most priority|blocked|overdue|deadline|stuck|current stage|what is going on|what's going on|what is the progress|taken/i.test(lower);
 
       const responseParts = [];
 
@@ -1141,6 +1175,11 @@ class AutonomousRunner {
       if (asksWhy) {
         const targets = mentioned.length ? mentioned : ['apex', 'forge'];
         responseParts.push(...targets.map((agent) => this._agentOpsSummary(agent)));
+      }
+
+      if (asksOps) {
+        responseParts.push(...this._projectOpsSummary(2));
+        responseParts.push(...this._overdueOpsSummary());
       }
 
       if (!responseParts.length) {
