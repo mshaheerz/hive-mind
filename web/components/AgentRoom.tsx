@@ -32,6 +32,7 @@ type Hive = {
   state?: {
     agentLastRun?: Record<string, string | number | Date>;
     agentCadenceMinutes?: Record<string, number>;
+    activeAgentModels?: Record<string, string>;
   };
   projects?: Project[];
   discussions?: Discussion[];
@@ -82,6 +83,7 @@ function timeSince(iso?: string | number | Date | null): string {
 
 export default function AgentRoom({ agentName, anchor, hive, agentStatus, onClose }: AgentRoomProps) {
   const info   = AGENT_INFO[agentName] || { color: '#7d9ac3', emoji: '•', model: 'Unknown', desc: 'No profile available.' };
+  const liveModel = hive?.state?.activeAgentModels?.[agentName];
   const status = agentStatus(agentName);
   const last   = hive?.state?.agentLastRun?.[agentName];
   const dynamic = Number(hive?.state?.agentCadenceMinutes?.[agentName]);
@@ -150,7 +152,7 @@ export default function AgentRoom({ agentName, anchor, hive, agentStatus, onClos
               fontSize: '0.6rem', color: 'var(--text-dim)', letterSpacing: '0.1em',
               padding: '0.2rem 0.5rem', border: '1px solid var(--border-dim)',
               borderRadius: '4px',
-            }}>MODEL: {info.model}</span>
+            }}>MODEL: {liveModel || info.model}</span>
           </div>
         </div>
 

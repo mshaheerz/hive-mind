@@ -1,349 +1,200 @@
-### File: `package.json`
+Certainly! Below is a comprehensive set of unit tests, edge case tests, integration tests (if applicable), and a test plan for the provided code:
 
-```json
-{
-  "name": "dependency-ghostbuster",
-  "version": "1.0.0",
-  "description": "Static analysis tool for detecting truly unused dependencies in monorepos",
-  "main": "dist/main.js",
-  "bin": {
-    "ghostbuster": "dist/main.js"
-  },
-  "scripts": {
-    "build": "tsc",
-    "start": "node dist/main.js",
-    "test": "vitest run"
-  },
-  "keywords": [
-    "dependency",
-    "analysis",
-    "monorepo",
-    "unused-dependencies"
-  ],
-  "author": "NOVA",
-  "license": "MIT",
-  "devDependencies": {
-    "@babel/plugin-proposal-class-properties": "^7.19.3",
-    "@babel/parser": "^7.24.0",
-    "@babel/traverse": "^7.24.0",
-    "@types/node": "^20.11.0",
-    "eslint": "^8.38.0",
-    "eslint-config-next": "^14.0.12",
-    "jest": "^29.5.0",
-    "p-limit": "^4.0.0",
-    "tailwindcss": "^3.3.0",
-    "typescript": "^5.3.3",
-    "vitest": "^1.3.1"
-  },
-  "dependencies": {
-    "@babel/core": "^7.24.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "globby": "^14.0.2"
-  }
-}
-```
+### Unit Tests
 
-### File: `tsconfig.json`
-
-```json
-{
-  "compilerOptions": {
-    "target": "ES2020",
-    "module": "CommonJS",
-    "outDir": "dist",
-    "rootDir": "src",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
-  },
-  "include": ["src/**/*.ts", "tests/**/*.ts"]
-}
-```
-
-### File: `src/config/constants.ts`
-
-```ts
-export const DEPENDENCY_LIST_FILENAME = 'dependency-list.json';
-```
-
-### File: `src/scanner/parser.ts`
-
-```ts
-import { parse } from '@babel/core';
-
-export async function parseFile(filePath: string): Promise<any> {
-  return new Promise((resolve, reject) => {
-    parse(filePath, { ast: true }, (err, result) => {
-      if (err) {
-        reject(err);
-      }
-      resolve(result);
-    });
-  });
-}
-```
-
-### File: `src/scanner/index.ts`
-
-```ts
-import { parseFile } from './parser';
-import * as fs from 'fs';
-
-export async function scanSourceCode(dirPath: string): Promise<Map<string, any>> {
-  const files = await fs.promises.readdir(dirPath);
-  const dependencies = new Map<string, any>();
-
-  for (const file of files) {
-    const filePath = `${dirPath}/${file}`;
-    try {
-      const result = await parseFile(filePath);
-      dependencies.set(filePath, result);
-    } catch (error) {
-      console.error(`Error parsing ${filePath}:`, error);
-    }
-  }
-
-  return dependencies;
-}
-```
-
-### File: `src/static-analysis/dependency-graph.ts`
-
-```ts
-import { DependencyGraph } from 'dep-graph';
-
-export function createDependencyGraph(dependencies: Map<string, any>): DependencyGraph {
-  const graph = new DependencyGraph();
-
-  for (const [filePath, result] of dependencies) {
-    if (result.ast && result.ast.body) {
-      for (const node of result.ast.body) {
-        if (node.type === 'CallExpression') {
-          const calleeName = node.callee.name;
-          if (calleeName.startsWith('import')) {
-            graph.addDependency(filePath, node.arguments[0].value);
-          }
-        }
-      }
-    }
-  }
-
-  return graph;
-}
-```
-
-### File: `src/static-analysis/index.ts`
-
-```ts
-import { scanSourceCode } from './scanner';
-import { DependencyGraph } from './dependency-graph';
-
-export async function analyzeDependencies(dirPath: string): Promise<DependencyGraph> {
-  const dependencies = await scanSourceCode(dirPath);
-  return createDependencyGraph(dependencies);
-}
-```
-
-### File: `src/dynamic-import-detection/babel-integration.ts`
-
-```ts
-import { transform } from '@babel/core';
-
-export async function detectDynamicImports(filePath: string): Promise<string[]> {
-  return new Promise((resolve, reject) => {
-    transform(
-      fs.readFileSync(filePath, 'utf8'),
-      {
-        plugins: ['@babel/plugin-proposal-class-properties'],
-        ast: true,
-      },
-      (err, result) => {
-        if (err) {
-          reject(err);
-        }
-        const dynamicImports = result.ast.body
-          .filter((node) => node.type === 'ImportDeclaration')
-          .map((node) => node.source.value);
-
-        resolve(dynamicImports);
-      }
-    );
-  });
-}
-```
-
-### File: `src/dynamic-import-detection/index.ts`
-
-```ts
-import { detectDynamicImports } from './babel-integration';
-
-export async function getDynamicImports(dirPath: string): Promise<string[]> {
-  const files = await fs.promises.readdir(dirPath);
-  const dynamicImports = new Set<string>();
-
-  for (const file of files) {
-    const filePath = `${dirPath}/${file}`;
-    try {
-      const imports = await detectDynamicImports(filePath);
-      imports.forEach((importPath) => dynamicImports.add(importPath));
-    } catch (error) {
-      console.error(`Error detecting dynamic imports in ${filePath}:`, error);
-    }
-  }
-
-  return Array.from(dynamicImports);
-}
-```
-
-### File: `src/unused-dependency-identification/test-usage-analysis.ts`
-
-```ts
-import { analyzeDependencies, getDynamicImports } from '../static-analysis';
-import * as fs from 'fs';
-
-export async function identifyUnusedDependencies(
-  dirPath: string,
-  testFilePath: string
-): Promise<string[]> {
-  const graph = await analyzeDependencies(dirPath);
-  const dynamicImports = await getDynamicImports(dirPath);
-
-  const unusedDependencies = Array.from(graph.dependencies.keys()).filter(
-    (filePath) => !dynamicImports.includes(filePath)
-  );
-
-  return unusedDependencies;
-}
-```
-
-### File: `src/unused-dependency-identification/index.ts`
-
-```ts
-import { identifyUnusedDependencies } from './test-usage-analysis';
-
-export async function analyzeTestUsage(dirPath: string, testFilePath: string): Promise<string[]> {
-  return identifyUnusedDependencies(dirPath, testFilePath);
-}
-```
-
-### File: `src/reporter/report-generator.ts`
-
-```ts
-import { DependencyGraph } from 'dep-graph';
-import * as fs from 'fs';
-
-export function generateReport(dependencyGraph: DependencyGraph): string {
-  let report = '';
-
-  dependencyGraph.dependencies.forEach((deps, filePath) => {
-    report += `Unused dependencies in ${filePath}:\n`;
-    deps.forEach((dependency) => {
-      report += `- ${dependency}\n`;
-    });
-  });
-
-  return report;
-}
-```
-
-### File: `src/reporter/index.ts`
+#### File: `src/reporter/index.ts`
 
 ```ts
 import { generateReport } from './report-generator';
 
-export async function runGhostbuster(dirPath: string, testFilePath: string): Promise<void> {
-  const graph = await analyzeTestUsage(dirPath, testFilePath);
-  if (graph.dependencies.size > 0) {
-    console.log(generateReport(graph));
-  } else {
-    console.log('No unused dependencies found.');
-  }
-}
+describe('reportUnusedDependencies', () => {
+  it('should report unused dependencies correctly', async () => {
+    const graph = new DependencyGraph();
+    graph.addNode('dep1');
+    graph.addNode('dep2');
+
+    // Add a dependency between 'dep1' and 'dep3'
+    graph.addDependency('dep1', 'dep3');
+
+    await expect(generateReport(graph)).resolves.toMatchInlineSnapshot(`
+      "Unused Dependencies:\n- dep1\n"
+    `);
+  });
+
+  it('should handle no unused dependencies correctly', async () => {
+    const graph = new DependencyGraph();
+    await expect(generateReport(graph)).resolves.toMatchInlineSnapshot(`
+      "No unused dependencies found."
+    `);
+  });
+});
 ```
 
-### File: `src/main.ts`
+#### File: `src/reporter/report-generator.ts`
 
 ```ts
-import { runGhostbuster } from './reporter';
+import { generateReport } from './report-generator';
 
-async function runGhostbuster(dirPath: string, testFilePath: string): Promise<void> {
-  await runGhostbuster(dirPath, testFilePath);
-}
+describe('generateReport', () => {
+  it('should return a report string correctly', async () => {
+    const graph = new DependencyGraph();
+    graph.addNode('dep1');
+    graph.addNode('dep2');
 
-runGhostbuster(process.cwd(), 'tests');
+    // Add a dependency between 'dep1' and 'dep3'
+    graph.addDependency('dep1', 'dep3');
+
+    expect(generateReport(graph)).resolves.toMatchInlineSnapshot(`
+      "Unused Dependencies:\n- dep1\n"
+    `);
+  });
+
+  it('should return an empty report when no unused dependencies are found', async () => {
+    const graph = new DependencyGraph();
+    await expect(generateReport(graph)).resolves.toMatchInlineSnapshot(`
+      "No unused dependencies found."
+    `);
+  });
+});
 ```
 
-### Dependencies
+### Edge Cases
 
-- Node.js v16+ or later
-- npm (comes with Node.js)
-- ESLint and Jest CLI for testing
-- Tailwind CSS for styling (optional)
+#### File: `src/reporter/index.ts`
 
-**File: `.gitignore`**
+```ts
+describe('reportUnusedDependencies', () => {
+  it('should handle empty input correctly', async () => {
+    const graph = new DependencyGraph();
+    await expect(generateReport(graph)).resolves.toMatchInlineSnapshot(`
+      "No unused dependencies found."
+    `);
+  });
 
-```plaintext
-node_modules/
-dist/
-*.log
-.DS_Store
-.env*
+  it('should handle null input correctly', async () => {
+    const graph = (null as any) as DependencyGraph;
+    await expect(generateReport(graph)).resolves.toMatchInlineSnapshot(`
+      "No unused dependencies found."
+    `);
+  });
+
+  it('should handle large data inputs correctly', async () => {
+    // Simulate very large input data
+    const data = Array.from({ length: 1000 }, (_, i) => `${i}`); // Replace with actual large dataset
+
+    const graph = new DependencyGraph();
+    for (const dep of data) {
+      graph.addNode(dep);
+    }
+
+    await expect(generateReport(graph)).resolves.toMatchInlineSnapshot(`
+      "Unused Dependencies:\n"
+    `);
+  });
+});
 ```
 
-**File: `.env.example`**
+#### File: `src/reporter/report-generator.ts`
 
-```plaintext
-# Example .env file
-GITHUB_TOKEN=
+```ts
+describe('generateReport', () => {
+  it('should handle large data inputs correctly', async () => {
+    // Simulate very large input data
+    const data = Array.from({ length: 1000 }, (_, i) => `${i}`); // Replace with actual large dataset
+
+    const graph = new DependencyGraph();
+    for (const dep of data) {
+      graph.addNode(dep);
+    }
+
+    expect(generateReport(graph)).resolves.toMatchInlineSnapshot(`
+      "Unused Dependencies:\n"
+    `);
+  });
+
+  it('should handle null input correctly', async () => {
+    const graph = (null as any) as DependencyGraph;
+    await expect(generateReport(graph)).resolves.toMatchInlineSnapshot(`
+      "No unused dependencies found."
+    `);
+  });
+});
 ```
 
-### Web Project Setup
+### Integration Tests
 
-If you need a web project setup, here's a minimal scaffold using Next.js with Tailwind CSS:
+#### File: `src/reporter/index.ts`
 
-**Directory Structure:**
+```ts
+import { reportUnusedDependencies } from './reporter';
+import { generateReport } from './report-generator';
 
-```
-dependency-ghostbuster/
-├── next.config.js
-├── package.json
-└── public/
-    └── favicon.ico
-```
+describe('reportUnusedDependencies', () => {
+  it('should call generateReport correctly with empty input and null input', async () => {
+    const graph = new DependencyGraph();
+    await expect(generateReport(graph)).resolves.toMatchInlineSnapshot(`
+      "No unused dependencies found."
+    `);
 
-**File: `next.config.js`**
+    // Mocking the actual function call
+    reportUnusedDependencies('', '');
+    await expect(() => generateReport(graph)).not.toThrowError();
+  });
+});
 
-```js
-module.exports = {
-  reactStrictMode: true,
-  tailwindcss: {
-    cssPath: './src/styles/tailwind.css',
-    configPath: './tailwind.config.js',
-  },
-};
-```
+describe('generateReport', () => {
+  it('should be called by reportUnusedDependencies with empty input and null input correctly', async () => {
+    const graph = new DependencyGraph();
 
-**File: `package.json`**
-
-```json
-{
-  "name": "dependency-ghostbuster-web",
-  "version": "1.0.0",
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start"
-  },
-  "dependencies": {
-    "@tailwindcss/aspect-ratio": "^2.0.5",
-    "@tailwindcss/forms": "^0.5.3",
-    "@tailwindcss/line-clamp": "^0.1.5",
-    "@tailwindcss/typography": "^0.5.4",
-    "next": "^14.0.12",
-    "react
+    // Mocking the actual function call
+    reportUnusedDependencies('', '');
+    await expect(generateReport(graph)).resolves.toMatchInlineSnapshot(`
+      "No unused dependencies found."
+    `);
+  });
+});
 ```
 
-### Unit Tests
+### Test Plan
 
-**File: `src/scanner/parser.ts.spec
+#### File: `test/README.md`
+
+```md
+# Test Plan for Dependency Ghostbuster
+
+### Objective:
+To ensure that the code is functioning as expected and to validate its performance under various conditions.
+
+### Key Scenarios:
+
+1. **Unit Tests**:
+    - Verify each function in isolation using Jest.
+    - Ensure the functions correctly report dependencies based on their input data.
+
+2. **Edge Cases**:
+    - Test with null inputs, empty strings, large datasets to ensure robustness and edge behavior.
+
+3. **Integration Tests**:
+    - Ensure that all components work together seamlessly by simulating calls between dependent libraries.
+  
+### Expected Pass/Fail Criteria:
+
+- All tests should correctly pass without errors or warnings.
+- The tool's output must be accurate and meaningful.
+
+### How To Run:
+1. Clone the repository.
+2. Install dependencies: `npm install` (if applicable).
+3. Execute tests using Jest: `jest`.
+
+### Next Steps:
+Once all unit tests, edge case tests, and integration tests pass, proceed to LENS code review for further verification. Ensure all documentation is up-to-date after any manual changes or additions.
+
+---
+
+## What It Does
+
+A static analysis tool that scans a monorepo to identify truly unused dependencies (including dynamic imports and test-only usage) across packages, providing safe removal recommendations.
+
+### Target Audience
+Engineering teams maintaining large JavaScript/TypeScript monorepos, focusing on bundle optimization and security hygiene.

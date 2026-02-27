@@ -1,129 +1,99 @@
-### File: `src/index.test.ts`
+**Unit Tests**
 
-```ts
-import 'dotenv/config';
-import { SecretsManagerClient, ClientConfiguration } from '@aws-sdk/client-secretsmanager';
-import { SSMClient } from '@aws-sdk/client-ssm';
-import { AzureKeyVaultSecretsClient } from '@azure/keyvault-secrets';
-import * as argparse from 'argparse';
-import deepDiff from 'deep-diff';
-import { syncSecrets } from '../src/index';
-
-jest.mock('dotenv', () => ({
-  config: jest.fn().mockReturnValue({}),
-}));
-
-jest.mock('@aws-sdk/client-secretsmanager');
-jest.mock('@aws-sdk/client-ssm');
-jest.mock('@azure/keyvault-secrets');
-
-describe('syncSecrets function', () => {
-  it('handles an empty local .env file correctly', async () => {
-    // Arrange
-    const args = parser.parseArgs({ local: './tests/empty-env.example' });
-    
-    // Mock AWS Secrets Manager response
-    (SecretsManagerClient.prototype.getSecretValue as jest.Mock).mockResolvedValueOnce({
-      SecretString: '{}',
-    });
-
-    // Act
-    await syncSecrets();
-
-    // Assert
-    expect(SecretsManagerClient.prototype.getSecretValue).toHaveBeenCalledWith({ SecretId: './tests/empty-env.example' });
-  });
-
-  it('handles a null local .env file correctly', async () => {
-    // Arrange
-    const args = parser.parseArgs({ local: './tests/null-env.example' });
-
-    // Mock AWS Secrets Manager response
-    (SecretsManagerClient.prototype.getSecretValue as jest.Mock).mockResolvedValueOnce(null);
-
-    // Act
-    await syncSecrets();
-
-    // Assert
-    expect(SecretsManagerClient.prototype.getSecretValue).toHaveBeenCalledWith({ SecretId: './tests/null-env.example' });
-  });
-
-  it('handles an overflow local .env file correctly', async () => {
-    // Arrange
-    const args = parser.parseArgs({ local: './tests/overflow-env.example' });
-
-    // Mock AWS Secrets Manager response
-    (SecretsManagerClient.prototype.getSecretValue as jest.Mock).mockResolvedValueOnce({
-      SecretString: 'a'.repeat(1025),
-    });
-
-    // Act
-    await syncSecrets();
-
-    // Assert
-    expect(SecretsManagerClient.prototype.getSecretValue).toHaveBeenCalledWith({ SecretId: './tests/overflow-env.example' });
-  });
-
-  it('handles an non-existent local .env file correctly', async () => {
-    // Arrange
-    const args = parser.parseArgs({ local: './tests/nonexistent-env.example' });
-
-    // Mock AWS Secrets Manager response
-    (SecretsManagerClient.prototype.getSecretValue as jest.Mock).mockRejectedValueOnce(new Error('No secret found with ID ./tests/nonexistent-env.example'));
-
-    // Act
-    await syncSecrets();
-
-    // Assert
-    expect(SecretsManagerClient.prototype.getSecretValue).toHaveBeenCalledWith({ SecretId: './tests/nonexistent-env.example' });
-  });
-
-  it('handles an invalid remote type correctly', async () => {
-    // Arrange
-    const args = parser.parseArgs({ local: './tests/example.env', remote: 'invalid' });
-
-    try {
-      await syncSecrets();
-    } catch (error) {
-      // Assert
-      expect(error.message).toBe('Invalid remote type');
-    }
-  });
-});
+```plaintext
+### File: `src/main.py`
 ```
 
-### File: `src/index.integration.test.ts` (if applicable)
+| Function | Test Name | Expected Outcome |
+| --- | --- | --- |
+| sync_local_to_cloud | test_sync_local_to_gcp_secret_manager | Returns encrypted secrets from GCP Secret Manager |
+| sync_cloud_to_local | test_sync_cloud_to_aws_key_vault | Retrieves key values from AWS Key Vault and writes to local `.env` file |
 
-```ts
-// This would involve setting up a real AWS/GCP/Azure environment and mocks for testing integration with the actual cloud services.
+```plaintext
+### File: `src/cloud_providers/gcp.py`
 ```
 
-### File: `setup.js`
+| Function | Test Name | Expected Outcome |
+| --- | --- | --- |
+| get_secret_from_gcp | test_get_secret_from_gcp | Retrieves a secret value from GCP Secrets Manager and returns it in the local `.env` file |
 
-```js
-// Global test setup if needed
-import 'dotenv/config';
-jest.mock('dotenv', () => ({
-  config: jest.fn().mockReturnValue({}),
-}));
+```plaintext
+### File: `tests/test_cloud_providers.py`
 ```
 
-### Test Plan
+| Function | Test Name | Expected Outcome |
+| --- | --- | --- |
+| test_sync_local_to_gcp_secret_manager | sync_local_to_cloud | Returns encrypted secrets from GCP Secret Manager |
+| test_get_secret_from_gcp | get_secret_from_gcp | Retrieves a secret value from GCP Secrets Manager and returns it in the local `.env` file |
 
-#### Unit Tests
+**Edge Cases**
 
-- **Test syncSecrets function**
-  - Empty local .env file
-  - Null local .env file
-  - Overflow local .env file
-  - Non-existent local .env file
-  - Invalid remote type
+```plaintext
+### File: `tests/test_main.py`
+```
 
-#### Edge Cases
+| Test Name | Expected Outcome |
+| --- | --- |
+| test_empty_input_local_file | Raises ValueError if local `.env` is empty |
+| test_null_input_local_file | Raises TypeError if `local_file` is null |
+| test_overflow_data | Raises OverflowError if the data exceeds memory limits |
 
-- **Empty input** (e.g., no arguments, empty command)
-- **Null input** (e.g., null values for necessary parameters)
-- **Overflow data** (e.g., super large secrets or configurations)
-- **Non-existent files** (e.g., missing local .env file)
+```plaintext
+### File: `tests/test_main.py`
+```
 
-These tests cover the core functionality and edge cases to ensure robustness in handling various scenarios.
+| Test Name | Expected Outcome |
+| --- | --- |
+| test_empty_file_local | Raises ValueError on empty local file |
+| test_null_file_local | Raises TypeError on null `local_file` argument |
+| test_large_data_sync | Raises OverflowError if the data exceeds memory limits during sync |
+
+**Integration Tests**
+
+```plaintext
+### File: `src/sync_mechanism.py`
+```
+
+| Function | Test Name | Expected Outcome |
+| --- | --- | --- |
+| main_sync | test_main_sync | Synchronizes local and cloud `.env` files successfully |
+
+```plaintext
+### File: `tests/test_sync_mechanism.py`
+```
+
+| Function | Test Name | Expected Outcome |
+| --- | --- | --- |
+| test_main_sync | main_sync | Successful sync between local and cloud environments |
+
+**Security Tests**
+
+```plaintext
+### File: `src/config_parser.py`
+```
+
+| Test Name | Expected Outcome |
+| --- | --- |
+| test_encryption_key | Ensure the encryption key is secure and not easily guessable. |
+
+```plaintext
+### File: `tests/test_config_parser.py`
+```
+
+| Function | Test Name | Expected Outcome |
+| --- | --- | --- |
+| test_secret_key_secure | Verify that secrets are stored securely in encrypted form |
+
+**Test Plan**
+
+- **Core functionality:** Implement all core functionalities as per the requirements.
+- **Lens code review pass:** Ensure the code passes lens with no major issues.
+- **Pulse tests passing:** Write unit and integration tests to cover edge cases, data integrity checks, and security aspects. Use a test plan for manual testing in scenarios where automated tools cannot be used.
+
+**Definition of Done**
+
+- [ ] Core functionality implemented
+- [ ] LENS code review passes
+- [ ] PULSE tests pass
+- [ ] SAGE documentation complete
+- [ ] ECHO launch content ready

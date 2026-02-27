@@ -1,23 +1,25 @@
 # 🦾 HIVE MIND — Multi-Agent AI Workspace
 
-A self-organizing, multi-agent AI team powered by free OpenRouter models.
-9 specialized agents collaborate, propose, review, and ship projects — all from a single repo.
+A self-organizing multi-agent AI team with provider routing (`openrouter`, `groq`, `local` via Ollama).
+9 specialized agents collaborate, propose, review, test, and ship projects from one repo.
 
 ---
 
 ## 🧠 The Team
 
-| Agent | Role | Model | Personality |
-|-------|------|-------|-------------|
-| **APEX** | Operations Head | Nous: Hermes 3 405B | Impartial. Final say on all approvals. Never biased. |
-| **SCOUT** | Researcher | Mistral Small 3.1 24B | Curious, thorough, cites sources |
-| **FORGE** | Lead Developer | Llama 3.2 3B Instruct | Clean code, comments everything |
-| **LENS** | Code Reviewer | Google: Gemma 3 12B | Strict. No bad code ships. |
-| **PULSE** | Tester | Google: Gemma 3 4B | Breaks things intentionally |
-| **ECHO** | Social Media Head | Mistral Small 3.1 24B | Viral-brained, concise |
-| **ATLAS** | Architect | Google: Gemma 3n 4B | Systems thinker, diagrams everything |
-| **SAGE** | Documentation | Nous: Hermes 3 405B | Crystal clear, no jargon |
-| **NOVA** | Innovation Scout | Google: Gemma 3 12B | Proposes wild ideas that actually work |
+| Agent | Role |
+|-------|------|
+| **APEX** | Operations Head (approval + strict execution control) |
+| **NOVA** | Innovation Scout (new ideas) |
+| **SCOUT** | Researcher (validation + feasibility) |
+| **ATLAS** | Architect (system design + stack/template decisions) |
+| **FORGE** | Developer (implementation + file materialization) |
+| **LENS** | Code Reviewer (quality gate) |
+| **PULSE** | Tester (test generation + execution gate) |
+| **SAGE** | Documentation |
+| **ECHO** | Launch/Social content |
+
+Agent models are provider-specific and configured in [llm-client.js](./core/llm-client.js) with fallback chains.
 
 ---
 
@@ -27,29 +29,27 @@ A self-organizing, multi-agent AI team powered by free OpenRouter models.
 hive-mind/
 ├── README.md                  ← You are here
 ├── .env.example               ← API keys config
-├── hive.js                    ← Main entry point (run this)
+├── hive.js                    ← Main CLI entry point
+├── run.js                     ← Autonomous runner (cycle loop)
 ├── agents/                    ← Agent definitions & system prompts
-│   ├── apex.js                ← Operations Head (gatekeeper)
-│   ├── scout.js               ← Researcher
-│   ├── forge.js               ← Developer
-│   ├── lens.js                ← Code Reviewer
-│   ├── pulse.js               ← Tester
-│   ├── echo.js                ← Social Media Head
-│   ├── atlas.js               ← Architect
-│   ├── sage.js                ← Docs writer
-│   └── nova.js                ← Innovation Scout
+│   ├── apex.js                ← APEX
+│   ├── nova.js                ← NOVA
+│   └── agents.js              ← SCOUT/FORGE/LENS/PULSE/ECHO/ATLAS/SAGE
+├── core/
+│   ├── llm-client.js          ← Multi-provider client + fallbacks
+│   └── autonomous.js          ← schedules/deadlines/state
 ├── projects/                  ← All projects live here
 │   ├── README.md              ← How to create projects
 │   └── _template/             ← Copy this to start a new project
 │       └── README.md
-├── skills/                    ← Reusable agent skills/tools
-│   ├── README.md
-│   └── web-search.js
+├── scripts/                   ← Operational scripts (status/probes/local advisor)
+├── skills/                    ← Reusable skill modules
 ├── memory/                    ← Persistent agent memory (JSON)
 ├── logs/                      ← Full run logs
 └── .hive/                     ← Internal config
-    ├── config.json
-    └── queue.json             ← Pending proposals awaiting APEX approval
+    ├── queue.json             ← Proposal queue
+    ├── deadlines.json         ← Stage deadlines
+    └── runner.lock.json       ← active runner lock
 ```
 
 ---
@@ -58,7 +58,7 @@ hive-mind/
 
 ### 1. Install
 ```bash
-npm install               # installs dependencies including the official OpenRouter SDK
+npm install               # installs dependencies (OpenRouter SDK + Groq SDK, etc.)
 cp .env.example .env
 # Configure provider in `.env`:
 # LLM_PROVIDER=openrouter   # or groq or local
@@ -66,13 +66,14 @@ cp .env.example .env
 # GROQ_API_KEY=...
 # LOCAL_LLM_BASE_URL=http://localhost:11434
 ```
-> **Note:** the client code now leverages the official `@openrouter/sdk` package instead of rolling its own HTTP calls. If you already had an older checkout, run `npm install` to pick up the new dependency.
+> For local provider, Ollama must be running separately (`ollama serve`).
 
 
 ### 2. Run Hive
 ```bash
 node hive.js                        # Start the agent loop
 node hive.js --provider groq run    # Force Groq provider for this run
+node hive.js --provider local run   # Force local (Ollama) provider
 node hive.js --task "build X"       # Give a specific task
 node hive.js --agent apex           # Talk to one agent
 node hive.js --review               # APEX reviews pending proposals
@@ -85,7 +86,10 @@ node run.js                          # Start autonomous mode — agents run on a
 node run.js --provider groq          # Start autonomous mode on Groq
 node run.js --provider local         # Start autonomous mode on local Ollama
 ```
-The runner checks agents every 5 minutes by default and will autonomously propose, review, and advance projects.
+The runner checks on a 5-minute interval. It also enforces:
+- capacity gate (`MAX_ACTIVE_PROJECTS=2` prioritized oldest projects)
+- strict wake for blocked stage owners
+- non-overlapping cycles (next interval skips if previous cycle is still running)
 
 ### 3. Create a Project (Human)
 ```bash
@@ -101,9 +105,13 @@ node hive.js --project my-project-name   # Agents pick it up
 1. **Human or NOVA creates a project proposal** (fills out README)
 2. **APEX reviews** — approves or rejects with reasoning
 3. **On approval**, SCOUT researches, ATLAS architects, FORGE builds
-4. **LENS reviews code**, PULSE tests, SAGE documents
-5. **ECHO drafts launch content** when ready
-6. **Agents propose improvements** — all go back through APEX
+4. **Workspace bootstrap first** (Next.js/Vite/npm/python init attempts)
+5. **FORGE writes code**, materialized into `projects/<name>/workspace/*`
+6. **LENS reviews**, **PULSE generates+executes tests**, then SAGE docs
+7. **ECHO drafts launch content** when ready
+8. **Agents propose improvements** — all go back through APEX
+
+Each project keeps markdown artifacts in `projects/<name>/output/*.md`, but actual runnable code is written into `projects/<name>/workspace/`.
 
 ---
 
@@ -166,11 +174,24 @@ Then register it in `skills/index.js`.
 - All agent messages are logged to `logs/`
 - Agent memory persists in `memory/` between runs  
 - The `.hive/queue.json` tracks all pending APEX decisions
-- Models are free via OpenRouter — no cost
-- Client uses the **official `@openrouter/sdk`** under the hood for all API interactions
+- Provider support:
+  - `openrouter` via `@openrouter/sdk`
+  - `groq` via `groq-sdk`
+  - `local` via Ollama HTTP API (`/api/chat`)
+- Fallback behavior:
+  - Per-agent default model map per provider
+  - Provider fallback chain on transient/model availability errors
+- Useful ops commands:
+  - `npm run runner:status`
+  - `npm run test:openrouter:quick`
+  - `npm run test:groq:quick`
+  - `npm run test:local:quick`
+  - `npm run local:advisor`
+  - `npm run local:install`
 
-## ⚠️ Troubleshooting: OpenRouter / model errors
-If agents fail to call the API you'll see errors in `logs/<date>-autonomous.log`. Common errors and fixes:
+## ⚠️ Troubleshooting: Provider / model errors
+If agents fail to call models, check `logs/<date>-autonomous.log`.
+Common fixes:
 
 - 400 Developer instruction not enabled for model
     - Cause: some provider models (eg. Google Gemma variants) require a `developer instruction` toggle or different prompt format.
@@ -180,14 +201,27 @@ If agents fail to call the API you'll see errors in `logs/<date>-autonomous.log`
     - Cause: shared free endpoints can be rate-limited upstream.
     - Fix: add your own provider key at https://openrouter.ai/settings/integrations or use a different model to spread quota; the client already retries on 429 with exponential backoff.
 
-- 404 No endpoints found for model
-    - Cause: the requested model is not currently available through OpenRouter.
-    - Fix: update `AGENT_MODELS` in `core/llm-client.js` to use a currently available model, or add a fallback chain.
+- `fetch failed` (especially on `local`)
+    - Cause: Ollama unavailable, overloaded, or request overlap from long runs.
+    - Fix: ensure `ollama serve` is active, keep one runner process, use smaller local models, and verify with `npm run test:local:quick`.
 
-If you want help picking stable models for your account, tell me which providers/keys you have and I can update `core/llm-client.js` accordingly.
+- 404 No endpoints found for model (OpenRouter/Groq routes)
+    - Cause: model unavailable on selected provider.
+    - Fix: update provider model map/fallbacks in `core/llm-client.js`, or set env overrides.
+
+Model overrides (examples):
+```
+LLM_PROVIDER=groq
+GROQ_MODEL_NOVA=groq/compound-mini
+MODEL_LENS=openai/gpt-oss-120b
+
+LLM_PROVIDER=local
+LOCAL_MODEL_FORGE=qwen2.5-coder:3b-instruct
+LOCAL_MODEL_LENS=qwen2.5-coder:3b-instruct
+```
 
 ### Quick model probe & fixes
-If agents are failing (rate-limited / no endpoints), run a quick probe to see which models are reachable from your OpenRouter key. The helper scripts also use the SDK so they mirror the behaviour of the agents exactly:
+Run quick probes to validate configured models:
 
 ```bash
 # fast single-attempt probe (recommended)
@@ -199,30 +233,10 @@ npm run test:local:quick
 npm run test:openrouter
 ```
 
-If the probe shows failures like `429`, `404`, or `402` you have two options:
-
-- Add your own provider/integration key at https://openrouter.ai/settings/integrations to increase quota and reduce rate limits.
-- Override an agent's model in `.env` to one you know works for your account, e.g.:
-
-```
-OPENROUTER_MODEL_NOVA=stepfun/step-3.5-flash:free
-OPENROUTER_MODEL_LENS=openai/gpt-oss-120b:free
-```
-
-The client will automatically use `OPENROUTER_MODEL_<AGENT>` values when present, so you can tune models without changing code. After editing `.env`, restart the autonomous runner:
-
+After changing `.env` models/provider, restart runner:
 ```bash
-npm run dev:autonomous   # for development (auto-restarts)
-# or
-node run.js              # start without watcher
-```
-
-Provider-aware model overrides:
-
-```
-LLM_PROVIDER=groq
-GROQ_MODEL_NOVA=groq/compound-mini
-MODEL_LENS=openai/gpt-oss-120b        # works across providers
+pkill -f "^node run.js"
+node run.js --provider <openrouter|groq|local>
 ```
 
 ### Local provider (Ollama)

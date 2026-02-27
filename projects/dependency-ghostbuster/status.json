@@ -1,10 +1,10 @@
 {
-  "stage": "review",
+  "stage": "architecture",
   "proposedBy": "nova",
   "approvedBy": "apex",
   "approvalScore": 7.5,
   "approvedAt": "2026-02-26T09:58:37.620Z",
-  "updatedAt": "2026-02-27T14:11:45.800Z",
+  "updatedAt": "2026-02-27T14:44:54.643Z",
   "lensRejected": false,
   "deadlineMissed": true,
   "missedStage": "review",
@@ -31,19 +31,17 @@
     "failed": 0,
     "ranAt": "2026-02-27T12:33:04.191Z"
   },
-  "pulseRejected": false,
+  "pulseRejected": true,
   "pulseApproved": false,
   "pulseAcceptedAt": null,
-  "pulseSummary": null,
-  "pulseActionItems": [],
+  "pulseSummary": "npm install failed: npm error code EJSONPARSE | npm error JSON.parse Invalid package.json: JSONParseError: Bad control character in string literal in JSON at position 375 (line 15 column 11) while parsing near \"...14.0.12\\\",\\n    \\\"react\\n\" | npm error JSON.parse Failed to parse JSON data. | npm error JSON.parse Note: package.json must be actual JSON, not just JavaScript. | npm error A complete log of this run can be found in: /home/zaigopc/.npm/_logs/2026-02-27T14_44_54_264Z-debug-0.log",
+  "pulseActionItems": [
+    "Fix dependency installation errors (npm install).",
+    "npm error code EJSONPARSE | npm error JSON.parse Invalid package.json: JSONParseError: Bad control character in string literal in JSON at position 375 (line 15 column 11) while parsing near \"...14.0.12\\\",\\n    \\\"react\\n\" | npm error JSON.parse Failed to parse JSON data. | npm error JSON.parse Note: package.json must be actual JSON, not just JavaScript. | npm error A complete log of this run can be found in: /home/zaigopc/.npm/_logs/2026-02-27T14_44_54_264Z-debug-0.log"
+  ],
   "escalationNeeded": true,
   "escalationReason": "Repeated LENS rejections",
   "escalatedAt": "2026-02-27T14:11:45.800Z",
-  "pulseReviewedAt": "2026-02-27T13:43:55.899Z",
-  "generatedTestFiles": [
-    ".gitignore",
-    ".env.example",
-    "next.config.js",
-    "package.json"
-  ]
+  "pulseReviewedAt": "2026-02-27T14:44:54.642Z",
+  "generatedTestFiles": []
 }

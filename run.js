@@ -26,6 +26,7 @@ const {
   AutonomousState,
   AGENT_SCHEDULE,
 } = require('./core/autonomous');
+const { buildAgentModels } = require('./core/llm-client');
 
 const PROJECTS_DIR = path.join(__dirname, 'projects');
 const QUEUE_FILE   = path.join(__dirname, '.hive', 'queue.json');
@@ -433,10 +434,24 @@ function parseFilesFromForgeOutput(text = '') {
   return items;
 }
 
-function materializeForgeFiles(projectName, forgeOutput) {
+function isLikelyMarkdownTableBlob(content = '') {
+  const lines = String(content || '').split('\n').map((l) => l.trim()).filter(Boolean);
+  if (lines.length < 2) return false;
+  const tableish = lines.filter((l) => l.startsWith('|') && l.endsWith('|')).length;
+  const hasDivider = lines.some((l) => /^\|\s*-+/.test(l));
+  return tableish >= 2 && hasDivider;
+}
+
+function materializeForgeFiles(projectName, forgeOutput, opts = {}) {
+  const { pathAllowList = null } = opts;
   const files = parseFilesFromForgeOutput(forgeOutput);
   const written = [];
   for (const item of files) {
+    if (Array.isArray(pathAllowList) && pathAllowList.length) {
+      const allowed = pathAllowList.some((rx) => rx.test(item.path));
+      if (!allowed) continue;
+    }
+    if (isLikelyMarkdownTableBlob(item.content)) continue;
     const target = safeWorkspacePath(projectName, item.path);
     if (!target) continue;
     fs.mkdirSync(path.dirname(target), { recursive: true });
@@ -634,6 +649,7 @@ class AutonomousRunner {
     if (!this.state.state.agentCadenceMinutes) this.state.state.agentCadenceMinutes = {};
     this.state.state.agentCadenceMinutes.forge = 15;
     this.state.state.llmProvider = current;
+    this.state.state.activeAgentModels = buildAgentModels(current);
     this.state.save();
   }
 
@@ -1467,7 +1483,14 @@ ${decision.reasoning}
           writeOutput(projectName, 'tests.md', output);
           {
             ensureWorkspaceScaffold(projectName, status.preferredStack || status.stack || status.template || '');
-            const generatedTestFiles = materializeForgeFiles(projectName, output);
+            const generatedTestFiles = materializeForgeFiles(projectName, output, {
+              pathAllowList: [
+                /^tests?\//i,
+                /(^|\/).+\.test\.(js|jsx|ts|tsx|py)$/i,
+                /(^|\/)(vitest|jest|pytest|playwright|cypress)\.config\.(js|cjs|mjs|ts)$/i,
+                /(^|\/)(pytest\.ini|tox\.ini|setup\.cfg)$/i,
+              ],
+            });
             const testRun = runProjectTests(projectName);
             writeOutput(projectName, 'test-exec.txt', `Summary: ${testRun.summary}\n\n${testRun.raw || ''}`.trim());
             if (!testRun.passed) {
