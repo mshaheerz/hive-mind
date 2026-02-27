@@ -4,8 +4,8 @@
   "approvedBy": "apex",
   "approvalScore": 7.75,
   "approvedAt": "2026-02-26T09:54:03.179Z",
-  "updatedAt": "2026-02-27T10:01:30.223Z",
+  "updatedAt": "2026-02-27T10:05:49.240Z",
   "lensRejected": true,
-  "lensReviewSummary": "**VERDICT:** NEEDS_CHANGES | ## CRITICAL issues (must be fixed before merge) | | 2 | **Security** | When reading secrets from cloud providers, keep them in memory only as long as needed; zero‑out the dict after writing to the file (`secrets.clear()`). |",
-  "lensReviewedAt": "2026-02-27T10:01:30.222Z"
+  "lensReviewSummary": "**VERDICT:** NEEDS_CHANGES | ## CRITICAL issues (must be fixed before merge) | | 6 | Security hardening | Add an optional `--mask-values` flag that replaces secret values with `\"***\"` in any output (including diff output). |",
+  "lensReviewedAt": "2026-02-27T10:05:49.239Z"
 }

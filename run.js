@@ -985,7 +985,12 @@ ${decision.reasoning}
       }
 
       this.deadlines.complete(projectName, stageInfo.next);
-      setProjectStatus(projectName, { stage: stageInfo.next });
+      const updates = { stage: stageInfo.next };
+      if (stage === 'architecture' && stageInfo.next === 'implementation') {
+        updates.lensRejected = false;
+        updates.lensReviewSummary = null;
+      }
+      setProjectStatus(projectName, updates);
       log(stageInfo.agentKey, `✓ "${projectName}" → moved to "${stageInfo.next}"`);
       return { worked: true, success: true };
 
