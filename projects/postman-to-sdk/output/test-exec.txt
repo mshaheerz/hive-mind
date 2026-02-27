@@ -1,6 +1,0 @@
-Summary: npm test passed.
-
-> postman-to-sdk@0.1.0 test
-> echo "No tests yet" --watch=false
-
-No tests yet --watch=false

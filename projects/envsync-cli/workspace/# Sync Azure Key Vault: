@@ -1,1 +1,0 @@
-envsync-cli --azure-keyvault <key-vault-name> <path-in-key-vault>

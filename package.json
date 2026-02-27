@@ -29,6 +29,8 @@
     "test:local:quick": "node scripts/test-openrouter-quick.js --provider local",
     "local:advisor": "node scripts/local-model-advisor.js",
     "local:install": "node scripts/local-model-advisor.js --install",
+    "reset:all": "node scripts/reset-all.js --yes",
+    "reset:all:hard": "node scripts/reset-all.js --yes --wipe-project-folders",
     "skills:sync": "node scripts/skills-sync.js",
     "skills:lint": "node scripts/skills-lint.js",
     "docs:sync": "node scripts/docs-sync.js"
