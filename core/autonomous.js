@@ -362,8 +362,12 @@ class AutonomousState {
   }
 
   markAgentRun(agentName, meta = {}) {
-    const { worked = false, success = true } = meta;
-    this.state.agentLastRun[agentName] = new Date().toISOString();
+    const { worked = false, success = true, retryImmediately = false } = meta;
+    if (retryImmediately) {
+      delete this.state.agentLastRun[agentName];
+    } else {
+      this.state.agentLastRun[agentName] = new Date().toISOString();
+    }
 
     if (!this.state.agentCadenceMinutes) this.state.agentCadenceMinutes = {};
     if (agentName === "forge") {

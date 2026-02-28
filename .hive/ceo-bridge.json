@@ -74,7 +74,82 @@
       "message": "Strict order accepted. Forced wake: NOVA, SCOUT, APEX, ATLAS, FORGE, LENS, PULSE, SAGE, ECHO.",
       "at": "2026-02-28T11:53:54.772Z",
       "inReplyTo": "ceo_1772279228827_vvg1s"
+    },
+    {
+      "id": "ceo_1772301218711_w4xok",
+      "from": "ceo",
+      "message": "strict wake all agents",
+      "at": "2026-02-28T17:53:38.711Z",
+      "handledAt": "2026-02-28T17:53:48.001Z",
+      "handledBy": "apex"
+    },
+    {
+      "id": "apex_1772301228001_7fu59",
+      "from": "apex",
+      "message": "Strict order accepted. Forced wake: NOVA, SCOUT, APEX, ATLAS, FORGE, LENS, PULSE, SAGE, ECHO.",
+      "at": "2026-02-28T17:53:48.001Z",
+      "inReplyTo": "ceo_1772301218711_w4xok"
+    },
+    {
+      "id": "ceo_1772301386563_8m3r2",
+      "from": "ceo",
+      "message": "strict wake all agents",
+      "at": "2026-02-28T17:56:26.563Z",
+      "handledAt": "2026-02-28T17:56:28.332Z",
+      "handledBy": "apex"
+    },
+    {
+      "id": "apex_1772301388332_1am4a",
+      "from": "apex",
+      "message": "Strict order accepted. Forced wake: NOVA, SCOUT, APEX, ATLAS, FORGE, LENS, PULSE, SAGE, ECHO.",
+      "at": "2026-02-28T17:56:28.332Z",
+      "inReplyTo": "ceo_1772301386563_8m3r2"
+    },
+    {
+      "id": "ceo_1772301416470_c85c3",
+      "from": "ceo",
+      "message": "hello apwx",
+      "at": "2026-02-28T17:56:56.470Z",
+      "handledAt": "2026-02-28T17:57:13.058Z",
+      "handledBy": "apex"
+    },
+    {
+      "id": "apex_1772301433058_nojdw",
+      "from": "apex",
+      "message": "Hello! How can I assist you today?",
+      "at": "2026-02-28T17:57:13.058Z",
+      "inReplyTo": "ceo_1772301416470_c85c3"
+    },
+    {
+      "id": "ceo_1772302395224_9jqzw",
+      "from": "ceo",
+      "message": "strict wake forge",
+      "at": "2026-02-28T18:13:15.224Z",
+      "handledAt": "2026-02-28T18:13:20.104Z",
+      "handledBy": "apex"
+    },
+    {
+      "id": "apex_1772302400104_f9qqn",
+      "from": "apex",
+      "message": "Strict order accepted. Forced wake: FORGE.",
+      "at": "2026-02-28T18:13:20.104Z",
+      "inReplyTo": "ceo_1772302395224_9jqzw"
+    },
+    {
+      "id": "ceo_1772302807666_o6fvp",
+      "from": "ceo",
+      "message": "strict wake apex",
+      "at": "2026-02-28T18:20:07.666Z",
+      "handledAt": "2026-02-28T18:20:11.277Z",
+      "handledBy": "apex"
+    },
+    {
+      "id": "apex_1772302811277_7787t",
+      "from": "apex",
+      "message": "Strict order accepted. Forced wake: APEX.",
+      "at": "2026-02-28T18:20:11.277Z",
+      "inReplyTo": "ceo_1772302807666_o6fvp"
     }
   ],
-  "updatedAt": "2026-02-28T11:53:54.772Z"
+  "updatedAt": "2026-02-28T18:20:11.284Z"
 }

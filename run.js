@@ -1118,6 +1118,23 @@ function extractLensActionItems(text = "", maxItems = 5) {
       String(cols[0] || "")
         .replace(/[^\w-]/g, "")
         .toUpperCase() || `L${items.length + 1}`;
+
+    // Skip table header rows — the LLM often emits "| ID | Severity | ... |"
+    const HEADER_WORDS = new Set([
+      "ID",
+      "SEVERITY",
+      "ISSUE",
+      "DESCRIPTION",
+      "FIX",
+      "RECOMMENDATION",
+      "CODE",
+      "FILE",
+      "COLUMN",
+    ]);
+    if (HEADER_WORDS.has(idCandidate)) continue;
+    // Also skip rows where the id doesn't look like a real issue id (e.g. pure words)
+    if (!/^[A-Z]\d+$|^[A-Z]{1,3}$/.test(idCandidate)) continue;
+
     const file = (cols[2] || "").includes(".") ? cols[2] : undefined;
     items.push({ id: idCandidate, severity, file, requirement });
     if (items.length >= maxItems) break;
@@ -2345,6 +2362,7 @@ ${
         this.state.markAgentRun(stageInfo.agentKey, {
           worked: true,
           success: run?.success !== false,
+          retryImmediately: run?.retryImmediately === true,
         });
         progressed = progressed || run?.worked !== false;
 
@@ -2355,6 +2373,18 @@ ${
 
         // If stage didn't change, don't spin.
         if (currentStatus.stage === beforeStage) break;
+
+        // Stage DID change! Wake the next agent immediately to fast-track the flow.
+        const nextStageOwner = stageMap[currentStatus.stage]?.agentKey;
+        if (nextStageOwner) {
+          dueSnapshot[nextStageOwner] = true;
+          delete this.state.state.agentLastRun[nextStageOwner];
+          this.state.save();
+          log(
+            "system",
+            `⚡ Fast-track: Waking ${nextStageOwner.toUpperCase()} immediately for new stage "${currentStatus.stage}"`,
+          );
+        }
       }
     }
 
@@ -2527,7 +2557,17 @@ ${
             status.lensActionItems.length
           ) {
             const fixMap = parseForgeFixMap(output);
-            const missing = status.lensActionItems.filter(
+            // Only require FIX_MAP entries for critical items with real issue IDs (e.g. C1, L2, W1)
+            // Skip header artefacts like "ID" and skip warning-level items
+            const requiredItems = status.lensActionItems.filter((item) => {
+              const id = String(item.id || "").toUpperCase();
+              const isRealId =
+                /^[A-Z]\d+$|^[A-Z]{1,2}$/.test(id) && id !== "ID";
+              const isCritical =
+                (item.severity || "critical").toLowerCase() === "critical";
+              return isRealId && isCritical;
+            });
+            const missing = requiredItems.filter(
               (item) => !fixMap[String(item.id || "").toUpperCase()],
             );
             if (missing.length) {
@@ -2942,9 +2982,14 @@ ${
       );
       return { worked: true, success: true };
     } catch (err) {
+      const msg = String(err?.message || err).toLowerCase();
+      const isTransient =
+        msg.includes("fetch failed") ||
+        msg.includes("timeout") ||
+        msg.includes("econnrefused");
       log(
         stageInfo.agentKey,
-        `✗ Error on "${projectName}" at ${stage}: ${err.message}`,
+        `✗ Error on "${projectName}" at ${stage}: ${err.message}${isTransient ? " (will retry immediately)" : ""}`,
       );
       appendRunEvidence(
         projectName,
@@ -2966,7 +3011,7 @@ ${
           model,
         },
       });
-      return { worked: true, success: false };
+      return { worked: true, success: false, retryImmediately: isTransient };
     }
   }
 }
