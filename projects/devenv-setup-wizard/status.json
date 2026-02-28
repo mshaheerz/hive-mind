@@ -2,7 +2,10 @@
   "stage": "architecture",
   "stageOwner": "forge",
   "stageAttempt": 7,
-  "blockedReason": null,
+  "blockedReason": {
+    "code": "missing_fix_map",
+    "message": "FORGE response missing FIX_MAP references for: C1, C2, C3, C4, S1, S2"
+  },
   "proposedBy": "nova",
   "approvedBy": "apex",
   "approvalScore": 8,
@@ -62,7 +65,7 @@
   "lastHandoffRunId": "1772304124987-forge-n3pse",
   "escalationLevel": "none",
   "approvedAt": "2026-02-28T10:55:52.009Z",
-  "updatedAt": "2026-02-28T18:42:04.990Z",
+  "updatedAt": "2026-02-28T18:46:13.678Z",
   "lensIssueRepeats": {
     "ID": 2,
     "L1": 1,

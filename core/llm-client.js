@@ -63,10 +63,10 @@ const PROVIDER_FALLBACK_MODELS = {
     "llama-3.1-8b-instant",
   ],
   local: [
-    "qwen2.5-coder:3b-instruct",
-    "qwen2.5-coder:7b-instruct",
-    "qwen2.5:7b-instruct",
-    "llama3.2:3b-instruct",
+    "DeepSeek-Coder-V2",
+    "DeepSeek-Coder-V2",
+    "DeepSeek-Coder-V2",
+    "DeepSeek-Coder-V2",
   ],
 };
 
