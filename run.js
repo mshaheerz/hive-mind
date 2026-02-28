@@ -1090,6 +1090,54 @@ function summarizeLensReview(text = "") {
 
 function extractLensActionItems(text = "", maxItems = 5) {
   const raw = String(text || "").replace(/\r/g, "");
+
+  // Try parsing JSON block first if LENS ignored the markdown table instruction
+  try {
+    let jsonStr = "";
+    const blockMatch = raw.match(/```(?:json)?\s*([\s\S]+?)\s*```/);
+    if (blockMatch) {
+      jsonStr = blockMatch[1];
+    } else {
+      const firstBrace = raw.indexOf("{");
+      const lastBrace = raw.lastIndexOf("}");
+      if (firstBrace >= 0 && lastBrace > firstBrace) {
+        jsonStr = raw.substring(firstBrace, lastBrace + 1);
+      }
+    }
+
+    if (jsonStr) {
+      const parsed = JSON.parse(jsonStr);
+      let itemsArray =
+        parsed.ACTION_ITEMS_TABLE ||
+        parsed.CRITICAL ||
+        parsed.issues ||
+        parsed.action_items ||
+        [];
+      if (Array.isArray(itemsArray) && itemsArray.length > 0) {
+        return itemsArray
+          .map((i, idx) => {
+            const idCandidate = String(i.id || `L${idx + 1}`)
+              .replace(/[^\w-]/g, "")
+              .toUpperCase();
+            const severityRaw = String(i.severity || "critical").toLowerCase();
+            const severity = /warn|low|non.?critical|should/.test(severityRaw)
+              ? "warning"
+              : "critical";
+            const file =
+              i.file && String(i.file).includes(".") ? i.file : undefined;
+            const requirement =
+              `${file ? file + " " : ""}${i.issue || i.description || ""} ${i.required_fix || i.fix || i.recommendation || ""}`
+                .replace(/\s+/g, " ")
+                .trim();
+            return { id: idCandidate, severity, file, requirement };
+          })
+          .slice(0, maxItems);
+      }
+    }
+  } catch (e) {
+    // Ignore JSON parse errors and fall back to markdown table parsing
+  }
+
   const lines = raw.split("\n");
   const items = [];
 
@@ -2759,7 +2807,7 @@ ${
               return {
                 worked: true,
                 success: true,
-                haltProjectThisCycle: true,
+                haltProjectThisCycle: false,
               };
             }
 
@@ -2804,7 +2852,7 @@ ${
                 model,
               },
             });
-            return { worked: true, success: true, haltProjectThisCycle: true };
+            return { worked: true, success: true, haltProjectThisCycle: false };
           }
 
           setProjectStatus(projectName, {
@@ -2896,7 +2944,7 @@ ${
               return {
                 worked: true,
                 success: true,
-                haltProjectThisCycle: true,
+                haltProjectThisCycle: false,
               };
             }
             setProjectStatus(projectName, {
