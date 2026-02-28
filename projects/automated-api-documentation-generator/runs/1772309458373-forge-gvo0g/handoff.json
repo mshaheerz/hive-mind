@@ -1,0 +1,15 @@
+{
+  "fromAgent": "forge",
+  "toAgent": "forge",
+  "project": "automated-api-documentation-generator",
+  "stage": "architecture",
+  "runId": "1772309458373-forge-gvo0g",
+  "summary": "Execution failed at architecture: 413 {\"error\":{\"message\":\"Request Entity Too Large\",\"type\":\"invalid_request_error\",\"code\":\"request_too_large\"}}",
+  "artifacts": [],
+  "requiredActions": [],
+  "acceptanceChecks": [],
+  "modelInfo": {
+    "provider": "groq",
+    "model": "openai/gpt-oss-120b"
+  }
+}

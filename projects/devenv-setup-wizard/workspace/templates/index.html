@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>DevEnv Setup Wizard</title>
+    <style>
+        body {font-family: Arial, sans-serif; margin: 2rem;}
+        h1 {color: #2c3e50;}
+        .status {margin-top: 1rem; color: #27ae60;}
+    </style>
+</head>
+<body>
+    <h1>Welcome to the DevEnv Setup Wizard</h1>
+    <p>Use the API endpoints to trigger environment setup actions.</p>
+    <div class="status" id="status"></div>
+
+    <script>
+        // Simple client‑side health check
+        fetch('/api/status')
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('status').textContent = data.message;
+            })
+            .catch(err => {
+                document.getElementById('status').textContent = 'Unable to reach server';
+            });
+    </script>
+</body>
+</html>

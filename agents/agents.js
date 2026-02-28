@@ -4,6 +4,35 @@
  */
 
 const Agent = require("../core/agent");
+const fs = require("fs");
+const path = require("path");
+const os = require("os");
+
+function loadApplicableSkills(keywords = []) {
+  try {
+    const skillsDir = path.join(__dirname, "..", "skills");
+    if (!fs.existsSync(skillsDir)) return "";
+
+    let injectedContext = "";
+    for (const folder of fs.readdirSync(skillsDir)) {
+      const isApplicable = keywords.some((k) =>
+        folder.toLowerCase().includes(k.toLowerCase()),
+      );
+      if (isApplicable) {
+        const skillPath = path.join(skillsDir, folder, "SKILL.md");
+        if (fs.existsSync(skillPath)) {
+          const content = fs.readFileSync(skillPath, "utf8");
+          injectedContext += `\n\n--- SKILL DEFINITION: ${folder} ---\n${content}\n-----------------------------------\n`;
+        }
+      }
+    }
+    return injectedContext
+      ? `\n\nYou have access to the following specialized skills. Follow them critically:\n${injectedContext}`
+      : "";
+  } catch (e) {
+    return "";
+  }
+}
 
 // ─── SCOUT — Researcher ────────────────────────────────────────
 class ScoutAgent extends Agent {
@@ -85,11 +114,21 @@ When writing code, always output:
   }
 
   async implement(task, architecture = "", researchNotes = "") {
+    const skillsContext = loadApplicableSkills([
+      "tool-",
+      "workflow-",
+      "stripe",
+      "supabase",
+      "cloudflare",
+      "clean-code",
+      "best-practices",
+    ]);
     const prompt = `Implement the following task:
 
 **Task:** ${task}
 ${architecture ? `**Architecture Notes:** ${architecture}` : ""}
 ${researchNotes ? `**Research Notes:** ${researchNotes}` : ""}
+${skillsContext}
 
 Ensure you provide a FULL setup (package.json, root config files, etc.) if this is a new project. If fixing issues, ONLY output the modified files in full.
 
@@ -149,9 +188,16 @@ Rules:
   }
 
   async review(code, context = "") {
+    const skillsContext = loadApplicableSkills([
+      "review-",
+      "clean-code",
+      "best-practices",
+    ]);
     const prompt = `Review this code:
 
 ${context ? `**Context:** ${context}\n` : ""}
+${skillsContext}
+
 \`\`\`
 ${code}
 \`\`\`

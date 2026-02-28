@@ -1,0 +1,18 @@
+{
+  "fromAgent": "pulse",
+  "toAgent": "forge",
+  "project": "devenv-setup-wizard",
+  "stage": "review",
+  "runId": "1772309446130-pulse-e24g9",
+  "summary": "pytest failed: /usr/bin/python3: No module named pytest",
+  "artifacts": [],
+  "requiredActions": [
+    "Fix failing tests reported by pytest.",
+    "/usr/bin/python3: No module named pytest"
+  ],
+  "acceptanceChecks": [],
+  "modelInfo": {
+    "provider": "groq",
+    "model": "openai/gpt-oss-20b"
+  }
+}

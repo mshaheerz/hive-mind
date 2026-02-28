@@ -1,11 +1,8 @@
 {
   "stage": "architecture",
   "stageOwner": "forge",
-  "stageAttempt": 2,
-  "blockedReason": {
-    "code": "tests_failed",
-    "message": "npm test failed: > api-doc-generator@1.0.0 test | > jest --watch=false --watch=false | ● Multiple configurations found: | * /home/zaigopc/Desktop/my/hive-mind/projects/automated-api-documentation-generator/workspace/jest.config.js | * `jest` key in /home/zaigopc/Desktop/my/hive-mind/projects/automated-api-documentation-generator/workspace/package.json | Implicit config resolution does not allow multiple configuration files."
-  },
+  "stageAttempt": 4,
+  "blockedReason": null,
   "proposedBy": "nova",
   "approvedBy": "apex",
   "approvalScore": 8,
@@ -14,10 +11,10 @@
   "template": "",
   "lensVerdict": "NEEDS_CHANGES",
   "lensActionItems": [],
-  "lastHandoffRunId": "1772309216477-pulse-shmlp",
+  "lastHandoffRunId": "1772309895770-forge-7sutw",
   "escalationLevel": "force_progress",
   "approvedAt": "2026-02-28T13:45:42.726Z",
-  "updatedAt": "2026-02-28T20:08:20.753Z",
+  "updatedAt": "2026-02-28T20:18:15.771Z",
   "lensIssueRepeats": {
     "ID": 1,
     "L1": 2,

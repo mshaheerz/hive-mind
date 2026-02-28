@@ -1,8 +1,0 @@
-{
-  "outcome": "rejected",
-  "rationale": "PULSE tests failed; implementation sent back for remediation.",
-  "risk": "safe",
-  "approvedBy": "system",
-  "approved": true,
-  "decidedAt": "2026-02-28T19:58:10.677Z"
-}
