@@ -1,0 +1,20 @@
+{
+  "fromAgent": "forge",
+  "toAgent": "lens",
+  "project": "devenv-setup-wizard",
+  "stage": "architecture",
+  "runId": "1772313597047-forge-0yb7o",
+  "summary": "devenv-setup-wizard: architecture -> implementation",
+  "artifacts": [
+    "output/architecture.md",
+    "output/implementation.md"
+  ],
+  "requiredActions": [],
+  "acceptanceChecks": [
+    "Workspace files materialized"
+  ],
+  "modelInfo": {
+    "provider": "local",
+    "model": "DeepSeek-Coder-V2"
+  }
+}

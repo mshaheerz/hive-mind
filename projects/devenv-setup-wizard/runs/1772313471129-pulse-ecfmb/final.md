@@ -1,0 +1,16 @@
+# Run Summary
+
+- Outcome: rejected
+- Project: devenv-setup-wizard
+- Stage: review
+- From: pulse
+- To: forge
+- Risk: safe
+- Approved: yes
+
+## Summary
+npm install failed: npm error code ETARGET | npm error notarget No matching version found for flask@^2.0.1. | npm error notarget In most cases you or one of your dependencies are requesting | npm error notarget a package version that doesn't exist. | npm error A complete log of this run can be found in: /home/zaigopc/.npm/_logs/2026-02-28T21_19_55_876Z-debug-0.log
+
+## Required Actions
+- Fix dependency installation errors (npm install).
+- npm error code ETARGET | npm error notarget No matching version found for flask@^2.0.1. | npm error notarget In most cases you or one of your dependencies are requesting | npm error notarget a package version that doesn't exist. | npm error A complete log of this run can be found in: /home/zaigopc/.npm/_logs/2026-02-28T21_19_55_876Z-debug-0.log

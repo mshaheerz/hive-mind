@@ -1,26 +1,17 @@
 {
-  "name": "api-doc-generator",
+  "name": "api-documentation-generator",
   "version": "1.0.0",
-  "description": "Automated API Documentation Generator",
-  "main": "index.js",
-  "type": "module",
-  "scripts": {
-    "test": "jest --watch=false",
-    "generate-docs": "node src/generateDocs.js"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "private": true,
   "dependencies": {
-    "redoc-cli": "^0.13.0"
+    "swagger-js": "^3.45.2",
+    "redoc": "^2.0.0"
   },
-  "devDependencies": {
-    "jest": "^29.7.0"
+  "scripts": {
+    "generate-docs": "node generate_docs.js",
+    "start": "next start",
+    "dev": "next dev"
   },
-  "jest": {
-    "testEnvironment": "node"
-  },
-  "bin": {
-    "api-doc-gen": "./src/generateDocs.js"
+  "engines": {
+    "node": "14.x"
   }
 }

@@ -1,0 +1,10 @@
+{
+    "name": "devenv-setup-wizard",
+    "version": "1.0.0",
+    "scripts": {
+        "start": "python src/web-server/main.py"
+    },
+    "dependencies": {
+        "flask": "^2.0.1"
+    }
+}

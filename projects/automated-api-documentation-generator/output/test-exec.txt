@@ -1,16 +1,7 @@
-Summary: npm test failed: > api-doc-generator@1.0.0 test | > jest --watch=false --watch=false | ● Multiple configurations found: | * /home/zaigopc/Desktop/my/hive-mind/projects/automated-api-documentation-generator/workspace/jest.config.js | * `jest` key in /home/zaigopc/Desktop/my/hive-mind/projects/automated-api-documentation-generator/workspace/package.json | Implicit config resolution does not allow multiple configuration files.
+Summary: npm install failed: npm error code ETARGET | npm error notarget No matching version found for swagger-js@^3.45.2. | npm error notarget In most cases you or one of your dependencies are requesting | npm error notarget a package version that doesn't exist. | npm error A complete log of this run can be found in: /home/zaigopc/.npm/_logs/2026-02-28T21_29_32_023Z-debug-0.log
 
-> api-doc-generator@1.0.0 test
-> jest --watch=false --watch=false
-
-
-● Multiple configurations found:
-
-    * /home/zaigopc/Desktop/my/hive-mind/projects/automated-api-documentation-generator/workspace/jest.config.js
-    * `jest` key in /home/zaigopc/Desktop/my/hive-mind/projects/automated-api-documentation-generator/workspace/package.json
-
-  Implicit config resolution does not allow multiple configuration files.
-  Either remove unused config files or select one explicitly with `--config`.
-
-  Configuration Documentation:
-  https://jestjs.io/docs/configuration
+npm error code ETARGET
+npm error notarget No matching version found for swagger-js@^3.45.2.
+npm error notarget In most cases you or one of your dependencies are requesting
+npm error notarget a package version that doesn't exist.
+npm error A complete log of this run can be found in: /home/zaigopc/.npm/_logs/2026-02-28T21_29_32_023Z-debug-0.log
