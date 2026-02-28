@@ -1,0 +1,17 @@
+{
+  "fromAgent": "lens",
+  "toAgent": "pulse",
+  "project": "devenv-setup-wizard",
+  "stage": "implementation",
+  "runId": "1772308655259-lens-osihx",
+  "summary": "LENS bypassed after repeated rejections.",
+  "artifacts": [],
+  "requiredActions": [
+    "**VERDICT:** NEEDS_CHANGES | | L1 | CRITICAL | `src/web_server/main.py` & `.env.example` | Debug mode is enabled by default (`FLASK_DEBUG=True` in the example) and the code falls back to `True` when the env var is missing, exposing the Flask debugger in production. | Change the default to `False` in both the code (`debug = os.getenv(\"FLASK_DEBUG\", \"False\")...`) and the `.env.example`. Document that debug should only be turned on explicitly for local development. | | | L2 | CRITICAL | `src/web_server/main.py` | `sub"
+  ],
+  "acceptanceChecks": [],
+  "modelInfo": {
+    "provider": "groq",
+    "model": "openai/gpt-oss-120b"
+  }
+}

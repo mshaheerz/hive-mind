@@ -984,6 +984,24 @@ function hasRealProjectFiles(projectName) {
   return files.some((f) => !/\.md$/i.test(f));
 }
 
+function gatherWorkspaceForLLM(projectName) {
+  const files = listWorkspaceFiles(projectName);
+  let out = "";
+  for (const file of files) {
+    // Skip likely binary or heavy irrelevant files just in case
+    if (/\.(png|jpe?g|gif|svg|ico|pdf|zip|tar|gz|mp4|webm)$/i.test(file))
+      continue;
+    const full = path.join(PROJECTS_DIR, projectName, "workspace", file);
+    try {
+      const content = fs.readFileSync(full, "utf8");
+      out += `\n**File: \`${file}\`**\n\`\`\`\n${content}\n\`\`\`\n`;
+    } catch (e) {
+      // Ignore read errors
+    }
+  }
+  return out;
+}
+
 function scaffoldGitignore(stack = "") {
   const s = String(stack || "").toLowerCase();
   const common = [".DS_Store", "*.log", ".env", ".env.local", ""];
@@ -2558,10 +2576,8 @@ ${
         case "architecture":
           const arch = readOutput(projectName, "architecture.md");
           const res = readOutput(projectName, "research.md");
-          const previousImplementation = readOutput(
-            projectName,
-            "implementation.md",
-          );
+          const previousImplementation = gatherWorkspaceForLLM(projectName);
+
           const bootstrap = ensureProjectBootstrap(projectName, status, readme);
           appendRunEvidence(
             projectName,
@@ -2589,7 +2605,7 @@ ${
             ? `\n\n## Mandatory Rework (LENS/PULSE)\n${remediationItems.map((x, i) => `${i + 1}. ${x.requirement || x}`).join("\n")}\n`
             : "";
           const previousImplBlock = previousImplementation.trim()
-            ? `\n\n## Previous Implementation (fix this, do not restart from scratch)\n${previousImplementation.slice(0, 12000)}\n`
+            ? `\n\n## Current Workspace Implementation (fix this, do ONLY output the specific files you modify)\n${previousImplementation.slice(0, 30000)}\n`
             : "";
           const taskForForge = `${readme}${bootstrapBlock}${mandatoryFixMap}${remediationBlock}${previousImplBlock}`;
           output = await this.agents.forge.implement(taskForForge, arch, res);
@@ -2695,8 +2711,10 @@ ${
           break;
 
         case "implementation":
-          const impl = readOutput(projectName, "implementation.md");
-          output = await this.agents.lens.review(impl, readme);
+          const currentImpl =
+            gatherWorkspaceForLLM(projectName) ||
+            readOutput(projectName, "implementation.md");
+          output = await this.agents.lens.review(currentImpl, readme);
           writeOutput(projectName, "review.md", output);
           appendRunEvidence(
             projectName,
@@ -2850,8 +2868,13 @@ ${
           break;
 
         case "review":
-          const code = readOutput(projectName, "implementation.md");
-          output = await this.agents.pulse.generateTests(code, readme);
+          const testSubjectCode =
+            gatherWorkspaceForLLM(projectName) ||
+            readOutput(projectName, "implementation.md");
+          output = await this.agents.pulse.generateTests(
+            testSubjectCode,
+            readme,
+          );
           writeOutput(projectName, "tests.md", output);
           {
             ensureWorkspaceScaffold(

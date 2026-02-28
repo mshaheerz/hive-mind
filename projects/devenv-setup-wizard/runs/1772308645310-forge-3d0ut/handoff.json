@@ -1,0 +1,20 @@
+{
+  "fromAgent": "forge",
+  "toAgent": "lens",
+  "project": "devenv-setup-wizard",
+  "stage": "architecture",
+  "runId": "1772308645310-forge-3d0ut",
+  "summary": "devenv-setup-wizard: architecture -> implementation",
+  "artifacts": [
+    "output/architecture.md",
+    "output/implementation.md"
+  ],
+  "requiredActions": [],
+  "acceptanceChecks": [
+    "Workspace files materialized"
+  ],
+  "modelInfo": {
+    "provider": "groq",
+    "model": "openai/gpt-oss-120b"
+  }
+}
