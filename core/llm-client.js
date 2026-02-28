@@ -148,16 +148,42 @@ class LLMClient {
       ...this.fallbackModels.filter((m) => m !== primaryModel),
     ];
 
+    let fullOutput = "";
+    let currentMessages = [...messages];
+
     let lastError;
     for (const model of modelChain) {
       try {
-        const result = await this._callWithRetry(model, messages, opts);
+        let result = await this._callWithRetry(model, currentMessages, opts);
+        fullOutput += result.content;
+
+        let loopCount = 0;
+        // Automatically continue if the AI hit the token length limit
+        while (
+          (result.finishReason === "length" ||
+            result.finishReason === "max_tokens") &&
+          loopCount < 3
+        ) {
+          console.log(
+            `  [${agentName.toUpperCase()}] Token limit reached on ${model}. Auto-resuming generation...`,
+          );
+          currentMessages.push({ role: "assistant", content: result.content });
+          currentMessages.push({
+            role: "user",
+            content:
+              "Continue exactly where you left off. Do not repeat previous content or add new markdown blocks unless opening a new file.",
+          });
+          result = await this._callWithRetry(model, currentMessages, opts);
+          fullOutput += result.content;
+          loopCount++;
+        }
+
         if (model !== primaryModel) {
           console.log(
             `  [${agentName.toUpperCase()}] Used ${this.provider} fallback model: ${model}`,
           );
         }
-        return result;
+        return fullOutput;
       } catch (err) {
         lastError = err;
         if (!this._shouldFallback(err)) {
@@ -188,7 +214,7 @@ class LLMClient {
               stream: false,
               options: {
                 temperature: opts.temperature ?? 0.7,
-                num_predict: opts.maxTokens || 2048,
+                num_predict: opts.maxTokens || 8192,
                 top_p: opts.topP ?? 1,
               },
             }),
@@ -202,33 +228,42 @@ class LLMClient {
           }
 
           const json = await response.json();
-          return json?.message?.content || "";
+          return {
+            content: json?.message?.content || "",
+            finishReason: json?.done_reason || json?.finish_reason,
+          };
         } else if (this.provider === "groq") {
           const response = await this.sdk.chat.completions.create({
             model,
             messages,
             temperature: opts.temperature ?? 0.7,
-            max_completion_tokens: opts.maxTokens || 2048,
+            max_completion_tokens: opts.maxTokens || 8192,
             top_p: opts.topP ?? 1,
             stream: false,
             ...(opts.reasoningEffort
               ? { reasoning_effort: opts.reasoningEffort }
               : {}),
           });
-          return response.choices?.[0]?.message?.content || "";
+          return {
+            content: response.choices?.[0]?.message?.content || "",
+            finishReason: response.choices?.[0]?.finish_reason,
+          };
         }
 
         const response = await this.sdk.chat.send({
           chatGenerationParams: {
             model,
             messages,
-            max_tokens: opts.maxTokens || 2048,
+            max_tokens: opts.maxTokens || 8192,
             temperature: opts.temperature ?? 0.7,
           },
           httpReferer: "https://github.com/hive-mind",
           xTitle: "Hive Mind Multi-Agent",
         });
-        return response.choices?.[0]?.message?.content || "";
+        return {
+          content: response.choices?.[0]?.message?.content || "",
+          finishReason: response.choices?.[0]?.finish_reason,
+        };
       } catch (err) {
         const isTransient = this._isTransientError(err);
         if (

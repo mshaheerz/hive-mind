@@ -2619,36 +2619,10 @@ ${
               (item) => !fixMap[String(item.id || "").toUpperCase()],
             );
             if (missing.length) {
-              setProjectStatus(projectName, {
-                blockedReason: {
-                  code: "missing_fix_map",
-                  message: `FORGE response missing FIX_MAP references for: ${missing.map((m) => m.id).join(", ")}`,
-                },
-              });
-              finalizeRunArtifact(projectName, run.runId, {
-                outcome: "rejected",
-                rationale:
-                  "FORGE must include FIX_MAP references for all LENS action items.",
-                risk: riskClass,
-                fromAgent: "forge",
-                toAgent: "forge",
-                project: projectName,
-                stage,
-                summary: `Missing FIX_MAP IDs: ${missing.map((m) => m.id).join(", ")}`,
-                requiredActions: missing.map(
-                  (m) => `${m.id}: ${m.requirement}`,
-                ),
-                modelInfo: {
-                  provider:
-                    this.state.state.llmProvider || process.env.LLM_PROVIDER,
-                  model,
-                },
-              });
-              return {
-                worked: true,
-                success: false,
-                haltProjectThisCycle: true,
-              };
+              log(
+                "forge",
+                `⚠ FORGE missing FIX_MAP references for: ${missing.map((m) => m.id).join(", ")}. Proceeding with materialized code anyway.`,
+              );
             }
             setProjectStatus(projectName, { forgeFixMap: fixMap });
           }

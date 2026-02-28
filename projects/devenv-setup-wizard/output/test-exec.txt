@@ -1,1 +1,3 @@
-Summary: No runnable test command detected (expected package.json or pytest tests).
+Summary: pytest failed: /usr/bin/python3: No module named pytest
+
+/usr/bin/python3: No module named pytest
