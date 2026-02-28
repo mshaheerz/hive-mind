@@ -1,0 +1,18 @@
+{
+  "fromAgent": "scout",
+  "toAgent": "atlas",
+  "project": "automated-api-documentation-generator",
+  "stage": "approved",
+  "runId": "1772287541308-scout-x6q6y",
+  "summary": "automated-api-documentation-generator: approved -> research",
+  "artifacts": [
+    "output/approved.md",
+    "output/research.md"
+  ],
+  "requiredActions": [],
+  "acceptanceChecks": [],
+  "modelInfo": {
+    "provider": "local",
+    "model": "DeepSeek-Coder-V2"
+  }
+}

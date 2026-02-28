@@ -878,10 +878,18 @@ function parseFilesFromForgeOutput(text = "") {
   const source = String(text || "");
   const items = [];
   const patterns = [
-    // The PRIMARY mandatory format: **File: `path/to/file.ext`**
+    // Format 1 (bold+backtick): **File: `path/to/file.ext`**
     /\*\*File:\s*`([^`]+)`\*\*[\s\S]*?```[^\n]*\n([\s\S]*?)```/g,
-    // Slightly looser but still explicit: File: `path/to/file.ext`
+    // Format 2 (plain): File: `path/to/file.ext`
     /(?:^|\n)File:\s*`([^`]+)`[^\n]*\n```[^\n]*\n([\s\S]*?)```/g,
+    // Format 3 (H2 header): ## File: `path/to/file.ext`  — most common LLM output
+    /(?:^|\n)#{1,3}\s+File:\s*`([^`]+)`[^\n]*\n```[^\n]*\n([\s\S]*?)```/g,
+    // Format 4 (H2 plain, no backtick): ## File: path/to/file.ext
+    /(?:^|\n)#{1,3}\s+File:\s+([^\n`]+\.[a-zA-Z0-9]+)[^\n]*\n```[^\n]*\n([\s\S]*?)```/g,
+    // Format 5 (bold only, no backtick): **path/to/file.ext**
+    /(?:^|\n)\*\*([^\n*]+\.[a-zA-Z0-9]+)\*\*[^\n]*\n```[^\n]*\n([\s\S]*?)```/g,
+    // Format 6 (numbered+backtick): 1. `path/to/file.ext`
+    /(?:^|\n)\d+\.\s+`([^`]+\.[a-zA-Z0-9]+)`[^\n]*\n```[^\n]*\n([\s\S]*?)```/g,
   ];
 
   for (const pattern of patterns) {
@@ -1298,12 +1306,16 @@ class AutonomousRunner {
   }
 
   cleanupOldRuns() {
-    const retentionDays = Number(process.env.HIVE_RUNS_RETENTION_DAYS || 30);
+    const retentionDays = Number(process.env.HIVE_RUNS_RETENTION_DAYS || 7);
+    const maxRunsPerProject = Number(
+      process.env.HIVE_MAX_RUNS_PER_PROJECT || 10,
+    );
     if (!Number.isFinite(retentionDays) || retentionDays <= 0) return;
     const cutoff = Date.now() - retentionDays * 24 * 60 * 60 * 1000;
     for (const projectName of getProjects()) {
       const runsRoot = path.join(PROJECTS_DIR, projectName, "runs");
       if (!fs.existsSync(runsRoot)) continue;
+      let entries = [];
       for (const entry of fs.readdirSync(runsRoot)) {
         const full = path.join(runsRoot, entry);
         let st;
@@ -1313,7 +1325,14 @@ class AutonomousRunner {
           continue;
         }
         if (!st.isDirectory()) continue;
-        if (st.mtimeMs < cutoff) {
+        entries.push({ full, mtime: st.mtimeMs });
+      }
+      // Sort newest-first
+      entries.sort((a, b) => b.mtime - a.mtime);
+      for (let i = 0; i < entries.length; i++) {
+        const { full, mtime } = entries[i];
+        // Remove if beyond max count OR beyond retention age
+        if (i >= maxRunsPerProject || mtime < cutoff) {
           try {
             fs.rmSync(full, { recursive: true, force: true });
           } catch {}
@@ -1806,6 +1825,19 @@ ${text}`,
   // ─── NOVA: Generate new ideas autonomously ──────────────────
 
   async novaGeneratesIdeas() {
+    // Skip if the queue is already too busy
+    const queue = loadQueue();
+    const pendingCount = queue.filter(
+      (p) => !["approved", "rejected", "complete", "failed"].includes(p.status),
+    ).length;
+    if (pendingCount >= 5) {
+      log(
+        "nova",
+        `RESTING: Queue is already busy with ${pendingCount} pending items. Waiting for decisions before proposing more.`,
+      );
+      return false;
+    }
+
     log("nova", "Waking up... thinking of new project ideas");
 
     // Give NOVA context about existing projects to avoid duplication
@@ -1897,6 +1929,13 @@ Do NOT propose anything similar to these. Think of genuinely new, useful develop
     }
 
     log("scout", `Validating ${pending.length} proposal(s)...`);
+
+    // Prioritize revisions over brand new ideas
+    pending.sort((a, b) => {
+      if (a.revisionRequested && !b.revisionRequested) return -1;
+      if (!a.revisionRequested && b.revisionRequested) return 1;
+      return new Date(a.proposedAt || 0) - new Date(b.proposedAt || 0);
+    });
 
     for (const proposal of pending) {
       if (proposal.status === "needs_revision") {
@@ -2559,10 +2598,36 @@ ${
                 `Materialized ${written.length} code file(s) in projects/${projectName}/workspace (checks: ${check.passed}/${check.checked} passed).`,
               );
             } else {
+              const noFileAttempts =
+                (Number(status.forgeNoFileAttempts) || 0) + 1;
               log(
                 "forge",
-                `No file blocks detected. Kept markdown output only for "${projectName}".`,
+                `No file blocks detected in FORGE output for "${projectName}" (attempt ${noFileAttempts}). The output likely uses an unrecognised header format.`,
               );
+              // Log the first 400 chars so we can debug the format
+              appendRunEvidence(
+                projectName,
+                run.runId,
+                "no-files-debug.txt",
+                `Attempt ${noFileAttempts}\n\nFirst 800 chars of output:\n${output.slice(0, 800)}`,
+              );
+              if (noFileAttempts >= 4) {
+                setProjectStatus(projectName, {
+                  forgeNoFileAttempts: noFileAttempts,
+                  blockedReason: {
+                    code: "forge_no_files",
+                    message: `FORGE produced no materialisable files after ${noFileAttempts} attempts. Human review required. Check output/implementation.md and ensure FORGE uses ## File: \`path\` headers.`,
+                  },
+                });
+                log(
+                  "forge",
+                  `🛑 "${projectName}" BLOCKED: FORGE could not produce workspace files after ${noFileAttempts} tries. Requires human review.`,
+                );
+              } else {
+                setProjectStatus(projectName, {
+                  forgeNoFileAttempts: noFileAttempts,
+                });
+              }
             }
           }
           break;

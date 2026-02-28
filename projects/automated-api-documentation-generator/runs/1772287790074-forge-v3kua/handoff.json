@@ -1,0 +1,20 @@
+{
+  "fromAgent": "forge",
+  "toAgent": "lens",
+  "project": "automated-api-documentation-generator",
+  "stage": "architecture",
+  "runId": "1772287790074-forge-v3kua",
+  "summary": "automated-api-documentation-generator: architecture -> implementation",
+  "artifacts": [
+    "output/architecture.md",
+    "output/implementation.md"
+  ],
+  "requiredActions": [],
+  "acceptanceChecks": [
+    "Workspace files materialized"
+  ],
+  "modelInfo": {
+    "provider": "local",
+    "model": "DeepSeek-Coder-V2"
+  }
+}

@@ -1,1 +1,90 @@
-[]
+[
+  {
+    "id": "devenv-setup-wizard::research",
+    "projectName": "devenv-setup-wizard",
+    "stage": "research",
+    "agent": "scout",
+    "dueAt": "2026-02-28T13:17:25.289Z",
+    "setAt": "2026-02-28T11:17:25.289Z",
+    "status": "complete",
+    "completedAt": "2026-02-28T11:18:47.224Z"
+  },
+  {
+    "id": "devenv-setup-wizard::architecture",
+    "projectName": "devenv-setup-wizard",
+    "stage": "architecture",
+    "agent": "atlas",
+    "dueAt": "2026-02-28T14:18:47.236Z",
+    "setAt": "2026-02-28T11:18:47.236Z",
+    "status": "complete",
+    "completedAt": "2026-02-28T11:21:32.446Z"
+  },
+  {
+    "id": "devenv-setup-wizard::implementation",
+    "projectName": "devenv-setup-wizard",
+    "stage": "implementation",
+    "agent": "forge",
+    "dueAt": "2026-02-28T23:30:01.138Z",
+    "setAt": "2026-02-28T17:30:01.138Z",
+    "status": "active"
+  },
+  {
+    "id": "devenv-setup-wizard::review",
+    "projectName": "devenv-setup-wizard",
+    "stage": "review",
+    "agent": "lens",
+    "dueAt": "2026-02-28T19:22:00.489Z",
+    "setAt": "2026-02-28T17:22:00.489Z",
+    "status": "complete",
+    "completedAt": "2026-02-28T17:25:01.091Z"
+  },
+  {
+    "id": "devenv-setup-wizard::tests",
+    "projectName": "devenv-setup-wizard",
+    "stage": "tests",
+    "agent": "pulse",
+    "dueAt": "2026-02-28T13:49:51.171Z",
+    "setAt": "2026-02-28T11:49:51.171Z",
+    "status": "complete",
+    "completedAt": "2026-02-28T11:53:44.739Z"
+  },
+  {
+    "id": "automated-api-documentation-generator::research",
+    "projectName": "automated-api-documentation-generator",
+    "stage": "research",
+    "agent": "scout",
+    "dueAt": "2026-02-28T16:05:41.309Z",
+    "setAt": "2026-02-28T14:05:41.309Z",
+    "status": "complete",
+    "completedAt": "2026-02-28T14:07:05.057Z"
+  },
+  {
+    "id": "automated-api-documentation-generator::architecture",
+    "projectName": "automated-api-documentation-generator",
+    "stage": "architecture",
+    "agent": "atlas",
+    "dueAt": "2026-02-28T17:07:05.059Z",
+    "setAt": "2026-02-28T14:07:05.059Z",
+    "status": "complete",
+    "completedAt": "2026-02-28T14:09:50.072Z"
+  },
+  {
+    "id": "automated-api-documentation-generator::implementation",
+    "projectName": "automated-api-documentation-generator",
+    "stage": "implementation",
+    "agent": "forge",
+    "dueAt": "2026-02-28T23:35:02.844Z",
+    "setAt": "2026-02-28T17:35:02.844Z",
+    "status": "active"
+  },
+  {
+    "id": "automated-api-documentation-generator::review",
+    "projectName": "automated-api-documentation-generator",
+    "stage": "review",
+    "agent": "lens",
+    "dueAt": "2026-02-28T16:43:45.114Z",
+    "setAt": "2026-02-28T14:43:45.114Z",
+    "status": "complete",
+    "completedAt": "2026-02-28T14:45:59.361Z"
+  }
+]

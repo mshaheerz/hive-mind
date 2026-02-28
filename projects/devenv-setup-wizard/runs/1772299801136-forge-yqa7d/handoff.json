@@ -1,0 +1,15 @@
+{
+  "fromAgent": "forge",
+  "toAgent": "forge",
+  "project": "devenv-setup-wizard",
+  "stage": "architecture",
+  "runId": "1772299801136-forge-yqa7d",
+  "summary": "Execution failed at architecture: fetch failed",
+  "artifacts": [],
+  "requiredActions": [],
+  "acceptanceChecks": [],
+  "modelInfo": {
+    "provider": "local",
+    "model": "DeepSeek-Coder-V2"
+  }
+}

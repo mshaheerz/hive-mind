@@ -1,0 +1,15 @@
+{
+  "fromAgent": "forge",
+  "toAgent": "forge",
+  "project": "automated-api-documentation-generator",
+  "stage": "architecture",
+  "runId": "1772294627067-forge-zsnsu",
+  "summary": "Execution failed at architecture: fetch failed",
+  "artifacts": [],
+  "requiredActions": [],
+  "acceptanceChecks": [],
+  "modelInfo": {
+    "provider": "local",
+    "model": "DeepSeek-Coder-V2"
+  }
+}

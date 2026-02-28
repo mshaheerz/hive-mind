@@ -1,0 +1,24 @@
+{
+  "name": "api-doc-generator",
+  "version": "1.0.0",
+  "description": "Automated API Documentation Generator for complex systems",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "next": "^12.0.7",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "swagger-jsdoc": "^6.1.0",
+    "redoc": "^2.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^14.14.32",
+    "@types/react": "^17.0.0",
+    "@types/react-dom": "^17.0.3",
+    "typescript": "^4.1.2"
+  }
+}
