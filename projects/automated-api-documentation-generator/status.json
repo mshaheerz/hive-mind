@@ -1,10 +1,10 @@
 {
   "stage": "architecture",
   "stageOwner": "forge",
-  "stageAttempt": 3,
+  "stageAttempt": 4,
   "blockedReason": {
-    "code": "lens_rejected",
-    "message": "\"VERDICT\": \"NEEDS_CHANGES\", | \"issue\": \"Security vulnerability: API key and debug settings are exposed in the .env.example file.\", | \"issue\": \"Missing entries that could lead to security vulnerabilities, such as logs and process IDs.\", | \"CRITICAL\": ["
+    "code": "missing_fix_map",
+    "message": "FORGE response missing FIX_MAP references for: L1, L2, L3, L4, L5"
   },
   "proposedBy": "nova",
   "approvedBy": "apex",
@@ -40,10 +40,10 @@
       "requirement": "\"issue\": \"Missing entries that could lead to security vulnerabilities, such as logs and process IDs.\","
     }
   ],
-  "lastHandoffRunId": "1772304425001-lens-i5qcz",
+  "lastHandoffRunId": "1772305719663-forge-c0zht",
   "escalationLevel": "none",
   "approvedAt": "2026-02-28T13:45:42.726Z",
-  "updatedAt": "2026-02-28T18:49:17.358Z",
+  "updatedAt": "2026-02-28T19:13:08.127Z",
   "lensIssueRepeats": {
     "ID": 1,
     "L1": 2,
