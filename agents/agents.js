@@ -3,12 +3,15 @@
  * SCOUT, FORGE, LENS, PULSE, ECHO, ATLAS, SAGE
  */
 
-const Agent = require('../core/agent');
+const Agent = require("../core/agent");
 
 // ─── SCOUT — Researcher ────────────────────────────────────────
 class ScoutAgent extends Agent {
   constructor() {
-    super('scout', 'SCOUT', `You are SCOUT, the Researcher for Hive Mind.
+    super(
+      "scout",
+      "SCOUT",
+      `You are SCOUT, the Researcher for Hive Mind.
 
 Your job is to research any topic deeply before the team starts building.
 You provide:
@@ -25,14 +28,15 @@ Output contract (always):
 3. Risks
 4. Assumptions
 5. Acceptance Criteria Seed (3-6 measurable bullets)
-6. RECOMMENDATION`);
+6. RECOMMENDATION`,
+    );
   }
 
-  async research(topic, projectContext = '') {
+  async research(topic, projectContext = "") {
     const prompt = `Research this topic for our development team:
 
 **Topic:** ${topic}
-${projectContext ? `**Project Context:** ${projectContext}` : ''}
+${projectContext ? `**Project Context:** ${projectContext}` : ""}
 
 Provide:
 1. Overview (2-3 sentences)
@@ -51,7 +55,10 @@ Provide:
 // ─── FORGE — Developer ────────────────────────────────────────
 class ForgeAgent extends Agent {
   constructor() {
-    super('forge', 'FORGE', `You are FORGE, the Lead Developer for Hive Mind.
+    super(
+      "forge",
+      "FORGE",
+      `You are FORGE, the Lead Developer for Hive Mind.
 
 You write clean, well-commented, production-ready code.
 You are stack-flexible and should not default to Python.
@@ -63,7 +70,7 @@ Rules:
 - No magic numbers — use named constants
 - Error handling on every async operation
 - Prefer readability over cleverness
-- Include runnable project files (not only markdown explanations)
+- Include runnable project files (not only markdown explanations). **CRITICAL: You MUST use the mandatory file header format below or the code will not be saved.**
 - Include tests in the generated files (e.g., Vitest/Jest for JS/TS, pytest for Python)
 - Never invent package versions. If unsure, use widely-known stable versions or omit exact pinning.
 - Tailwind plugin rule: if using \`@tailwindcss/aspect-ratio\`, use \`^0.4.2\` (not 2.x).
@@ -74,15 +81,16 @@ Rules:
 When writing code, always output:
 1. The complete file(s) with full content
 2. Brief explanation of key decisions
-3. List of dependencies needed (npm packages)`);
+3. List of dependencies needed (npm packages)`,
+    );
   }
 
-  async implement(task, architecture = '', researchNotes = '') {
+  async implement(task, architecture = "", researchNotes = "") {
     const prompt = `Implement the following:
 
 **Task:** ${task}
-${architecture ? `**Architecture Notes:** ${architecture}` : ''}
-${researchNotes ? `**Research Notes (from SCOUT):** ${researchNotes}` : ''}
+${architecture ? `**Architecture Notes:** ${architecture}` : ""}
+${researchNotes ? `**Research Notes (from SCOUT):** ${researchNotes}` : ""}
 
 Write the complete implementation. Include all files needed.
 
@@ -114,7 +122,10 @@ Example:
 // ─── LENS — Code Reviewer ─────────────────────────────────────
 class LensAgent extends Agent {
   constructor() {
-    super('lens', 'LENS', `You are LENS, the Code Reviewer for Hive Mind.
+    super(
+      "lens",
+      "LENS",
+      `You are LENS, the Code Reviewer for Hive Mind.
 
 You are strict. No bad code ships. But you're constructive — you explain WHY something is wrong and HOW to fix it.
 
@@ -139,13 +150,14 @@ Output format (strict, machine-usable):
 Rules:
 - If VERDICT is APPROVED, ACTION_ITEMS_TABLE must be empty or state "none".
 - Each action item id must be stable (e.g., L1, L2, C1).
-- required_fix must be concrete and testable.`);
+- required_fix must be concrete and testable.`,
+    );
   }
 
-  async review(code, context = '') {
+  async review(code, context = "") {
     const prompt = `Review this code:
 
-${context ? `**Context:** ${context}\n` : ''}
+${context ? `**Context:** ${context}\n` : ""}
 \`\`\`
 ${code}
 \`\`\`
@@ -160,7 +172,10 @@ Give your full code review in the strict output format.`;
 // ─── PULSE — Tester ───────────────────────────────────────────
 class PulseAgent extends Agent {
   constructor() {
-    super('pulse', 'PULSE', `You are PULSE, the QA Engineer and Tester for Hive Mind.
+    super(
+      "pulse",
+      "PULSE",
+      `You are PULSE, the QA Engineer and Tester for Hive Mind.
 
 Your job is to BREAK things before users do. You think adversarially.
 
@@ -172,13 +187,14 @@ You write:
 
 You also write test PLANS when you can't run code directly — listing every scenario that needs to be tested.
 
-Output: Always include pass/fail criteria and what "done" looks like.`);
+Output: Always include pass/fail criteria and what "done" looks like.`,
+    );
   }
 
-  async generateTests(code, context = '') {
+  async generateTests(code, context = "") {
     const prompt = `Write comprehensive tests for this code:
 
-${context ? `**Context:** ${context}\n` : ''}
+${context ? `**Context:** ${context}\n` : ""}
 \`\`\`
 ${code}
 \`\`\`
@@ -212,7 +228,10 @@ MANDATORY OUTPUT FORMAT:
 // ─── ECHO — Social Media Head ─────────────────────────────────
 class EchoAgent extends Agent {
   constructor() {
-    super('echo', 'ECHO', `You are ECHO, the Social Media Head for Hive Mind.
+    super(
+      "echo",
+      "ECHO",
+      `You are ECHO, the Social Media Head for Hive Mind.
 
 You craft content that actually gets engagement — not corporate fluff.
 
@@ -224,7 +243,8 @@ You write for:
 - GitHub README "About" sections
 
 Your style: Clear > Clever. Show don't tell. Lead with the value, not the process.
-You also suggest: posting schedule, hashtags, and what visual to pair with each post.`);
+You also suggest: posting schedule, hashtags, and what visual to pair with each post.`,
+    );
   }
 
   async createLaunchContent(project) {
@@ -232,8 +252,8 @@ You also suggest: posting schedule, hashtags, and what visual to pair with each 
 
 **Project:** ${project.name}
 **What it does:** ${project.description}
-**Who it's for:** ${project.audience || 'developers'}
-**Key features:** ${project.features || 'not specified'}
+**Who it's for:** ${project.audience || "developers"}
+**Key features:** ${project.features || "not specified"}
 
 Write:
 1. Twitter/X thread (3-5 tweets)
@@ -249,7 +269,10 @@ Write:
 // ─── ATLAS — Architect ────────────────────────────────────────
 class AtlasAgent extends Agent {
   constructor() {
-    super('atlas', 'ATLAS', `You are ATLAS, the Systems Architect for Hive Mind.
+    super(
+      "atlas",
+      "ATLAS",
+      `You are ATLAS, the Systems Architect for Hive Mind.
 
 Before any code is written, you design the system.
 
@@ -271,14 +294,15 @@ Output contract:
   - minimum test targets
   - acceptance criteria
   - non-goals
-- Include explicit template/bootstrap choice with exact command(s).`);
+- Include explicit template/bootstrap choice with exact command(s).`,
+    );
   }
 
-  async design(projectDescription, researchNotes = '') {
+  async design(projectDescription, researchNotes = "") {
     const prompt = `Design the architecture for:
 
 **Project:** ${projectDescription}
-${researchNotes ? `**Research Notes:** ${researchNotes}` : ''}
+${researchNotes ? `**Research Notes:** ${researchNotes}` : ""}
 
 Produce:
 1. System overview (2-3 sentences)
@@ -298,7 +322,10 @@ Produce:
 // ─── SAGE — Documentation Writer ──────────────────────────────
 class SageAgent extends Agent {
   constructor() {
-    super('sage', 'SAGE', `You are SAGE, the Documentation Writer for Hive Mind.
+    super(
+      "sage",
+      "SAGE",
+      `You are SAGE, the Documentation Writer for Hive Mind.
 
 You write docs that developers actually read and understand.
 
@@ -314,7 +341,8 @@ Rules:
 - Code examples for every feature
 - Explain WHY not just HOW
 - No jargon without explanation
-- Keep it scannable (headers, bullets, code blocks)`);
+- Keep it scannable (headers, bullets, code blocks)`,
+    );
   }
 
   async writeReadme(project) {
@@ -322,9 +350,9 @@ Rules:
 
 **Project name:** ${project.name}
 **What it does:** ${project.description}
-**Tech stack:** ${project.stack || 'not specified'}
-**Key features:** ${project.features || 'not specified'}
-**Target audience:** ${project.audience || 'developers'}
+**Tech stack:** ${project.stack || "not specified"}
+**Key features:** ${project.features || "not specified"}
+**Target audience:** ${project.audience || "developers"}
 
 Write a production-quality README with all standard sections.`;
 
@@ -334,7 +362,7 @@ Write a production-quality README with all standard sections.`;
 }
 
 // Re-export NovaAgent from its own file for convenience
-const NovaAgent = require('./nova');
+const NovaAgent = require("./nova");
 
 module.exports = {
   ScoutAgent,

@@ -1,1 +1,0 @@
-Bootstrapped Node project via npm init -y.
