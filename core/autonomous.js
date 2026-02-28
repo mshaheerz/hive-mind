@@ -13,27 +13,27 @@
  *   - APEX enforces deadlines and reassigns if missed
  */
 
-const fs   = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
-const STATE_FILE    = path.join(__dirname, '..', '.hive', 'autonomous-state.json');
-const PROJECTS_DIR  = path.join(__dirname, '..', 'projects');
-const DISCUSS_DIR   = path.join(__dirname, '..', '.hive', 'discussions');
-const DEADLINES_FILE= path.join(__dirname, '..', '.hive', 'deadlines.json');
+const STATE_FILE = path.join(__dirname, "..", ".hive", "autonomous-state.json");
+const PROJECTS_DIR = path.join(__dirname, "..", "projects");
+const DISCUSS_DIR = path.join(__dirname, "..", ".hive", "discussions");
+const DEADLINES_FILE = path.join(__dirname, "..", ".hive", "deadlines.json");
 
 // ─── Agent Work Schedules ─────────────────────────────────────
 // Each agent "wakes" at these intervals (in ms for the loop)
 // In real usage these map to: how often they trigger in a cycle
 const AGENT_SCHEDULE = {
-  nova:  { cycleMinutes: 60,  role: 'proposes new ideas' },
-  scout: { cycleMinutes: 45,  role: 'researches & validates' },
-  apex:  { cycleMinutes: 15,  role: 'reviews & decides' },
-  atlas: { cycleMinutes: 90,  role: 'designs approved projects' },
-  forge: { cycleMinutes: 15,  role: 'implements designs' },
-  lens:  { cycleMinutes: 60,  role: 'reviews code' },
-  pulse: { cycleMinutes: 60,  role: 'tests code' },
-  sage:  { cycleMinutes: 90,  role: 'writes docs' },
-  echo:  { cycleMinutes: 120, role: 'creates launch content' },
+  nova: { cycleMinutes: 60, role: "proposes new ideas" },
+  scout: { cycleMinutes: 45, role: "researches & validates" },
+  apex: { cycleMinutes: 15, role: "reviews & decides" },
+  atlas: { cycleMinutes: 90, role: "designs approved projects" },
+  forge: { cycleMinutes: 15, role: "implements designs" },
+  lens: { cycleMinutes: 60, role: "reviews code" },
+  pulse: { cycleMinutes: 60, role: "tests code" },
+  sage: { cycleMinutes: 90, role: "writes docs" },
+  echo: { cycleMinutes: 120, role: "creates launch content" },
 };
 
 const MIN_AGENT_CADENCE_MINUTES = 15;
@@ -42,13 +42,15 @@ const MAX_AGENT_CADENCE_MINUTES = 120;
 // ─── Duplicate Detection ──────────────────────────────────────
 class DuplicateDetector {
   constructor() {
-    this.indexFile = path.join(__dirname, '..', '.hive', 'idea-index.json');
+    this.indexFile = path.join(__dirname, "..", ".hive", "idea-index.json");
     this.index = this._load();
   }
 
   _load() {
     if (fs.existsSync(this.indexFile)) {
-      try { return JSON.parse(fs.readFileSync(this.indexFile, 'utf8')); } catch {}
+      try {
+        return JSON.parse(fs.readFileSync(this.indexFile, "utf8"));
+      } catch {}
     }
     return { ideas: [], projects: [] };
   }
@@ -65,8 +67,10 @@ class DuplicateDetector {
     const incoming = this._keywords(`${title} ${description}`);
 
     for (const existing of [...this.index.ideas, ...this.index.projects]) {
-      const existingKw = this._keywords(`${existing.title} ${existing.description}`);
-      const overlap    = this._overlap(incoming, existingKw);
+      const existingKw = this._keywords(
+        `${existing.title} ${existing.description}`,
+      );
+      const overlap = this._overlap(incoming, existingKw);
 
       if (overlap >= 0.6) {
         return { isDuplicate: true, similarTo: existing, similarity: overlap };
@@ -75,15 +79,15 @@ class DuplicateDetector {
     return { isDuplicate: false };
   }
 
-  register(title, description, type = 'idea') {
+  register(title, description, type = "idea") {
     const entry = {
       title,
-      description: description.slice(0, 200),
+      description: description.slice(0, 2000),
       keywords: this._keywords(`${title} ${description}`),
       registeredAt: new Date().toISOString(),
     };
 
-    if (type === 'project') {
+    if (type === "project") {
       this.index.projects.push(entry);
     } else {
       this.index.ideas.push(entry);
@@ -92,21 +96,66 @@ class DuplicateDetector {
   }
 
   _keywords(text) {
-    const stopwords = new Set(['a','an','the','and','or','but','in','on','at','to','for',
-      'of','with','by','from','is','are','was','were','be','been','being','have',
-      'has','had','do','does','did','will','would','could','should','may','might',
-      'it','its','this','that','these','those','i','we','you','they','he','she']);
+    const stopwords = new Set([
+      "a",
+      "an",
+      "the",
+      "and",
+      "or",
+      "but",
+      "in",
+      "on",
+      "at",
+      "to",
+      "for",
+      "of",
+      "with",
+      "by",
+      "from",
+      "is",
+      "are",
+      "was",
+      "were",
+      "be",
+      "been",
+      "being",
+      "have",
+      "has",
+      "had",
+      "do",
+      "does",
+      "did",
+      "will",
+      "would",
+      "could",
+      "should",
+      "may",
+      "might",
+      "it",
+      "its",
+      "this",
+      "that",
+      "these",
+      "those",
+      "i",
+      "we",
+      "you",
+      "they",
+      "he",
+      "she",
+    ]);
 
-    return text.toLowerCase()
-      .replace(/[^a-z0-9\s]/g, ' ')
+    return text
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, " ")
       .split(/\s+/)
-      .filter(w => w.length > 3 && !stopwords.has(w));
+      .filter((w) => w.length > 3 && !stopwords.has(w));
   }
 
   _overlap(a, b) {
     const setA = new Set(a);
     const setB = new Set(b);
-    const intersection = [...setA].filter(x => setB.has(x)).length;
+    const intersection = [...setA].filter((x) => setB.has(x)).length;
     const union = new Set([...setA, ...setB]).size;
     return union === 0 ? 0 : intersection / union;
   }
@@ -127,7 +176,7 @@ class DiscussionBoard {
       topic,
       messages: [],
       startedAt: new Date().toISOString(),
-      status: 'open',
+      status: "open",
     };
     this._saveThread(thread);
     return thread;
@@ -151,7 +200,7 @@ class DiscussionBoard {
   closeThread(threadId, resolution) {
     const thread = this.getThread(threadId);
     if (!thread) return;
-    thread.status = 'closed';
+    thread.status = "closed";
     thread.resolution = resolution;
     thread.closedAt = new Date().toISOString();
     this._saveThread(thread);
@@ -160,27 +209,37 @@ class DiscussionBoard {
   getThread(id) {
     const f = path.join(DISCUSS_DIR, `${id}.json`);
     if (!fs.existsSync(f)) return null;
-    try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch { return null; }
+    try {
+      return JSON.parse(fs.readFileSync(f, "utf8"));
+    } catch {
+      return null;
+    }
   }
 
   getAllOpen() {
     if (!fs.existsSync(DISCUSS_DIR)) return [];
-    return fs.readdirSync(DISCUSS_DIR)
-      .filter(f => f.endsWith('.json'))
-      .map(f => {
-        try { return JSON.parse(fs.readFileSync(path.join(DISCUSS_DIR, f), 'utf8')); } catch { return null; }
+    return fs
+      .readdirSync(DISCUSS_DIR)
+      .filter((f) => f.endsWith(".json"))
+      .map((f) => {
+        try {
+          return JSON.parse(fs.readFileSync(path.join(DISCUSS_DIR, f), "utf8"));
+        } catch {
+          return null;
+        }
       })
-      .filter(t => t && t.status === 'open');
+      .filter((t) => t && t.status === "open");
   }
 
   _saveThread(thread) {
-    fs.writeFileSync(path.join(DISCUSS_DIR, `${thread.id}.json`), JSON.stringify(thread, null, 2));
+    fs.writeFileSync(
+      path.join(DISCUSS_DIR, `${thread.id}.json`),
+      JSON.stringify(thread, null, 2),
+    );
   }
 
   formatThread(thread) {
-    return thread.messages
-      .map(m => `[${m.from}]: ${m.message}`)
-      .join('\n');
+    return thread.messages.map((m) => `[${m.from}]: ${m.message}`).join("\n");
   }
 }
 
@@ -192,7 +251,9 @@ class DeadlineTracker {
 
   _load() {
     if (fs.existsSync(DEADLINES_FILE)) {
-      try { return JSON.parse(fs.readFileSync(DEADLINES_FILE, 'utf8')); } catch {}
+      try {
+        return JSON.parse(fs.readFileSync(DEADLINES_FILE, "utf8"));
+      } catch {}
     }
     return [];
   }
@@ -216,11 +277,11 @@ class DeadlineTracker {
       agent,
       dueAt: new Date(Date.now() + hours * 3600 * 1000).toISOString(),
       setAt: new Date().toISOString(),
-      status: 'active',
+      status: "active",
     };
 
     // Replace if exists
-    const idx = this.deadlines.findIndex(d => d.id === deadline.id);
+    const idx = this.deadlines.findIndex((d) => d.id === deadline.id);
     if (idx >= 0) this.deadlines[idx] = deadline;
     else this.deadlines.push(deadline);
 
@@ -229,8 +290,12 @@ class DeadlineTracker {
   }
 
   complete(projectName, stage) {
-    const d = this.deadlines.find(d => d.id === `${projectName}::${stage}`);
-    if (d) { d.status = 'complete'; d.completedAt = new Date().toISOString(); this._save(); }
+    const d = this.deadlines.find((d) => d.id === `${projectName}::${stage}`);
+    if (d) {
+      d.status = "complete";
+      d.completedAt = new Date().toISOString();
+      this._save();
+    }
   }
 
   /**
@@ -238,13 +303,13 @@ class DeadlineTracker {
    */
   getOverdue() {
     const now = new Date();
-    return this.deadlines.filter(d =>
-      d.status === 'active' && new Date(d.dueAt) < now
+    return this.deadlines.filter(
+      (d) => d.status === "active" && new Date(d.dueAt) < now,
     );
   }
 
   getActive() {
-    return this.deadlines.filter(d => d.status === 'active');
+    return this.deadlines.filter((d) => d.status === "active");
   }
 
   hoursUntil(dueAt) {
@@ -260,7 +325,9 @@ class AutonomousState {
 
   _load() {
     if (fs.existsSync(STATE_FILE)) {
-      try { return JSON.parse(fs.readFileSync(STATE_FILE, 'utf8')); } catch {}
+      try {
+        return JSON.parse(fs.readFileSync(STATE_FILE, "utf8"));
+      } catch {}
     }
     return {
       running: false,
@@ -268,7 +335,13 @@ class AutonomousState {
       cycleCount: 0,
       agentLastRun: {},
       agentCadenceMinutes: {},
-      stats: { proposed: 0, approved: 0, rejected: 0, completed: 0, duplicatesBlocked: 0 },
+      stats: {
+        proposed: 0,
+        approved: 0,
+        rejected: 0,
+        completed: 0,
+        duplicatesBlocked: 0,
+      },
     };
   }
 
@@ -281,8 +354,11 @@ class AutonomousState {
     const base = AGENT_SCHEDULE[agentName]?.cycleMinutes || 60;
     const override = this.state.agentCadenceMinutes?.[agentName];
     const candidate = Number.isFinite(override) ? override : base;
-    if (agentName === 'forge') return 15;
-    return Math.max(MIN_AGENT_CADENCE_MINUTES, Math.min(MAX_AGENT_CADENCE_MINUTES, candidate));
+    if (agentName === "forge") return 15;
+    return Math.max(
+      MIN_AGENT_CADENCE_MINUTES,
+      Math.min(MAX_AGENT_CADENCE_MINUTES, candidate),
+    );
   }
 
   markAgentRun(agentName, meta = {}) {
@@ -290,7 +366,7 @@ class AutonomousState {
     this.state.agentLastRun[agentName] = new Date().toISOString();
 
     if (!this.state.agentCadenceMinutes) this.state.agentCadenceMinutes = {};
-    if (agentName === 'forge') {
+    if (agentName === "forge") {
       this.state.agentCadenceMinutes[agentName] = 15;
       this.save();
       return;
@@ -299,9 +375,15 @@ class AutonomousState {
     const current = this.getCycleMinutes(agentName);
 
     if (worked && success) {
-      this.state.agentCadenceMinutes[agentName] = Math.max(MIN_AGENT_CADENCE_MINUTES, current - 15);
+      this.state.agentCadenceMinutes[agentName] = Math.max(
+        MIN_AGENT_CADENCE_MINUTES,
+        current - 15,
+      );
     } else if (worked && !success) {
-      this.state.agentCadenceMinutes[agentName] = Math.min(MAX_AGENT_CADENCE_MINUTES, current + 15);
+      this.state.agentCadenceMinutes[agentName] = Math.min(
+        MAX_AGENT_CADENCE_MINUTES,
+        current + 15,
+      );
     } else if (!Number.isFinite(this.state.agentCadenceMinutes[agentName])) {
       this.state.agentCadenceMinutes[agentName] = current;
     }

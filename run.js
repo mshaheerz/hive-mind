@@ -852,7 +852,13 @@ function isBogusGeneratedPath(relPath = "") {
   // Reject filenames that are just section titles (no extension and no path slash)
   if (!p.includes(".") && !p.includes("/")) return true;
   // Reject names containing section keywords if they lack an extension
-  if (/\b(?:Frontend|Backend|Component|Setup|Contract|Requirement|Goal|Note)s?\b/i.test(p) && !p.includes(".")) return true;
+  if (
+    /\b(?:Frontend|Backend|Component|Setup|Contract|Requirement|Goal|Note)s?\b/i.test(
+      p,
+    ) &&
+    !p.includes(".")
+  )
+    return true;
   return false;
 }
 
@@ -1382,11 +1388,16 @@ class AutonomousRunner {
     }, CHECK_INTERVAL_MS);
 
     // CEO bridge is processed more frequently than full cycles for faster replies.
+    this.bridgeInProgress = false;
     this.bridgeIntervalId = setInterval(async () => {
+      if (this.bridgeInProgress) return;
+      this.bridgeInProgress = true;
       try {
         await this.processCeoBridge();
       } catch (err) {
         log("system", `CEO bridge error: ${err.message}`);
+      } finally {
+        this.bridgeInProgress = false;
       }
     }, 10 * 1000);
 
@@ -1911,13 +1922,13 @@ Do NOT propose anything similar to these. Think of genuinely new, useful develop
         this.discussion.post(
           threadId,
           "scout",
-          `Research findings:\n${research.slice(0, 600)}`,
+          `Research findings:\n${research.slice(0, 8000)}`,
         );
 
         // Update proposal with research
         const idx = queue.findIndex((p) => p.id === proposal.id);
         queue[idx].status = "pending_apex";
-        queue[idx].scoutNotes = research.slice(0, 800);
+        queue[idx].scoutNotes = research.slice(0, 8000);
         queue[idx].threadId = threadId;
         queue[idx].scoutedAt = new Date().toISOString();
 
@@ -1980,7 +1991,7 @@ Do NOT propose anything similar to these. Think of genuinely new, useful develop
           this.discussion.post(
             proposal.threadId,
             "apex",
-            apexThought.slice(0, 400),
+            apexThought.slice(0, 4000),
           );
         }
 
@@ -2812,7 +2823,7 @@ ${
           output = await this.agents.echo.createLaunchContent({
             name: projectName,
             description: readme,
-            features: readOutput(projectName, "docs.md").slice(0, 300),
+            features: readOutput(projectName, "docs.md").slice(0, 5000),
           });
           writeOutput(projectName, "launch.md", output);
           break;

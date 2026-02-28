@@ -1,4 +1,65 @@
 {
-  "messages": [],
-  "updatedAt": "2026-02-28T07:13:38.338Z"
+  "messages": [
+    {
+      "id": "ceo_1772264246235_i80xa",
+      "from": "ceo",
+      "message": "strict wake scout",
+      "at": "2026-02-28T07:37:26.235Z",
+      "handledAt": "2026-02-28T07:37:27.932Z",
+      "handledBy": "apex"
+    },
+    {
+      "id": "apex_1772264247932_3fte9",
+      "from": "apex",
+      "message": "Strict order accepted. Forced wake: SCOUT.",
+      "at": "2026-02-28T07:37:27.932Z",
+      "inReplyTo": "ceo_1772264246235_i80xa"
+    },
+    {
+      "id": "ceo_1772267589708_a8b3l",
+      "from": "ceo",
+      "message": "hei apex",
+      "at": "2026-02-28T08:33:09.708Z",
+      "handledAt": "2026-02-28T08:41:05.479Z",
+      "handledBy": "apex"
+    },
+    {
+      "id": "ceo_1772267771027_gp27o",
+      "from": "ceo",
+      "message": "hi",
+      "at": "2026-02-28T08:36:11.027Z",
+      "handledAt": "2026-02-28T08:41:08.436Z",
+      "handledBy": "apex"
+    },
+    {
+      "id": "apex_1772268065479_r3ptt",
+      "from": "apex",
+      "message": "Hei CEO,\n\nI've received no new proposals or requests since our last meeting. Our team is executing well on current projects and exploring some innovative ideas that align with our strategic goals. We are ready to proceed as planned unless there are specific changes needed based on your insights or additional information.",
+      "at": "2026-02-28T08:41:05.479Z",
+      "inReplyTo": "ceo_1772267589708_a8b3l"
+    },
+    {
+      "id": "apex_1772268068436_k7nxt",
+      "from": "apex",
+      "message": "Hello! How can I assist you today? If you have any questions or need immediate attention to specific matters, please let me know how I can help facilitate a swift resolution.",
+      "at": "2026-02-28T08:41:08.436Z",
+      "inReplyTo": "ceo_1772267771027_gp27o"
+    },
+    {
+      "id": "ceo_1772268237176_r2xk3",
+      "from": "ceo",
+      "message": "strict wake nova",
+      "at": "2026-02-28T08:43:57.176Z",
+      "handledAt": "2026-02-28T08:50:07.579Z",
+      "handledBy": "apex"
+    },
+    {
+      "id": "apex_1772268607579_u0fkm",
+      "from": "apex",
+      "message": "Strict order accepted. Forced wake: NOVA.",
+      "at": "2026-02-28T08:50:07.579Z",
+      "inReplyTo": "ceo_1772268237176_r2xk3"
+    }
+  ],
+  "updatedAt": "2026-02-28T08:50:07.580Z"
 }
