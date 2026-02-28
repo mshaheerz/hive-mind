@@ -1,1 +1,1 @@
-Checked=0 Passed=0 Failed=0
+Checked=3 Passed=3 Failed=0

@@ -1,7 +1,7 @@
 {
   "stage": "implementation",
   "stageOwner": "lens",
-  "stageAttempt": 2,
+  "stageAttempt": 1,
   "blockedReason": null,
   "proposedBy": "nova",
   "approvedBy": "apex",
@@ -11,23 +11,23 @@
   "template": "",
   "lensVerdict": null,
   "lensActionItems": [],
-  "lastHandoffRunId": "1772308801151-lens-cts14",
+  "lastHandoffRunId": "1772309149243-forge-dh3x5",
   "escalationLevel": "force_progress",
   "approvedAt": "2026-02-28T10:55:52.009Z",
-  "updatedAt": "2026-02-28T20:00:01.152Z",
+  "updatedAt": "2026-02-28T20:06:03.877Z",
   "lensIssueRepeats": {
     "ID": 2,
     "L1": 2,
     "L2": 2,
     "L3": 2,
-    "W1": 6,
-    "W2": 5,
-    "S1": 6,
-    "S2": 5,
-    "C1": 5,
-    "C2": 4,
-    "C3": 4,
-    "C4": 4,
+    "W1": 7,
+    "W2": 6,
+    "S1": 7,
+    "S2": 6,
+    "C1": 6,
+    "C2": 5,
+    "C3": 5,
+    "C4": 5,
     "S3": 1,
     "L4": 1,
     "L5": 1,
@@ -37,19 +37,20 @@
   },
   "transitionReason": "agent execution started",
   "workspaceFiles": [
-    "src/wizard.py",
-    "src/__init__.py"
+    "src/setup_wizard.py",
+    "test/test_setup_wizard_integration.py",
+    "test/test_setup_wizard_unit.py"
   ],
-  "workspaceUpdatedAt": "2026-02-28T20:00:01.147Z",
+  "workspaceUpdatedAt": "2026-02-28T20:06:03.876Z",
   "bootstrapTemplate": "python-cli",
   "bootstrapNotes": [
     "Bootstrap already present."
   ],
   "workspaceCheck": {
-    "checked": 9,
-    "passed": 9,
+    "checked": 5,
+    "passed": 5,
     "failed": 0,
-    "ranAt": "2026-02-28T20:00:01.147Z"
+    "ranAt": "2026-02-28T20:06:03.876Z"
   },
   "lensRejected": false,
   "lensApproved": false,
@@ -63,21 +64,17 @@
   "pulseAcceptedAt": null,
   "pulseSummary": null,
   "pulseActionItems": [],
-  "lensRejectCount": 7,
-  "lensReviewedAt": "2026-02-28T19:59:20.220Z",
+  "lensRejectCount": 8,
+  "lensReviewedAt": "2026-02-28T20:05:45.824Z",
   "escalationNeeded": true,
   "escalationReason": "Repeated LENS rejections",
-  "pulseReviewedAt": "2026-02-28T19:59:29.356Z",
+  "pulseReviewedAt": "2026-02-28T20:05:49.239Z",
   "generatedTestFiles": [
-    "test/test_env_loading.py",
-    "test/test_setup_wizard.py",
-    "test/test_logging.py",
-    "test/test_integration_git.py",
-    "test/test_integration_docker.py",
-    "test/test_edge_cases.py",
-    "test/test_security.py",
-    "test/smoke_test.sh",
-    "test/pytest.ini"
+    "test/conftest.py",
+    "test/test_setup_wizard_unit.py",
+    "test/test_setup_wizard_integration.py",
+    "test/test_setup_wizard_smoke.py",
+    "pytest.ini"
   ],
   "forgeFixMap": {
     "C1": "Added comprehensive try‑except blocks in `src/web-server/main.py` and ensured subprocess errors are caught and translated to HTTP 500 responses.",
@@ -88,5 +85,5 @@
     "S1": "Updated `templates/index.html` to include a Tailwind‑styled spinner that appears while the setup request is processing.",
     "S2": "Added explanatory comments and renamed variables in `src/automation/setup_scripts.sh` for clarity (`SELECTED_TYPE`, `LOG_DIRECTORY`, etc.)."
   },
-  "escalatedAt": "2026-02-28T19:59:20.220Z"
+  "escalatedAt": "2026-02-28T20:05:45.824Z"
 }

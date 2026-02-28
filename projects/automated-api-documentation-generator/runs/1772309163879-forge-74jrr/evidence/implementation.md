@@ -211,9 +211,3 @@ describe('File validation', () => {
       generateDocsModule.validateFileExists('/tmp/missing.json')
     ).rejects.toThrow(/Cannot read input file/);
   });
-});
-```
-
-## FIX_MAP
-- **1** -> Fixed `package.json` by removing invalid comments, adding proper dependencies (`redoc-cli`), and defining scripts and bin entry.
-- **2** -> Resolved JSON parsing error by ensuring `package.json` is valid JSON (no comments, proper commas).

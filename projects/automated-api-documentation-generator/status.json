@@ -4,7 +4,7 @@
   "stageAttempt": 2,
   "blockedReason": {
     "code": "tests_failed",
-    "message": "npm install failed: npm error code EJSONPARSE | npm error JSON.parse Invalid package.json: JSONParseError: Expected property name or '}' in JSON at position 286 (line 14 column 5) while parsing near \"...ependencies\\\": {\\n    // add runtime depen...\" | npm error JSON.parse Failed to parse JSON data. | npm error JSON.parse Note: package.json must be actual JSON, not just JavaScript. | npm error A complete log of this run can be found in: /home/zaigopc/.npm/_logs/2026-02-28T20_00_42_798Z-debug-0.log"
+    "message": "npm test failed: > api-doc-generator@1.0.0 test | > jest --watch=false --watch=false | ● Multiple configurations found: | * /home/zaigopc/Desktop/my/hive-mind/projects/automated-api-documentation-generator/workspace/jest.config.js | * `jest` key in /home/zaigopc/Desktop/my/hive-mind/projects/automated-api-documentation-generator/workspace/package.json | Implicit config resolution does not allow multiple configuration files."
   },
   "proposedBy": "nova",
   "approvedBy": "apex",
@@ -14,63 +14,68 @@
   "template": "",
   "lensVerdict": "NEEDS_CHANGES",
   "lensActionItems": [],
-  "lastHandoffRunId": "1772308839546-pulse-nda3q",
+  "lastHandoffRunId": "1772309216477-pulse-shmlp",
   "escalationLevel": "force_progress",
   "approvedAt": "2026-02-28T13:45:42.726Z",
-  "updatedAt": "2026-02-28T20:00:43.029Z",
+  "updatedAt": "2026-02-28T20:08:20.753Z",
   "lensIssueRepeats": {
     "ID": 1,
     "L1": 2,
     "L2": 2,
     "L3": 2,
     "L4": 2,
-    "W1": 4,
-    "S1": 4,
+    "W1": 5,
+    "S1": 5,
     "L5": 1,
-    "C1": 4,
+    "C1": 5,
     "C2": 4,
     "C3": 2,
     "C4": 2,
     "C5": 2,
     "C6": 1,
     "C7": 1,
-    "W2": 3,
-    "S2": 2,
+    "W2": 4,
+    "S2": 3,
     "S3": 2,
-    "S4": 1
+    "S4": 1,
+    "W3": 1,
+    "W4": 1,
+    "W5": 1
   },
   "transitionReason": "agent execution started",
   "workspaceFiles": [
-    "package.json"
+    "package.json",
+    "src/generateDocs.js",
+    "src/__tests__/generateDocs.test.js"
   ],
-  "workspaceUpdatedAt": "2026-02-28T20:00:25.017Z",
+  "workspaceUpdatedAt": "2026-02-28T20:06:34.668Z",
   "bootstrapTemplate": "node-cli",
   "bootstrapNotes": [
-    "Bootstrapped Node project via npm init -y."
+    "Bootstrap already present."
   ],
   "workspaceCheck": {
-    "checked": 0,
-    "passed": 0,
+    "checked": 3,
+    "passed": 3,
     "failed": 0,
-    "ranAt": "2026-02-28T20:00:25.017Z"
+    "ranAt": "2026-02-28T20:06:34.668Z"
   },
   "lensRejected": false,
   "lensApproved": false,
   "lensAcceptedAt": null,
   "lensReviewSummary": null,
   "lensBypassed": true,
-  "lensBypassReason": "LENS rejected 6 times. Auto-advanced to unblock pipeline.",
-  "lensBypassedAt": "2026-02-28T20:00:39.542Z",
+  "lensBypassReason": "LENS rejected 7 times. Auto-advanced to unblock pipeline.",
+  "lensBypassedAt": "2026-02-28T20:06:56.475Z",
   "pulseRejected": true,
   "pulseApproved": false,
   "pulseAcceptedAt": null,
-  "pulseSummary": "npm install failed: npm error code EJSONPARSE | npm error JSON.parse Invalid package.json: JSONParseError: Expected property name or '}' in JSON at position 286 (line 14 column 5) while parsing near \"...ependencies\\\": {\\n    // add runtime depen...\" | npm error JSON.parse Failed to parse JSON data. | npm error JSON.parse Note: package.json must be actual JSON, not just JavaScript. | npm error A complete log of this run can be found in: /home/zaigopc/.npm/_logs/2026-02-28T20_00_42_798Z-debug-0.log",
+  "pulseSummary": "npm test failed: > api-doc-generator@1.0.0 test | > jest --watch=false --watch=false | ● Multiple configurations found: | * /home/zaigopc/Desktop/my/hive-mind/projects/automated-api-documentation-generator/workspace/jest.config.js | * `jest` key in /home/zaigopc/Desktop/my/hive-mind/projects/automated-api-documentation-generator/workspace/package.json | Implicit config resolution does not allow multiple configuration files.",
   "pulseActionItems": [
-    "Fix dependency installation errors (npm install).",
-    "npm error code EJSONPARSE | npm error JSON.parse Invalid package.json: JSONParseError: Expected property name or '}' in JSON at position 286 (line 14 column 5) while parsing near \"...ependencies\\\": {\\n    // add runtime depen...\" | npm error JSON.parse Failed to parse JSON data. | npm error JSON.parse Note: package.json must be actual JSON, not just JavaScript. | npm error A complete log of this run can be found in: /home/zaigopc/.npm/_logs/2026-02-28T20_00_42_798Z-debug-0.log"
+    "Fix failing tests reported by npm test.",
+    "> api-doc-generator@1.0.0 test | > jest --watch=false --watch=false | ● Multiple configurations found: | * /home/zaigopc/Desktop/my/hive-mind/projects/automated-api-documentation-generator/workspace/jest.config.js | * `jest` key in /home/zaigopc/Desktop/my/hive-mind/projects/automated-api-documentation-generator/workspace/package.json | Implicit config resolution does not allow multiple configuration files."
   ],
-  "lensRejectCount": 6,
-  "lensReviewedAt": "2026-02-28T20:00:39.542Z",
+  "lensRejectCount": 7,
+  "lensReviewedAt": "2026-02-28T20:06:56.475Z",
   "forgeFixMap": {
     "L1": "Updated `.env.example` to remove explicit API_KEY and DEBUG placeholders and only expose safe, non‑secret variables.",
     "L2": "Added `*.pid` to `.gitignore` and ensured `.env.example` contains only non‑sensitive defaults for LOG_LEVEL and PROCESS_ID.",
@@ -80,13 +85,12 @@
   },
   "escalationNeeded": true,
   "escalationReason": "Repeated LENS rejections",
-  "escalatedAt": "2026-02-28T20:00:39.542Z",
-  "pulseReviewedAt": "2026-02-28T20:00:43.029Z",
+  "escalatedAt": "2026-02-28T20:06:56.475Z",
+  "pulseReviewedAt": "2026-02-28T20:08:20.753Z",
   "generatedTestFiles": [
-    "__tests__/generator.unit.test.js",
-    "__tests__/generator.integration.test.js",
-    "__tests__/generator.security.test.js",
-    "__tests__/generator.smoke.test.js",
-    "jest.config.js"
+    "src/__tests__/generateDocs.unit.test.js",
+    "src/__tests__/generateDocs.integration.test.js",
+    "src/__tests__/generateDocs.security.test.js",
+    "src/__tests__/generateDocs.smoke.test.js"
   ]
 }

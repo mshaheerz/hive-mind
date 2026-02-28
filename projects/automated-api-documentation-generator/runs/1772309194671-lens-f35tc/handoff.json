@@ -1,0 +1,17 @@
+{
+  "fromAgent": "lens",
+  "toAgent": "pulse",
+  "project": "automated-api-documentation-generator",
+  "stage": "implementation",
+  "runId": "1772309194671-lens-f35tc",
+  "summary": "LENS bypassed after repeated rejections.",
+  "artifacts": [],
+  "requiredActions": [
+    "**VERDICT:** NEEDS_CHANGES | | C1 | **CRITICAL** | `src/generateDocs.js` | **Shell‑injection risk** – `execAsync` is called with a interpolated string (`${REDOC_CLI_CMD} \"${specPath}\" -o \"${outPath}\"`). If an attacker can influence `specPath` or `outPath` (e.g., by providing a path containing `\"; rm -rf /\"`), arbitrary commands may be executed. | Replace `execAsync` with `child_process.spawn` (or `execFile`) using an argument array so that file paths are passed as literal arguments. Escape/validate the paths before"
+  ],
+  "acceptanceChecks": [],
+  "modelInfo": {
+    "provider": "groq",
+    "model": "openai/gpt-oss-120b"
+  }
+}

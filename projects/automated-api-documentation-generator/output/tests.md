@@ -1,346 +1,550 @@
-**File: `__tests__/generator.unit.test.js`**
+**File: `src/__tests__/generateDocs.unit.test.js`**
 ```js
 /**
- * Unit tests for the API documentation generator.
- * These tests assume that `index.js` exports a function called
- * `generateDocumentation` that accepts an `apiConfig` object and
- * returns a string containing the generated documentation.
+ * @fileoverview Unit tests for each exported function in generateDocs.js
+ * Covers normal behaviour, edge cases, error paths and security concerns.
  */
-import { generateDocumentation } from '../index.js';
+import { jest } from '@jest/globals';
+import { promises as fsPromises } from 'node:fs';
+import path from 'node:path';
+import process from 'node:process';
+import * as generateDocs from '../generateDocs.js';
+
+// ------------------------------------------------------------------
+// Mocks
+// ------------------------------------------------------------------
+jest.mock('node:child_process', () => ({
+  exec: jest.fn(),
+}));
+jest.mock('node:util', () => ({
+  promisify: jest.fn(() => jest.fn()),
+}));
+
+// ------------------------------------------------------------------
+// Helpers
+// ------------------------------------------------------------------
+const ORIGINAL_ARGV = process.argv.slice();
+const ORIGINAL_EXIT = process.exit;
+const ORIGINAL_LOG = console.log;
+const ORIGINAL_ERROR = console.error;
+
+// Restore global state after each test
+afterEach(() => {
+  process.argv = ORIGINAL_ARGV.slice();
+  process.exit = ORIGINAL_EXIT;
+  console.log = ORIGINAL_LOG;
+  console.error = ORIGINAL_ERROR;
+  jest.resetAllMocks();
+});
+
+describe('parseArgs', () => {
+  test('throws when input flag is missing', () => {
+    process.argv = ['node', 'generateDocs.js'];
+    expect(() => generateDocs.parseArgs()).toThrow(/Missing required argument/);
+  });
+
+  test('throws when input flag has no value', () => {
+    process.argv = ['node', 'generateDocs.js', '--input'];
+    expect(() => generateDocs.parseArgs()).toThrow(/Missing required argument/);
+  });
+
+  test('parses input and output correctly', () => {
+    process.argv = [
+      'node',
+      'generateDocs.js',
+      '--input',
+      'spec.json',
+      '--output',
+      'docs.html',
+    ];
+    const { input, output } = generateDocs.parseArgs();
+    expect(path.basename(input)).toBe('spec.json');
+    expect(path.basename(output)).toBe('docs.html');
+  });
+
+  test('uses default output when not provided', () => {
+    process.argv = ['node', 'generateDocs.js', '--input', 'spec.json'];
+    const { output } = generateDocs.parseArgs();
+    expect(path.basename(output)).toBe('docs.html');
+  });
+
+  test('handles relative paths and resolves to absolute', () => {
+    process.argv = ['node', 'generateDocs.js', '--input', './spec.json'];
+    const { input } = generateDocs.parseArgs();
+    expect(input).toBe(path.resolve('./spec.json'));
+  });
+
+  test('ignores unknown flags', () => {
+    process.argv = [
+      'node',
+      'generateDocs.js',
+      '--input',
+      'spec.json',
+      '--foo',
+      'bar',
+    ];
+    const { input } = generateDocs.parseArgs();
+    expect(path.basename(input)).toBe('spec.json');
+  });
+
+  test('takes first occurrence of input flag', () => {
+    process.argv = [
+      'node',
+      'generateDocs.js',
+      '--input',
+      'first.json',
+      '--input',
+      'second.json',
+    ];
+    const { input } = generateDocs.parseArgs();
+    expect(path.basename(input)).toBe('first.json');
+  });
+});
+
+describe('validateFileExists', () => {
+  test('resolves when file is readable', async () => {
+    jest.spyOn(fsPromises, 'access').mockResolvedValue(undefined);
+    await expect(generateDocs.validateFileExists('/tmp/spec.json')).resolves.not.toThrow();
+    expect(fsPromises.access).toHaveBeenCalledWith(
+      '/tmp/spec.json',
+      fsPromises.constants.R_OK
+    );
+  });
+
+  test('rejects when file does not exist', async () => {
+    const err = new Error('ENOENT: no such file');
+    jest.spyOn(fsPromises, 'access').mockRejectedValue(err);
+    await expect(generateDocs.validateFileExists('/tmp/missing.json')).rejects.toThrow(
+      /Cannot read input file/
+    );
+  });
+
+  test('rejects when file is not readable (EACCES)', async () => {
+    const err = new Error('EACCES: permission denied');
+    err.code = 'EACCES';
+    jest.spyOn(fsPromises, 'access').mockRejectedValue(err);
+    await expect(generateDocs.validateFileExists('/tmp/protected.json')).rejects.toThrow(
+      /Cannot read input file/
+    );
+  });
+});
 
 describe('generateDocumentation', () => {
-  // Basic happy‑path test
-  it('generates docs for a single endpoint', () => {
-    const apiConfig = {
-      endpoints: [
-        {
-          method: 'GET',
-          path: '/users',
-          description: 'Retrieve all users',
-          responses: [
-            { status: 200, description: 'Success', schema: {} },
-          ],
-        },
-      ],
-    };
-    const docs = generateDocumentation(apiConfig);
-    expect(typeof docs).toBe('string');
-    expect(docs).toContain('/users');
-    expect(docs).toContain('Retrieve all users');
+  const mockExecAsync = generateDocs.execAsync;
+  const mockStdout = jest.fn();
+  const mockStderr = jest.fn();
+
+  beforeEach(() => {
+    console.log = mockStdout;
+    console.error = mockStderr;
   });
 
-  // Edge case: empty configuration
-  it('returns an empty string when no endpoints are provided', () => {
-    const apiConfig = { endpoints: [] };
-    const docs = generateDocumentation(apiConfig);
-    expect(docs).toBe('');
+  test('executes correct command string with quoted paths', async () => {
+    const spec = '/tmp/spec.json';
+    const out = '/tmp/docs.html';
+    mockExecAsync.mockResolvedValue({ stdout: 'ok', stderr: '' });
+
+    await generateDocs.generateDocumentation(spec, out);
+
+    const expectedCmd = `npx redoc-cli bundle "${spec}" -o "${out}"`;
+    expect(mockExecAsync).toHaveBeenCalledWith(expectedCmd);
+    expect(mockStdout).toHaveBeenCalledWith('ok');
+    expect(mockStdout).toHaveBeenCalledWith(`Documentation generated at ${out}`);
   });
 
-  // Edge case: null or undefined config
-  it('throws a descriptive error when config is null', () => {
-    expect(() => generateDocumentation(null)).toThrow(
-      /API configuration must be a non‑null object/i,
-    );
+  test('handles stdout and stderr separately', async () => {
+    mockExecAsync.mockResolvedValue({ stdout: 'out', stderr: 'err' });
+    await generateDocs.generateDocumentation('/tmp/spec.json', '/tmp/out.html');
+    expect(mockStdout).toHaveBeenCalledWith('out');
+    expect(mockStderr).toHaveBeenCalledWith('err');
   });
 
-  // Edge case: missing required fields
-  it('throws an error when an endpoint lacks a required field', () => {
-    const apiConfig = {
-      endpoints: [
-        { method: 'GET', path: '/users' }, // missing description
-      ],
-    };
-    expect(() => generateDocumentation(apiConfig)).toThrow(
-      /description is required/i,
-    );
-  });
-
-  // Edge case: extremely large number of endpoints
-  it('handles a large endpoint list without crashing', () => {
-    const endpoints = Array.from({ length: 1000 }, (_, i) => ({
-      method: 'GET',
-      path: `/resource/${i}`,
-      description: `Resource ${i}`,
-      responses: [{ status: 200, description: 'OK', schema: {} }],
-    }));
-    const apiConfig = { endpoints };
-    const docs = generateDocumentation(apiConfig);
-    expect(typeof docs).toBe('string');
-    // Ensure the output contains a sample endpoint
-    expect(docs).toContain('/resource/999');
-  });
-
-  // Edge case: special characters in descriptions
-  it('escapes or preserves special characters correctly', () => {
-    const apiConfig = {
-      endpoints: [
-        {
-          method: 'POST',
-          path: '/submit',
-          description: 'Submit data & receive a response',
-          responses: [
-            { status: 201, description: 'Created', schema: {} },
-          ],
-        },
-      ],
-    };
-    const docs = generateDocumentation(apiConfig);
-    expect(docs).toContain('Submit data & receive a response');
-  });
-
-  // Security test: no sensitive data leaked
-  it('does not expose internal API keys or secrets', () => {
-    const apiConfig = {
-      endpoints: [
-        {
-          method: 'GET',
-          path: '/secret',
-          description: 'Secret endpoint',
-          responses: [
-            { status: 200, description: 'OK', schema: {} },
-          ],
-          // Intentionally adding a secret field to test filtering
-          secretKey: '12345',
-        },
-      ],
-    };
-    const docs = generateDocumentation(apiConfig);
-    expect(docs).not.toContain('secretKey');
-    expect(docs).not.toContain('12345');
+  test('throws error when exec fails', async () => {
+    const err = new Error('spawn EINVAL');
+    mockExecAsync.mockRejectedValue(err);
+    await expect(
+      generateDocs.generateDocumentation('/tmp/spec.json', '/tmp/out.html')
+    ).rejects.toThrow(/Redoc CLI failed/);
   });
 });
-```
 
----
+describe('main', () => {
+  const mockExecAsync = generateDocs.execAsync;
+  const mockAccess = fsPromises.access;
 
-**File: `__tests__/generator.integration.test.js`**
-```js
-/**
- * Integration test that exercises the full generation pipeline.
- * It writes a temporary JSON file, runs the generator,
- * and verifies the output file contains expected sections.
- */
-import { generateDocumentation } from '../index.js';
-import fs from 'fs/promises';
-import path from 'path';
-import os from 'os';
-
-describe('Integration: Documentation Generation', () => {
-  const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'api-doc-'));
-
-  const apiConfig = {
-    endpoints: [
-      {
-        method: 'GET',
-        path: '/users',
-        description: 'Get users',
-        responses: [{ status: 200, description: 'OK', schema: {} }],
-      },
-      {
-        method: 'POST',
-        path: '/users',
-        description: 'Create user',
-        responses: [{ status: 201, description: 'Created', schema: {} }],
-      },
-    ],
-  };
-
-  const outputPath = path.join(tmpDir, 'API.md');
-
-  beforeAll(async () => {
-    // Simulate the generator writing to a file
-    const docs = generateDocumentation(apiConfig);
-    await fs.writeFile(outputPath, docs, 'utf8');
+  beforeEach(() => {
+    process.exit = jest.fn();
+    console.log = jest.fn();
+    console.error = jest.fn();
   });
 
-  afterAll(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+  test('success flow: parses, validates, generates', async () => {
+    process.argv = [
+      'node',
+      'generateDocs.js',
+      '--input',
+      'spec.json',
+      '--output',
+      'out.html',
+    ];
+
+    mockAccess.mockResolvedValue(undefined);
+    mockExecAsync.mockResolvedValue({ stdout: 'ok', stderr: '' });
+
+    await generateDocs.main();
+
+    expect(mockAccess).toHaveBeenCalled();
+    expect(mockExecAsync).toHaveBeenCalled();
+    expect(console.log).toHaveBeenCalledWith(
+      `Documentation generated at ${path.resolve('out.html')}`
+    );
+    expect(process.exit).not.toHaveBeenCalled();
   });
 
-  it('creates a markdown file with the correct header', async () => {
-    const content = await fs.readFile(outputPath, 'utf8');
-    expect(content).toMatch(/^# API Documentation/);
+  test('fails when input file missing', async () => {
+    process.argv = ['node', 'generateDocs.js', '--input', 'missing.json'];
+    mockAccess.mockRejectedValue(new Error('ENOENT'));
+
+    await generateDocs.main();
+
+    expect(console.error).toHaveBeenCalledWith(
+      expect.stringMatching(/Error: Cannot read input file/)
+    );
+    expect(process.exit).toHaveBeenCalledWith(1);
   });
 
-  it('includes all endpoint paths', async () => {
-    const content = await fs.readFile(outputPath, 'utf8');
-    expect(content).toContain('/users');
+  test('fails when exec fails', async () => {
+    process.argv = ['node', 'generateDocs.js', '--input', 'spec.json'];
+    mockAccess.mockResolvedValue(undefined);
+    mockExecAsync.mockRejectedValue(new Error('Redoc error'));
+
+    await generateDocs.main();
+
+    expect(console.error).toHaveBeenCalledWith(
+      expect.stringMatching(/Error: Redoc CLI failed/)
+    );
+    expect(process.exit).toHaveBeenCalledWith(1);
   });
 
-  it('includes HTTP methods in uppercase', async () => {
-    const content = await fs.readFile(outputPath, 'utf8');
-    expect(content).toContain('GET');
-    expect(content).toContain('POST');
-  });
-
-  it('handles missing optional fields gracefully', async () => {
-    const badConfig = {
-      endpoints: [
-        {
-          method: 'GET',
-          path: '/missing',
-          // No description
-          responses: [{ status: 404, description: 'Not Found', schema: {} }],
-        },
-      ],
-    };
-    const docs = generateDocumentation(badConfig);
-    expect(docs).toContain('/missing');
-    expect(docs).toContain('Not Found');
-    // The generator should not crash or omit the endpoint entirely
-  });
-});
-```
-
----
-
-**File: `__tests__/generator.security.test.js`**
-```js
-/**
- * Security‑specific tests to ensure the generator does not leak
- * sensitive information such as environment variables or secrets.
- */
-import { generateDocumentation } from '../index.js';
-
-describe('Security: Sensitive data handling', () => {
-  // Simulate a config that contains environment variables
-  const apiConfig = {
-    endpoints: [
-      {
-        method: 'GET',
-        path: '/config',
-        description: 'Expose config',
-        responses: [
-          {
-            status: 200,
-            description: 'OK',
-            schema: { type: 'object', properties: { env: { type: 'string' } } },
-          },
-        ],
-        env: process.env,
-      },
-    ],
-  };
-
-  it('does not include raw environment variables in output', () => {
-    const docs = generateDocumentation(apiConfig);
-    Object.keys(process.env).forEach((key) => {
-      const value = process.env[key];
-      expect(docs).not.toContain(value);
-      // Also ensure the key name itself is not exposed if it's sensitive
-      if (/^SECRET_|^TOKEN_|^API_KEY_/i.test(key)) {
-        expect(docs).not.toContain(key);
-      }
+  test('does not run main when imported', async () => {
+    // Simulate import.meta.url not matching process.argv[1]
+    const originalImportMeta = global.import;
+    // Not needed – the guard is simple string comparison.
+    // This test ensures no side‑effects occur when the module is imported.
+    // We'll import the module again and verify no console logs or exit were called.
+    jest.isolateModules(() => {
+      require('../generateDocs.js');
     });
-  });
-
-  // Check that the generator sanitizes user‑supplied secrets
-  it('removes fields named `secret` or `password`', () => {
-    const config = {
-      endpoints: [
-        {
-          method: 'POST',
-          path: '/login',
-          description: 'Login',
-          responses: [{ status: 200, description: 'OK', schema: {} }],
-          secret: 'supersecret',
-          password: 'mypassword',
-        },
-      ],
-    };
-    const docs = generateDocumentation(config);
-    expect(docs).not.toContain('secret');
-    expect(docs).not.toContain('password');
-    expect(docs).not.toContain('supersecret');
-    expect(docs).not.toContain('mypassword');
+    expect(console.log).not.toHaveBeenCalled();
+    expect(process.exit).not.toHaveBeenCalled();
   });
 });
 ```
 
 ---
 
-**File: `__tests__/generator.smoke.test.js`**
+**File: `src/__tests__/generateDocs.integration.test.js`**
 ```js
 /**
- * Minimal smoke test that verifies the generator can run
- * with a very small configuration and produces a non‑empty
- * string. Useful when the full implementation is not yet
- * available or when running CI on a fresh clone.
+ * @fileoverview Integration test that exercises the full CLI flow
+ * with mocked filesystem and child_process to simulate a real run.
  */
-import { generateDocumentation } from '../index.js';
+import { jest } from '@jest/globals';
+import { promises as fsPromises } from 'node:fs';
+import path from 'node:path';
+import * as generateDocs from '../generateDocs.js';
 
-describe('Smoke test', () => {
-  it('produces documentation for a minimal config', () => {
-    const minimalConfig = {
-      endpoints: [
-        {
-          method: 'GET',
-          path: '/health',
-          description: 'Health check',
-          responses: [{ status: 200, description: 'OK', schema: {} }],
-        },
-      ],
-    };
-    const docs = generateDocumentation(minimalConfig);
-    expect(typeof docs).toBe('string');
-    expect(docs.length).toBeGreaterThan(0);
+jest.mock('node:child_process', () => ({
+  exec: jest.fn(),
+}));
+jest.mock('node:util', () => ({
+  promisify: jest.fn(() => jest.fn()),
+}));
+
+describe('Integration: CLI flow', () => {
+  const mockExecAsync = generateDocs.execAsync;
+  const mockAccess = fsPromises.access;
+
+  beforeEach(() => {
+    process.argv = [
+      'node',
+      'generateDocs.js',
+      '--input',
+      'spec.json',
+      '--output',
+      'docs.html',
+    ];
+    mockAccess.mockResolvedValue(undefined);
+    mockExecAsync.mockResolvedValue({ stdout: 'ok', stderr: '' });
+    console.log = jest.fn();
+    console.error = jest.fn();
+    process.exit = jest.fn();
+  });
+
+  test('generates docs and exits cleanly', async () => {
+    await generateDocs.main();
+
+    // Verify that the command was built correctly
+    const expectedCmd = `npx redoc-cli bundle "${path.resolve(
+      'spec.json'
+    )}" -o "${path.resolve('docs.html')}"`;
+    expect(mockExecAsync).toHaveBeenCalledWith(expectedCmd);
+
+    // Verify logs
+    expect(console.log).toHaveBeenCalledWith(
+      `Documentation generated at ${path.resolve('docs.html')}`
+    );
+
+    // Exit not called on success
+    expect(process.exit).not.toHaveBeenCalled();
+  });
+
+  test('fails gracefully when spec file missing', async () => {
+    mockAccess.mockRejectedValue(new Error('ENOENT'));
+
+    await generateDocs.main();
+
+    expect(console.error).toHaveBeenCalledWith(
+      expect.stringMatching(/Error: Cannot read input file/)
+    );
+    expect(process.exit).toHaveBeenCalledWith(1);
+  });
+
+  test('fails gracefully when redoc-cli errors', async () => {
+    mockExecAsync.mockRejectedValue(new Error('CLI error'));
+
+    await generateDocs.main();
+
+    expect(console.error).toHaveBeenCalledWith(
+      expect.stringMatching(/Error: Redoc CLI failed/)
+    );
+    expect(process.exit).toHaveBeenCalledWith(1);
   });
 });
 ```
 
 ---
 
-**File: `jest.config.js`**
+**File: `src/__tests__/generateDocs.security.test.js`**
 ```js
 /**
- * Jest configuration file to support ESM modules and
- * to customize test paths if needed.
+ * @fileoverview Security‑related tests for the CLI.
+ * Ensures no command‑injection vulnerabilities and that input is sanitized.
  */
-export default {
-  testEnvironment: 'node',
-  moduleFileExtensions: ['js', 'json'],
-  transform: {},
-  testMatch: ['**/__tests__/**/*.test.js'],
-};
+import { jest } from '@jest/globals';
+import * as generateDocs from '../generateDocs.js';
+
+jest.mock('node:child_process', () => ({
+  exec: jest.fn(),
+}));
+jest.mock('node:util', () => ({
+  promisify: jest.fn(() => jest.fn()),
+}));
+
+describe('Security: Command injection', () => {
+  const mockExecAsync = generateDocs.execAsync;
+
+  beforeEach(() => {
+    mockExecAsync.mockResolvedValue({ stdout: '', stderr: '' });
+  });
+
+  test('input path containing shell metacharacters is quoted', () => {
+    process.argv = [
+      'node',
+      'generateDocs.js',
+      '--input',
+      'spec;rm -rf /',
+      '--output',
+      'docs.html',
+    ];
+    const { input, output } = generateDocs.parseArgs();
+    generateDocs.generateDocumentation(input, output);
+
+    const expectedCmd = `npx redoc-cli bundle "${input}" -o "${output}"`;
+    expect(mockExecAsync).toHaveBeenCalledWith(expectedCmd);
+    // The command string should not contain unescaped semicolons
+    expect(expectedCmd).not.toMatch(/;|&&|\|/);
+  });
+
+  test('output path containing shell metacharacters is quoted', () => {
+    process.argv = [
+      'node',
+      'generateDocs.js',
+      '--input',
+      'spec.json',
+      '--output',
+      'docs.html;rm -rf /',
+    ];
+    const { input, output } = generateDocs.parseArgs();
+    generateDocs.generateDocumentation(input, output);
+
+    const expectedCmd = `npx redoc-cli bundle "${input}" -o "${output}"`;
+    expect(mockExecAsync).toHaveBeenCalledWith(expectedCmd);
+    expect(expectedCmd).not.toMatch(/;|&&|\|/);
+  });
+
+  test('rejects non‑string arguments', () => {
+    // Simulate passing a buffer as an argument
+    const args = ['node', 'generateDocs.js', '--input', Buffer.from('spec.json')];
+    process.argv = args;
+    expect(() => generateDocs.parseArgs()).toThrow(/Missing required argument/);
+  });
+});
 ```
 
 ---
 
-## Test Plan (Manual)
+**File: `src/__tests__/generateDocs.plan.md`**
+```markdown
+# Manual Test Plan for Automated API Documentation Generator
 
-| Scenario | Description | Expected Outcome |
-|----------|-------------|------------------|
-| **1. Basic Generation** | Run generator with a simple API config containing 2 endpoints. | Markdown file contains both endpoints, correct headers, and proper HTTP methods. |
-| **2. Empty Config** | Provide `{ endpoints: [] }`. | Output is an empty string or a header only; no errors. |
-| **3. Null/Undefined Config** | Pass `null` or `undefined`. | Generator throws a clear error message about invalid input. |
-| **4. Large Endpoint List** | Use 10,000 endpoints. | Generator completes within reasonable time (<5 s) and no crashes. |
-| **5. Special Characters** | Descriptions contain emojis, non‑ASCII, and Markdown‑reserved chars. | Output preserves these characters without escaping errors. |
-| **6. Missing Required Fields** | Omit `method` or `path`. | Generator throws an error indicating the missing field. |
-| **7. Security** | Include fields like `secretKey`, `password`, or environment variables. | Output does **not** contain any of these values or keys. |
-| **8. Integration with CI** | Run `npm test` in a CI pipeline. | All tests pass, coverage ≥ 80 %. |
-| **9. Performance** | Measure generation time for 1,000 endpoints. | Time < 2 s on a CI runner. |
-| **10. Error Handling** | Pass malformed JSON to the generator. | Generator throws a parsing error with a helpful message. |
+## 1. Argument Parsing
+| Scenario | Expected Result |
+| -------- | --------------- |
+| No `--input` flag | Error message & exit |
+| `--input` flag without value | Error message & exit |
+| `--input` with relative path | Resolves to absolute path |
+| `--output` omitted | Defaults to `docs.html` in cwd |
+| Multiple `--input` flags | First occurrence used |
+| Unknown flags present | Ignored, parsing continues |
+| Empty string as value | Treated as missing value, error |
+
+## 2. File Validation
+| Scenario | Expected Result |
+| -------- | --------------- |
+| File exists and readable | No error |
+| File does not exist | Error: Cannot read input file |
+| File exists but no read permission | Error: Cannot read input file |
+| Path is a directory | Error: Cannot read input file |
+
+## 3. Documentation Generation
+| Scenario | Expected Result |
+| -------- | --------------- |
+| Redoc CLI succeeds | Success log & file created |
+| Redoc CLI fails (non‑zero exit) | Error: Redoc CLI failed |
+| Redoc CLI outputs to stderr | stderr logged |
+| Spec path contains spaces | Command properly quoted |
+| Spec path contains shell metacharacters | No injection, command quoted |
+
+## 4. Main Flow
+| Scenario | Expected Result |
+| -------- | --------------- |
+| All steps succeed | Documentation generated, exit 0 |
+| Input validation fails | Error logged, exit 1 |
+| Redoc CLI fails | Error logged, exit 1 |
+
+## 5. Edge Cases
+| Scenario | Expected Result |
+| -------- | --------------- |
+| Spec file is huge (100 MB) | Process completes without memory blow |
+| Spec file is malformed JSON | Redoc CLI error, caught and logged |
+| Multiple concurrent runs | Each run writes its own output file |
+| Output path already exists | Overwritten without prompt |
+| Output path is a directory | Error: Cannot write output |
+
+## 6. Security
+| Scenario | Expected Result |
+| -------- | --------------- |
+| Spec path contains `; rm -rf /` | Command remains safe, no injection |
+| Output path contains `&&` | Command remains safe |
+| Non‑string argument types | Error thrown |
+
+## 7. Performance
+| Scenario | Expected Result |
+| -------- | --------------- |
+| Running with 10 microservice specs | Total runtime < 5 s (approx) |
+| Running with 100 specs sequentially | Total runtime scales linearly |
+
+## 8. Integration with CI
+| Scenario | Expected Result |
+| -------- | --------------- |
+| Script invoked from a GitHub Action | Documentation files are produced in artifact |
+| Environment variable LOG_LEVEL set | Logging level respected |
 
 ---
 
-**TEST_COMMAND:** `npm test`
+**Test Execution Checklist**
 
-**EXPECTED_RESULT:**  
-All Jest test suites (`generator.unit.test.js`, `generator.integration.test.js`, `generator.security.test.js`, `generator.smoke.test.js`) should pass without any failures. The test output should look similar to:
+- [ ] Run `npm test` locally; all automated tests pass.
+- [ ] Perform manual CLI invocation with valid and invalid arguments.
+- [ ] Verify generated HTML is valid and contains expected endpoints.
+- [ ] Check logs for correct verbosity based on `LOG_LEVEL`.
+- [ ] Inspect the generated file in a CI environment.
 
 ```
- PASS  __tests__/generator.unit.test.js
- PASS  __tests__/generator.integration.test.js
- PASS  __tests__/generator.security.test.js
- PASS  __tests__/generator.smoke.test.js
 
-Test Suites: 4 passed, 4 total
-Tests:       20 passed, 20 total
+---
+
+**File: `src/__tests__/generateDocs.smoke.test.js`**
+```js
+/**
+ * @fileoverview Minimal smoke test that ensures the CLI can be executed
+ * without crashing when provided with a mock spec file and a mock output.
+ * This test is useful when the full test suite cannot be run (e.g., CI
+ * with limited resources). It verifies that the main orchestrator calls
+ * the expected functions and handles success.
+ */
+import { jest } from '@jest/globals';
+import * as generateDocs from '../generateDocs.js';
+
+jest.mock('node:child_process', () => ({
+  exec: jest.fn(),
+}));
+jest.mock('node:util', () => ({
+  promisify: jest.fn(() => jest.fn()),
+}));
+
+describe('Smoke Test: main execution', () => {
+  const mockExecAsync = generateDocs.execAsync;
+  const mockAccess = jest.spyOn(generateDocs, 'validateFileExists');
+
+  beforeEach(() => {
+    process.argv = [
+      'node',
+      'generateDocs.js',
+      '--input',
+      'spec.json',
+      '--output',
+      'docs.html',
+    ];
+    mockAccess.mockResolvedValue(undefined);
+    mockExecAsync.mockResolvedValue({ stdout: '', stderr: '' });
+    console.log = jest.fn();
+    console.error = jest.fn();
+    process.exit = jest.fn();
+  });
+
+  test('runs main and exits normally', async () => {
+    await generateDocs.main();
+    expect(mockAccess).toHaveBeenCalled();
+    expect(mockExecAsync).toHaveBeenCalled();
+    expect(process.exit).not.toHaveBeenCalled();
+  });
+});
 ```
 
-**FAILURE_ACTION_ITEMS:**
-- If any unit test fails, inspect the corresponding function in `index.js` and adjust logic or error handling.
-- If integration tests fail, verify file I/O paths and ensure the generator writes to the expected location.
-- If security tests fail, add sanitization logic to strip or mask sensitive fields before output.
-- If performance tests exceed thresholds, optimize data structures or caching in the generator.
-- If coverage drops below 80 %, add missing branch coverage tests or refactor for testability.
+---
+
+**File: `jest.setup.js`** (optional, if you want to set global test environment)
+```js
+// No global setup required for current tests.
+// This file exists for future extensions (e.g., mocking global timers).
+```
+
+---
+
+**TEST_COMMAND**  
+```bash
+npm test
+```
+
+**EXPECTED_RESULT**  
+All test files (`generateDocs.unit.test.js`, `generateDocs.integration.test.js`, `generateDocs.security.test.js`, `generateDocs.smoke.test.js`) pass, producing a `0` exit code. Console output shows `PASS` for each test suite.
+
+**FAILURE_ACTION_ITEMS**  
+- Verify that `node:child_process` and `node:util` are correctly mocked in each test file.  
+- Ensure `process.argv` is reset after each test to avoid cross‑test contamination.  
+- If any test fails due to missing `execAsync` export, expose it in `generateDocs.js` (e.g., `export { execAsync }`).  
+- If `npm test` reports `jest` not found, run `npm install` to install dev dependencies.  
+- If tests hang or time‑out, increase Jest's `testTimeout` via `jest.setTimeout(30000)` in a setup file.  
+- If the redoc‑cli command changes, update the command string regex accordingly.

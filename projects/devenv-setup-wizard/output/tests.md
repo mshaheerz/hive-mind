@@ -1,320 +1,254 @@
-**File: `test/test_env_loading.py`**
+**File: `test/conftest.py`**
 ```python
 import os
-import builtins
-import importlib
+import shutil
+import tempfile
+from pathlib import Path
+
 import pytest
-from unittest import mock
 
-# Assuming the wizard module is in src/wizard.py
-wizard = importlib.import_module("wizard")
-
-def test_env_file_parsed_correctly(tmp_path, monkeypatch):
-    # Create a minimal .env file
-    env_file = tmp_path / ".env"
-    env_file.write_text("APP_ENV=development\nDEBUG=True\n")
-    monkeypatch.setenv("APP_ENV", None)  # Ensure no global env
-    # Load env
-    env = wizard.load_env(str(env_file))
-    assert env["APP_ENV"] == "development"
-    assert env["DEBUG"] == "True"
-
-def test_missing_env_file_raises(monkeypatch):
-    with pytest.raises(FileNotFoundError):
-        wizard.load_env("/non/existent/.env")
-
-def test_env_var_overwrite(monkeypatch):
-    # Simulate environment variable overriding file value
-    monkeypatch.setenv("APP_ENV", "production")
-    env = wizard.load_env(".env")
-    assert env["APP_ENV"] == "production"
-
-def test_empty_env_file(monkeypatch, tmp_path):
-    empty_file = tmp_path / ".env"
-    empty_file.write_text("")
-    env = wizard.load_env(str(empty_file))
-    assert env == {}
-
-def test_invalid_line_skipped(monkeypatch, tmp_path):
-    bad_file = tmp_path / ".env"
-    bad_file.write_text("INVALID_LINE\nKEY=VALUE\n")
-    env = wizard.load_env(str(bad_file))
-    assert env["KEY"] == "VALUE"
-    assert "INVALID_LINE" not in env
-```
-
----
-
-**File: `test/test_setup_wizard.py`**
-```python
-import importlib
-import os
-import sys
-import pytest
-from unittest import mock
-
-wizard = importlib.import_module("wizard")
 
 @pytest.fixture
-def mock_subprocess_run(monkeypatch):
-    mock = mock.Mock()
-    monkeypatch.setattr("wizard.subprocess.run", mock)
-    return mock
+def temp_project_dir():
+    """Create and teardown a temporary directory for testing."""
+    dir_path = Path(tempfile.mkdtemp(prefix="devenv_test_"))
+    yield dir_path
+    shutil.rmtree(dir_path)
 
-def test_setup_python_env_success(mock_subprocess_run):
-    # Simulate success
-    mock_subprocess_run.return_value.returncode = 0
-    result = wizard.setup_python_env(env={"APP_ENV": "development"})
-    assert result is True
-    # Verify expected commands called
-    calls = [mock.call(["python", "-m", "venv", "env"], check=True),
-             mock.call(["pip", "install", "-r", "requirements.txt"], check=True)]
-    mock_subprocess_run.assert_has_calls(calls, any_order=True)
 
-def test_setup_python_env_failure(mock_subprocess_run):
-    # Simulate failure
-    mock_subprocess_run.side_effect = RuntimeError("Command failed")
-    with pytest.raises(RuntimeError):
-        wizard.setup_python_env(env={})
-    mock_subprocess_run.assert_called()
+@pytest.fixture
+def mock_requirements_file(temp_project_dir):
+    """Create a dummy requirements.txt file."""
+    req_file = temp_project_dir / "requirements.txt"
+    req_file.write_text("requests==2.31.0\n")
+    return req_file
 
-def test_setup_node_env_success(mock_subprocess_run):
-    # Simulate success
-    mock_subprocess_run.return_value.returncode = 0
-    result = wizard.setup_node_env(env={"APP_ENV": "development"})
-    assert result is True
-    # Verify npm install called
-    mock_subprocess_run.assert_any_call(["npm", "install"], check=True)
 
-def test_setup_node_env_failure(mock_subprocess_run):
-    mock_subprocess_run.side_effect = RuntimeError("npm failed")
-    with pytest.raises(RuntimeError):
-        wizard.setup_node_env(env={})
+@pytest.fixture
+def mock_dockerfile(temp_project_dir):
+    """Create a dummy Dockerfile."""
+    dockerfile = temp_project_dir / "Dockerfile"
+    dockerfile.write_text("FROM python:3.10-slim\n")
+    return dockerfile
 ```
 
 ---
 
-**File: `test/test_logging.py`**
+**File: `test/test_setup_wizard_unit.py`**
 ```python
-import importlib
 import os
-import tempfile
+from pathlib import Path
+
 import pytest
 from unittest import mock
 
-wizard = importlib.import_module("wizard")
+# Import the module under test (assuming it lives in src/setup_wizard.py)
+# Adjust the import path if the actual location differs.
+import src.setup_wizard as wizard
 
-def test_log_setup_writes_file(tmp_path):
-    log_file = tmp_path / "setup.log"
-    wizard.log_setup("Test message", logfile=str(log_file))
-    assert log_file.exists()
-    content = log_file.read_text()
-    assert "Test message" in content
 
-def test_log_setup_appends(tmp_path):
-    log_file = tmp_path / "setup.log"
-    wizard.log_setup("First", logfile=str(log_file))
-    wizard.log_setup("Second", logfile=str(log_file))
-    content = log_file.read_text()
-    assert "First" in content and "Second" in content
+def test_create_virtualenv_success(temp_project_dir, monkeypatch):
+    """Virtualenv is created in the expected location."""
+    venv_path = wizard.create_virtualenv(temp_project_dir, python_version="3.10")
+    assert venv_path.exists()
+    assert venv_path.is_dir()
 
-def test_log_setup_no_file(tmp_path, monkeypatch):
-    # Simulate permission denied
-    monkeypatch.setattr("wizard.open", mock.Mock(side_effect=PermissionError))
-    with pytest.raises(PermissionError):
-        wizard.log_setup("Should fail")
-```
 
----
-
-**File: `test/test_integration_git.py`**
-```python
-import importlib
-import os
-import pytest
-from unittest import mock
-
-wizard = importlib.import_module("wizard")
-
-def test_git_integration_initializes_repo(monkeypatch):
-    mock_run = mock.Mock()
-    monkeypatch.setattr("wizard.subprocess.run", mock_run)
-    wizard.integrate_git()
-    mock_run.assert_called_with(["git", "init"], check=True)
-    # Check that a .git folder would exist (simulation)
-    # In real code, you would verify the filesystem
-
-def test_git_integration_failure(monkeypatch):
-    mock_run = mock.Mock(side_effect=RuntimeError("git init failed"))
-    monkeypatch.setattr("wizard.subprocess.run", mock_run)
-    with pytest.raises(RuntimeError):
-        wizard.integrate_git()
-```
-
----
-
-**File: `test/test_integration_docker.py`**
-```python
-import importlib
-import os
-import pytest
-from unittest import mock
-
-wizard = importlib.import_module("wizard")
-
-def test_docker_integration_up(monkeypatch):
-    mock_run = mock.Mock()
-    monkeypatch.setattr("wizard.subprocess.run", mock_run)
-    wizard.integrate_docker()
-    mock_run.assert_called_with(["docker", "compose", "up", "-d"], check=True)
-
-def test_docker_integration_missing_compose(monkeypatch):
-    mock_run = mock.Mock(side_effect=FileNotFoundError)
-    monkeypatch.setattr("wizard.subprocess.run", mock_run)
-    with pytest.raises(FileNotFoundError):
-        wizard.integrate_docker()
-```
-
----
-
-**File: `test/test_edge_cases.py`**
-```python
-import importlib
-import pytest
-from unittest import mock
-
-wizard = importlib.import_module("wizard")
-
-def test_empty_input_setup(monkeypatch):
-    # Empty env dict should not crash
-    result = wizard.setup_python_env(env={})
-    assert result is True  # Assuming default behaviour
-
-def test_null_env_var(monkeypatch):
-    # Passing None as env should raise ValueError
+def test_create_virtualenv_invalid_python(monkeypatch):
+    """Providing an unsupported Python version raises ValueError."""
     with pytest.raises(ValueError):
-        wizard.setup_python_env(env=None)
+        wizard.create_virtualenv(Path("/tmp"), python_version="0.0")
 
-def test_overflow_package_list(monkeypatch):
-    # Simulate huge list of packages
-    huge_list = ["pkg"] * 10000
-    mock_run = mock.Mock()
-    monkeypatch.setattr("wizard.subprocess.run", mock_run)
-    wizard.install_packages(huge_list)
-    # Ensure command built correctly
-    mock_run.assert_called()
+
+def test_install_requirements_success(temp_project_dir, mock_requirements_file, monkeypatch):
+    """Requirements are installed without errors."""
+    venv_path = wizard.create_virtualenv(temp_project_dir)
+    # Mock subprocess.run to avoid real pip install
+    monkeypatch.setattr("subprocess.run", mock.Mock(return_value=mock.Mock(returncode=0)))
+    wizard.install_requirements(venv_path, mock_requirements_file)
+    # No exception means success
+
+
+def test_install_requirements_file_missing(temp_project_dir, monkeypatch):
+    """Missing requirements file raises FileNotFoundError."""
+    venv_path = wizard.create_virtualenv(temp_project_dir)
+    missing_file = temp_project_dir / "nonexistent.txt"
+    with pytest.raises(FileNotFoundError):
+        wizard.install_requirements(venv_path, missing_file)
+
+
+def test_setup_git_repo_success(temp_project_dir, monkeypatch):
+    """Cloning a repository succeeds."""
+    repo_url = "https://github.com/example/repo.git"
+    monkeypatch.setattr("subprocess.run", mock.Mock(return_value=mock.Mock(returncode=0)))
+    wizard.setup_git_repo(temp_project_dir, repo_url)
+    # No exception means success
+
+
+def test_setup_git_repo_failure(monkeypatch):
+    """Git clone failure raises RuntimeError."""
+    monkeypatch.setattr("subprocess.run", mock.Mock(returncode=1))
+    with pytest.raises(RuntimeError):
+        wizard.setup_git_repo(Path("/tmp"), "https://invalid.url/repo.git")
+
+
+def test_setup_docker_success(temp_project_dir, mock_dockerfile, monkeypatch):
+    """Docker image builds successfully."""
+    monkeypatch.setattr("subprocess.run", mock.Mock(return_value=mock.Mock(returncode=0)))
+    wizard.setup_docker(temp_project_dir, mock_dockerfile)
+    # No exception means success
+
+
+def test_setup_docker_missing_file(temp_project_dir, monkeypatch):
+    """Missing Dockerfile raises FileNotFoundError."""
+    missing_file = temp_project_dir / "Dockerfile"
+    with pytest.raises(FileNotFoundError):
+        wizard.setup_docker(temp_project_dir, missing_file)
+
+
+def test_setup_logging_success(temp_project_dir):
+    """Logging is configured and log file is created."""
+    log_file = temp_project_dir / "setup.log"
+    wizard.setup_logging(log_file)
+    assert log_file.exists()
+
+
+def test_wizard_python_env_success(temp_project_dir, mock_requirements_file, monkeypatch):
+    """Full Python env wizard runs without errors."""
+    # Mock external calls
+    monkeypatch.setattr("subprocess.run", mock.Mock(return_value=mock.Mock(returncode=0)))
+    wizard.wizard("myproject", env_type="python")
+    # Check that expected directories were created
+    venv_path = temp_project_dir / "myproject" / "venv"
+    assert venv_path.exists()
+
+
+def test_wizard_node_env_success(temp_project_dir, monkeypatch):
+    """Full Node.js env wizard runs without errors."""
+    monkeypatch.setattr("subprocess.run", mock.Mock(return_value=mock.Mock(returncode=0)))
+    wizard.wizard("myproject", env_type="node")
+    # Node-specific artifacts can be checked here (e.g., node_modules dir)
+    node_modules = temp_project_dir / "myproject" / "node_modules"
+    assert node_modules.exists()
+
+
+def test_wizard_empty_project_name():
+    """An empty project name should raise ValueError."""
+    with pytest.raises(ValueError):
+        wizard.wizard("", env_type="python")
+
+
+def test_wizard_invalid_env_type():
+    """Unsupported env_type raises ValueError."""
+    with pytest.raises(ValueError):
+        wizard.wizard("proj", env_type="ruby")
 ```
 
 ---
 
-**File: `test/test_security.py`**
+**File: `test/test_setup_wizard_integration.py`**
 ```python
-import importlib
 import os
+import subprocess
+from pathlib import Path
+
 import pytest
-from unittest import mock
 
-wizard = importlib.import_module("wizard")
+# Import the module under test
+import src.setup_wizard as wizard
 
-def test_no_secrets_in_logs(monkeypatch, tmp_path):
-    log_file = tmp_path / "setup.log"
-    # Simulate a secret in env
-    env = {"API_KEY": "super_secret_value"}
-    # Capture log output
-    monkeypatch.setattr("wizard.open", open)
-    wizard.log_setup("Setup started", logfile=str(log_file))
-    wizard.log_setup(f"Using API_KEY={env['API_KEY']}", logfile=str(log_file))
-    content = log_file.read_text()
-    # Ensure secret not present
-    assert "super_secret_value" not in content
+
+def test_integration_python_env(temp_project_dir, mock_requirements_file, monkeypatch):
+    """Run the wizard end‑to‑end for a Python project."""
+    # Use a real subprocess call for virtualenv creation
+    monkeypatch.setattr("subprocess.run", lambda *args, **kwargs: subprocess.run(args[0], check=True))
+    wizard.wizard("integration_test_py", env_type="python")
+
+    # Verify key artifacts
+    project_path = temp_project_dir / "integration_test_py"
+    assert project_path.exists()
+    assert (project_path / "venv").exists()
+    assert (project_path / "setup.log").exists()
+
+
+def test_integration_node_env(temp_project_dir, monkeypatch):
+    """Run the wizard end‑to‑end for a Node.js project."""
+    monkeypatch.setattr("subprocess.run", lambda *args, **kwargs: subprocess.run(args[0], check=True))
+    wizard.wizard("integration_test_node", env_type="node")
+
+    project_path = temp_project_dir / "integration_test_node"
+    assert project_path.exists()
+    # Node modules may not exist if npm install fails silently; check presence of package.json
+    assert (project_path / "package.json").exists()
 ```
 
 ---
 
-**File: `test/TEST_PLAN.md`**
+**File: `test/test_setup_wizard_smoke.py`**
+```python
+# A minimal smoke test that simply imports the wizard and calls it with
+# a dummy project name. This test should pass even if the underlying
+# implementation is incomplete, as long as the public API exists.
+
+import src.setup_wizard as wizard
+
+def test_smoke():
+    wizard.wizard("smoke_test", env_type="python")
+```
+
+---
+
+**File: `test/test_plan.md`**
 ```markdown
-# DevEnv Setup Wizard – Test Plan
+# Manual Test Plan for DevEnv Setup Wizard
 
-## 1. Unit Tests
-| Test | Description | Pass Criteria |
-|------|-------------|---------------|
-| `test_env_loading` | Verify .env parsing, overrides, missing files | Correct dict returned / FileNotFoundError |
-| `test_setup_wizard` | Check python/node setup commands executed | Return True / RuntimeError |
-| `test_logging` | Log file creation and appending | File contains expected messages |
-| `test_integration_git` | Git repo initialization | `git init` called |
-| `test_integration_docker` | Docker Compose up | `docker compose up -d` called |
-| `test_edge_cases` | Empty, null, huge inputs | No crashes, correct handling |
-| `test_security` | Secrets not logged | Log file excludes secret values |
+| # | Test Case | Description | Steps | Expected Result | Pass / Fail |
+|---|-----------|-------------|-------|-----------------|-------------|
+| 1 | Basic Python Setup | Verify wizard creates Python env | 1. Run `wizard("demo_py", env_type="python")`<br>2. Check `demo_py/venv` exists | `demo_py/venv` folder created |  |
+| 2 | Basic Node Setup | Verify wizard creates Node env | 1. Run `wizard("demo_node", env_type="node")`<br>2. Check `demo_node/node_modules` exists | `demo_node/node_modules` folder created |  |
+| 3 | Empty Project Name | Validate error handling | 1. Run `wizard("", env_type="python")` | Raises ValueError |  |
+| 4 | Unsupported Env Type | Validate error handling | 1. Run `wizard("proj", env_type="ruby")` | Raises ValueError |  |
+| 5 | Missing Requirements File | Validate error handling | 1. Remove `requirements.txt`<br>2. Run wizard | Raises FileNotFoundError |  |
+| 6 | Large Project Name | Test path handling | 1. Create a 255‑char project name<br>2. Run wizard | Environment created without truncation |  |
+| 7 | Special Characters | Test path sanitization | 1. Use name `proj_!@#$%^&*()`<br>2. Run wizard | Environment created, special chars preserved |  |
+| 8 | Docker Integration | Verify Docker image built | 1. Include Dockerfile<br>2. Run wizard | Docker image built successfully |  |
+| 9 | Git Integration | Verify repo cloned | 1. Provide valid repo URL<br>2. Run wizard | Repo contents present |  |
+| 10 | Log File | Verify logging | 1. Run wizard<br>2. Open `setup.log` | Log contains status messages |  |
 
-## 2. Integration Tests
-- **Scenario A**: Run wizard with Python project template.
-  - Verify virtual environment folder `env/` created.
-  - Verify `requirements.txt` installed.
-  - Verify `.git` directory created.
-  - Verify Docker containers start if `docker-compose.yml` present.
-- **Scenario B**: Run wizard with Node.js project template.
-  - Verify `node_modules/` folder created.
-  - Verify `npm install` executed.
-  - Same git & docker checks.
-
-## 3. Manual Testing Checklist
-1. Execute `python -m wizard` with default arguments.
-2. Inspect `setup.log` for clear steps.
-3. Confirm local git repo initialized.
-4. If Docker compose file exists, run `docker compose ps` to see containers.
-5. Check that environment variables are correctly loaded into the process.
-6. Verify that missing required env vars cause a user‑friendly error.
-
-## 4. Security & Privacy
-- Run wizard with a fake `API_KEY` env var.
-- Ensure `API_KEY` value never appears in `setup.log`.
-
-## 5. Performance
-- Run wizard with a very large `requirements.txt` (10k packages) and ensure it does not crash.
-- Measure total execution time; should be < 60s on a typical dev machine.
-
-## 6. Failure Handling
-- Simulate network failure during `pip install` or `npm install`.
-- Verify wizard logs the error and exits gracefully with non‑zero status.
-
-## 7. Smoke Test
-- `pytest -q` should run all tests and report 0 failures.
+**Notes:**
+- Tests should be performed on a clean machine to avoid interference.
+- For tests involving Docker or Git, ensure the relevant services are available.
+- Use `pytest` for automated unit tests; manual tests are performed via the command line.
 ```
 
 ---
 
-**File: `test/smoke_test.sh`**
-```bash
-#!/usr/bin/env bash
-set -e
-# Simple smoke test: run wizard and check exit code
-python -m wizard --env .env.example
-echo "Smoke test passed: wizard exited with status 0"
+**File: `requirements-dev.txt`**
+```
+pytest>=7.0,<9
+pytest-mock>=3.14,<4
 ```
 
 ---
 
-## Test Configuration
-
-If additional pytest configuration is required, create `pytest.ini` in the project root (already exists) or add a `pytest.ini` in `test/` with coverage settings:
-
-**File: `test/pytest.ini`**
+**File: `pytest.ini`** (additions)
 ```ini
 [pytest]
-addopts = --cov=wizard --cov-report=term-missing
+addopts = -ra -q
 ```
 
 ---
 
-## Running the Tests
-
-```bash
-TEST_COMMAND: pytest -q
-EXPECTED_RESULT: All tests pass, exit code 0
-FAILURE_ACTION_ITEMS:
-- Verify that the `wizard` module exists and exports the expected functions.
-- Ensure all mocked subprocess calls match real command signatures.
-- Check that environment files are correctly located and parsed.
-- Update tests if new functions are added or signatures change.
-- Run `pytest --cov=wizard` to confirm coverage > 80%.
+### TEST_COMMAND
 ```
+pytest
+```
+
+### EXPECTED_RESULT
+All tests (`test_setup_wizard_unit.py`, `test_setup_wizard_integration.py`, `test_setup_wizard_smoke.py`) pass with 0 failures. Manual test plan passes when the wizard behaves as described.
+
+### FAILURE_ACTION_ITEMS
+- If any unit test fails, review the corresponding function implementation for incorrect handling of edge cases.
+- If integration tests fail, verify that external subprocess calls (virtualenv, npm, git, docker) are correctly invoked and that environment variables are set.
+- If the smoke test fails, ensure the public API (`wizard` function) exists and is callable.
+- If manual test plan fails, update the wizard to handle the reported scenario (e.g., path sanitization, error propagation).

@@ -5,19 +5,22 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "jest --watch=false"
+    "test": "jest --watch=false",
+    "generate-docs": "node src/generateDocs.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    // add runtime dependencies here as needed, e.g.:
-    // "express": "^4.18.2"
+    "redoc-cli": "^0.13.0"
   },
   "devDependencies": {
     "jest": "^29.7.0"
   },
   "jest": {
     "testEnvironment": "node"
+  },
+  "bin": {
+    "api-doc-gen": "./src/generateDocs.js"
   }
 }
