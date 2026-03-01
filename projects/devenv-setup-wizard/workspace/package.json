@@ -1,10 +1,14 @@
 {
-    "name": "devenv-setup-wizard",
-    "version": "1.0.0",
-    "scripts": {
-        "start": "python src/web-server/main.py"
-    },
-    "dependencies": {
-        "flask": "^2.0.1"
-    }
+  "name": "dev-env-setup-wizard",
+  "version": "1.0.0",
+  "description": "An automation tool to streamline the setup process for new projects",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/web-server/app.js"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "body-parser": "^1.19.0",
+    "morgan": "^1.10.0"
+  }
 }

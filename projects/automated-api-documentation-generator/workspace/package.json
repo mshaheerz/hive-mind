@@ -1,17 +1,16 @@
 {
-  "name": "api-documentation-generator",
+  "name": "api-docs-generator",
   "version": "1.0.0",
   "private": true,
   "dependencies": {
-    "swagger-js": "^3.45.2",
-    "redoc": "^2.0.0"
+    "next": "^13.2.4",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   },
   "scripts": {
-    "generate-docs": "node generate_docs.js",
+    "dev": "next dev",
+    "build": "next build",
     "start": "next start",
-    "dev": "next dev"
-  },
-  "engines": {
-    "node": "14.x"
+    "generate-docs": "python src/api/generate_docs.py"
   }
 }

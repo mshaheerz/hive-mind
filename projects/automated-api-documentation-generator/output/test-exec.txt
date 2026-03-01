@@ -1,7 +1,7 @@
-Summary: npm install failed: npm error code ETARGET | npm error notarget No matching version found for swagger-js@^3.45.2. | npm error notarget In most cases you or one of your dependencies are requesting | npm error notarget a package version that doesn't exist. | npm error A complete log of this run can be found in: /home/zaigopc/.npm/_logs/2026-02-28T21_29_32_023Z-debug-0.log
+Summary: npm test failed: npm error Missing script: "test" | npm error | npm error To see a list of scripts, run: | npm error   npm run | npm error A complete log of this run can be found in: /home/zaigopc/.npm/_logs/2026-03-01T06_07_27_107Z-debug-0.log
 
-npm error code ETARGET
-npm error notarget No matching version found for swagger-js@^3.45.2.
-npm error notarget In most cases you or one of your dependencies are requesting
-npm error notarget a package version that doesn't exist.
-npm error A complete log of this run can be found in: /home/zaigopc/.npm/_logs/2026-02-28T21_29_32_023Z-debug-0.log
+npm error Missing script: "test"
+npm error
+npm error To see a list of scripts, run:
+npm error   npm run
+npm error A complete log of this run can be found in: /home/zaigopc/.npm/_logs/2026-03-01T06_07_27_107Z-debug-0.log

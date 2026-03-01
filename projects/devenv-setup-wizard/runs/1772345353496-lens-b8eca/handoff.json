@@ -1,0 +1,18 @@
+{
+  "fromAgent": "lens",
+  "toAgent": "pulse",
+  "project": "devenv-setup-wizard",
+  "stage": "implementation",
+  "runId": "1772345353496-lens-b8eca",
+  "summary": "devenv-setup-wizard: implementation -> review",
+  "artifacts": [
+    "output/implementation.md",
+    "output/review.md"
+  ],
+  "requiredActions": [],
+  "acceptanceChecks": [],
+  "modelInfo": {
+    "provider": "local",
+    "model": "DeepSeek-Coder-V2"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "fromAgent": "lens",
+  "toAgent": "pulse",
+  "project": "automated-api-documentation-generator",
+  "stage": "implementation",
+  "runId": "1772346417579-lens-n94eg",
+  "summary": "automated-api-documentation-generator: implementation -> review",
+  "artifacts": [
+    "output/implementation.md",
+    "output/review.md"
+  ],
+  "requiredActions": [],
+  "acceptanceChecks": [],
+  "modelInfo": {
+    "provider": "local",
+    "model": "DeepSeek-Coder-V2"
+  }
+}

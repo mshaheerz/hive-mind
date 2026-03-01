@@ -1,8 +1,0 @@
-{
-  "outcome": "rejected",
-  "rationale": "413 {\"error\":{\"message\":\"Request Entity Too Large\",\"type\":\"invalid_request_error\",\"code\":\"request_too_large\"}}",
-  "risk": "safe",
-  "approvedBy": "system",
-  "approved": true,
-  "decidedAt": "2026-02-28T20:18:15.768Z"
-}

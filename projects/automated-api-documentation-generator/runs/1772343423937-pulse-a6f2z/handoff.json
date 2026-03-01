@@ -1,0 +1,18 @@
+{
+  "fromAgent": "pulse",
+  "toAgent": "forge",
+  "project": "automated-api-documentation-generator",
+  "stage": "review",
+  "runId": "1772343423937-pulse-a6f2z",
+  "summary": "npm test failed: > api-doc-generator@1.0.0 test | > react-scripts test --env=jsdom --watch=false | sh: 1: react-scripts: not found",
+  "artifacts": [],
+  "requiredActions": [
+    "Fix failing tests reported by npm test.",
+    "> api-doc-generator@1.0.0 test | > react-scripts test --env=jsdom --watch=false | sh: 1: react-scripts: not found"
+  ],
+  "acceptanceChecks": [],
+  "modelInfo": {
+    "provider": "local",
+    "model": "DeepSeek-Coder-V2"
+  }
+}

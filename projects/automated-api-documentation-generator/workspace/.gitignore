@@ -1,9 +1,4 @@
 node_modules
-.next
-dist
 *.log
 *.env
-.env.local
-.env.development
-.env.production
-*.pid
+src/api/api_data.json
