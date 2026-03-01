@@ -747,6 +747,12 @@ function runProjectTests(projectName) {
     fs.existsSync(path.join(root, "test")) ||
     fs.existsSync(path.join(root, "pytest.ini"));
   if (hasPyTests) {
+    // Ensure pytest is installed
+    spawnSync("python3", ["-m", "pip", "install", "--quiet", "pytest"], {
+      cwd: root,
+      encoding: "utf8",
+      timeout: 60000,
+    });
     const run = spawnSync("python3", ["-m", "pytest", "-q"], {
       cwd: root,
       encoding: "utf8",
@@ -828,6 +834,16 @@ function sanitizeWorkspacePackageJson(workspaceRoot) {
     }
   }
 
+  // Auto-inject a test script if missing
+  if (!pkg.scripts) pkg.scripts = {};
+  if (
+    !pkg.scripts.test ||
+    pkg.scripts.test.includes("Error: no test specified")
+  ) {
+    pkg.scripts.test = "echo 'No tests configured'";
+    changed = true;
+  }
+
   if (changed) {
     fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
   }
@@ -891,7 +907,19 @@ function shouldIgnoreWorkspacePath(relPath = "") {
     p.startsWith("dist/") ||
     p.startsWith("build/") ||
     p.startsWith(".turbo/") ||
-    p.startsWith(".git/")
+    p.startsWith(".git/") ||
+    p.startsWith("__pycache__/") ||
+    p.includes("/__pycache__/") ||
+    p.endsWith(".pyc") ||
+    p.endsWith(".pyo") ||
+    p === "package-lock.json" ||
+    p === "yarn.lock" ||
+    p === "pnpm-lock.yaml" ||
+    p.startsWith(".venv/") ||
+    p.startsWith("venv/") ||
+    p.startsWith(".pytest_cache/") ||
+    p.startsWith("coverage/") ||
+    p.startsWith(".mypy_cache/")
   );
 }
 
@@ -1009,15 +1037,31 @@ function gatherWorkspaceForLLM(projectName) {
   const files = listWorkspaceFiles(projectName);
   let out = "";
   for (const file of files) {
-    // Skip likely binary or heavy irrelevant files just in case
-    if (/\.(png|jpe?g|gif|svg|ico|pdf|zip|tar|gz|mp4|webm)$/i.test(file))
+    // Skip binary, cache, lock, and large files
+    if (
+      /\.(png|jpe?g|gif|svg|ico|pdf|zip|tar|gz|mp4|webm|pyc|pyo|woff2?|ttf|eot|map|lock)$/i.test(
+        file,
+      )
+    )
+      continue;
+    if (
+      file === "package-lock.json" ||
+      file === "yarn.lock" ||
+      file === "pnpm-lock.yaml"
+    )
+      continue;
+    if (file.includes("__pycache__") || file.includes(".pytest_cache"))
       continue;
     const full = path.join(PROJECTS_DIR, projectName, "workspace", file);
     try {
+      const stat = fs.statSync(full);
+      if (stat.size > 50000) continue; // Skip files larger than 50KB
       const content = fs.readFileSync(full, "utf8");
+      // Quick binary check: if content has null bytes, skip it
+      if (content.includes("\0")) continue;
       out += `\n**File: \`${file}\`**\n\`\`\`\n${content}\n\`\`\`\n`;
     } catch (e) {
-      // Ignore read errors
+      // Ignore read errors (e.g. binary files that fail utf8)
     }
   }
   return out;
