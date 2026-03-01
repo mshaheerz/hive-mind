@@ -1,0 +1,20 @@
+{
+  "stage": "architecture",
+  "stageOwner": "forge",
+  "stageAttempt": 2,
+  "blockedReason": null,
+  "proposedBy": "nova",
+  "approvedBy": "apex",
+  "approvalScore": 8,
+  "projectType": "cli_tool",
+  "preferredStack": "Node.js 20 + TypeScript",
+  "template": "node-cli",
+  "lensVerdict": null,
+  "lensActionItems": [],
+  "lastHandoffRunId": "1772366471083-forge-h2bzv",
+  "escalationLevel": "none",
+  "approvedAt": "2026-03-01T12:00:54.521Z",
+  "updatedAt": "2026-03-01T12:01:11.084Z",
+  "lensIssueRepeats": {},
+  "transitionReason": "agent execution started"
+}

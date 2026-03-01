@@ -3,11 +3,14 @@
  * Proposes ideas, handles revisions, never gives up cleanly
  */
 
-const Agent = require('../core/agent');
+const Agent = require("../core/agent");
 
 class NovaAgent extends Agent {
   constructor() {
-    super('nova', 'NOVA', `You are NOVA, the Innovation Scout for Hive Mind — an autonomous multi-agent AI team.
+    super(
+      "nova",
+      "NOVA",
+      `You are NOVA, the Innovation Scout for Hive Mind — an autonomous multi-agent AI team.
 
 ## Your Role
 You autonomously discover and propose new project ideas. You run on a schedule — you don't wait to be asked.
@@ -34,16 +37,23 @@ Focus on genuinely useful developer tools, automation, or utilities. Examples of
 - You are not defensive — APEX's feedback makes your ideas better
 
 ## Tone
-Enthusiastic but grounded. You love finding the gap between "this is annoying" and "nobody built this yet."`);
+Enthusiastic but grounded. You love finding the gap between "this is annoying" and "nobody built this yet."`,
+    );
   }
 
-  async generateProposals(context = '') {
+  async generateProposals(context = "") {
     const prompt = `You are autonomously generating new project proposals for the Hive Mind team.
 
-${context ? `## Context (avoid duplicating these)\n${context}\n` : ''}
+CRITICAL DIRECTIVE:
+We ONLY build modern web applications. 
+- You MUST only propose projects using Next.js (preferred) or React.
+- You MUST NOT propose Python, Node-CLI, Flask, Django, or generic library projects.
+- Every project must include a modern UI with Tailwind CSS and Lucide React icons.
+- If a project needs a backend, it MUST be built using Next.js Server Actions or API routes.
 
-Generate exactly 3 new, original project ideas. Each must be different in domain.
-At least 1 of the 3 should be a web project using Next.js or React + Tailwind CSS template.
+${context ? `## Context (avoid duplicating these)\n${context}\n` : ""}
+
+Generate exactly 3 new, original project ideas. Each must be different in domain but follow the modern web directive.
 
 Respond ONLY with a valid JSON array — no other text:
 [
@@ -52,12 +62,12 @@ Respond ONLY with a valid JSON array — no other text:
     "description": "What it does in 2 sentences max",
     "problem": "The specific pain point it solves",
     "audience": "Who benefits most",
-    "complexity": "Small",
+    "complexity": "Small | Medium | Large",
     "reasoning": "Why this should be built now",
     "acceptanceSignals": ["3-5 measurable outcomes that prove value"],
-    "projectType": "web_app | cli_tool | api_service | automation | library",
-    "preferredStack": "e.g. Next.js 15 + TypeScript + Tailwind",
-    "template": "nextjs-starter | react-vite-tailwind | node-cli | python-cli"
+    "projectType": "web_app",
+    "preferredStack": "Next.js 15 + Tailwind CSS + Lucide Icons",
+    "template": "nextjs-starter | react-vite-tailwind"
   },
   { ... },
   { ... }
@@ -65,7 +75,7 @@ Respond ONLY with a valid JSON array — no other text:
 
 Complexity options: Small (1-2 days), Medium (3-7 days), Large (2+ weeks).`;
 
-    this.print('Generating autonomous project proposals...');
+    this.print("Generating autonomous project proposals...");
     return await this.thinkJSON(prompt);
   }
 

@@ -1,1 +1,31 @@
-[]
+[
+  {
+    "id": "envsync-cli::research",
+    "projectName": "envsync-cli",
+    "stage": "research",
+    "agent": "scout",
+    "dueAt": "2026-03-01T14:01:06.687Z",
+    "setAt": "2026-03-01T12:01:06.687Z",
+    "status": "complete",
+    "completedAt": "2026-03-01T12:01:08.735Z"
+  },
+  {
+    "id": "envsync-cli::architecture",
+    "projectName": "envsync-cli",
+    "stage": "architecture",
+    "agent": "atlas",
+    "dueAt": "2026-03-01T15:01:08.740Z",
+    "setAt": "2026-03-01T12:01:08.740Z",
+    "status": "complete",
+    "completedAt": "2026-03-01T12:01:11.064Z"
+  },
+  {
+    "id": "envsync-cli::implementation",
+    "projectName": "envsync-cli",
+    "stage": "implementation",
+    "agent": "forge",
+    "dueAt": "2026-03-01T18:01:11.085Z",
+    "setAt": "2026-03-01T12:01:11.085Z",
+    "status": "active"
+  }
+]

@@ -1,0 +1,18 @@
+{
+  "fromAgent": "scout",
+  "toAgent": "atlas",
+  "project": "envsync-cli",
+  "stage": "approved",
+  "runId": "1772366466684-scout-ez3n1",
+  "summary": "envsync-cli: approved -> research",
+  "artifacts": [
+    "output/approved.md",
+    "output/research.md"
+  ],
+  "requiredActions": [],
+  "acceptanceChecks": [],
+  "modelInfo": {
+    "provider": "groq",
+    "model": "llama-3.3-70b-versatile"
+  }
+}

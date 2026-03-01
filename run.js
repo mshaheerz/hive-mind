@@ -534,31 +534,25 @@ function copyDirContents(src, dest) {
 function inferBootstrapTemplate(status = {}, readme = "") {
   const raw =
     `${status.preferredStack || ""} ${status.template || ""} ${readme || ""}`.toLowerCase();
+
   if (
     raw.includes("next.js") ||
     raw.includes("nextjs") ||
     raw.includes("nextjs-starter")
-  )
+  ) {
     return "nextjs";
+  }
+
   if (
     raw.includes("react") ||
     raw.includes("vite") ||
     raw.includes("react-vite")
-  )
+  ) {
     return "react-vite";
-  if (
-    raw.includes("python") ||
-    raw.includes("pytest") ||
-    raw.includes("python-cli")
-  )
-    return "python-cli";
-  if (
-    raw.includes("api_service") ||
-    raw.includes("node-cli") ||
-    raw.includes("node")
-  )
-    return "node-cli";
-  return "node-cli";
+  }
+
+  // Default to nextjs as the mandatory standard
+  return "nextjs";
 }
 
 function ensureProjectBootstrap(projectName, status = {}, readme = "") {
@@ -640,47 +634,7 @@ function ensureProjectBootstrap(projectName, status = {}, readme = "") {
     return { ok: fs.existsSync(packageJson), template, notes };
   }
 
-  if (
-    template === "python-cli" &&
-    !fs.existsSync(pyProject) &&
-    !fs.existsSync(requirements)
-  ) {
-    if (!commandExists("python3")) {
-      return {
-        ok: false,
-        template,
-        notes: [
-          "python3 not installed; falling back to manual FORGE generation.",
-        ],
-      };
-    }
-    fs.writeFileSync(requirements, "pytest\n");
-    fs.mkdirSync(path.join(root, "src"), { recursive: true });
-    notes.push("Bootstrapped minimal Python CLI structure.");
-    return { ok: true, template, notes };
-  }
-
-  if (template === "node-cli" && !fs.existsSync(packageJson)) {
-    if (!commandExists("npm"))
-      return {
-        ok: false,
-        template,
-        notes: ["npm not installed; falling back to manual FORGE generation."],
-      };
-    const run = spawnSync("npm", ["init", "-y"], {
-      cwd: root,
-      encoding: "utf8",
-      timeout: 60000,
-    });
-    if (run.status === 0) {
-      notes.push("Bootstrapped Node project via npm init -y.");
-      return { ok: true, template, notes };
-    }
-    notes.push(
-      `npm init failed: ${summarizeExecutionOutput(`${run.stdout || ""}\n${run.stderr || ""}`)}`,
-    );
-    return { ok: false, template, notes };
-  }
+  // Non-web bootstrap logic removed (mandate: React/Next.js only)
 
   return { ok: true, template, notes: ["Bootstrap already present."] };
 }
@@ -742,33 +696,7 @@ function runProjectTests(projectName) {
     }
   }
 
-  const hasPyTests =
-    fs.existsSync(path.join(root, "tests")) ||
-    fs.existsSync(path.join(root, "test")) ||
-    fs.existsSync(path.join(root, "pytest.ini"));
-  if (hasPyTests) {
-    // Ensure pytest is installed
-    spawnSync("python3", ["-m", "pip", "install", "--quiet", "pytest"], {
-      cwd: root,
-      encoding: "utf8",
-      timeout: 60000,
-    });
-    const run = spawnSync("python3", ["-m", "pytest", "-q"], {
-      cwd: root,
-      encoding: "utf8",
-      timeout: 180000,
-    });
-    const output = `${run.stdout || ""}\n${run.stderr || ""}`.trim();
-    results.push({
-      attempted: true,
-      passed: run.status === 0,
-      summary:
-        run.status === 0
-          ? "pytest passed."
-          : `pytest failed: ${summarizeExecutionOutput(output)}`,
-      raw: output,
-    });
-  }
+  // Python tests removed (mandate: React/Next.js and modern web only)
 
   if (results.length === 0)
     return {
@@ -2670,7 +2598,7 @@ ${
             ? `\n\n## Mandatory Rework (LENS/PULSE)\n${remediationItems.map((x, i) => `${i + 1}. ${x.requirement || x}`).join("\n")}\n`
             : "";
           const previousImplBlock = previousImplementation.trim()
-            ? `\n\n## Current Workspace Implementation (fix this, do ONLY output the specific files you modify)\n${previousImplementation.slice(0, 30000)}\n`
+            ? `\n\n## Current Workspace Implementation (fix this, do ONLY output the specific files you modify)\n${previousImplementation.slice(0, 15000)}\n`
             : "";
           const taskForForge = `${readme}${bootstrapBlock}${mandatoryFixMap}${remediationBlock}${previousImplBlock}`;
           output = await this.agents.forge.implement(taskForForge, arch, res);

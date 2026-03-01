@@ -214,7 +214,7 @@ class LLMClient {
               stream: false,
               options: {
                 temperature: opts.temperature ?? 0.7,
-                num_predict: opts.maxTokens || 8192,
+                num_predict: opts.maxTokens || 4096,
                 top_p: opts.topP ?? 1,
               },
             }),
@@ -223,7 +223,7 @@ class LLMClient {
           if (!response.ok) {
             const body = await response.text();
             throw new Error(
-              `Local API error (${response.status}): ${body.slice(0, 500)}`,
+              `Local API error (${response.status}): ${body.slice(0, 1000)}`,
             );
           }
 
