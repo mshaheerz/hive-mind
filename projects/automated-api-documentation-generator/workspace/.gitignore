@@ -1,4 +1,0 @@
-node_modules
-*.log
-*.env
-src/api/api_data.json
