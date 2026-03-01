@@ -699,6 +699,8 @@ function runProjectTests(projectName) {
     };
   }
 
+  const results = [];
+
   const pkgJson = path.join(root, "package.json");
   if (fs.existsSync(pkgJson)) {
     sanitizeWorkspacePackageJson(root);
@@ -711,47 +713,39 @@ function runProjectTests(projectName) {
       if (install.status !== 0) {
         const installOutput =
           `${install.stdout || ""}\n${install.stderr || ""}`.trim();
-        return {
+        results.push({
           attempted: true,
           passed: false,
           summary: `npm install failed: ${summarizeExecutionOutput(installOutput)}`,
-          actionItems: [
-            "Fix dependency installation errors (npm install).",
-            summarizeExecutionOutput(installOutput),
-          ],
           raw: installOutput,
-        };
+        });
       }
     }
-    const run = spawnSync("npm", ["test", "--", "--watch=false"], {
-      cwd: root,
-      encoding: "utf8",
-      timeout: 180000,
-    });
-    const output = `${run.stdout || ""}\n${run.stderr || ""}`.trim();
-    if (run.status === 0)
-      return {
+
+    if (!results.length) {
+      // Only run npm test if install passed
+      const run = spawnSync("npm", ["test", "--", "--watch=false"], {
+        cwd: root,
+        encoding: "utf8",
+        timeout: 180000,
+      });
+      const output = `${run.stdout || ""}\n${run.stderr || ""}`.trim();
+      results.push({
         attempted: true,
-        passed: true,
-        summary: "npm test passed.",
-        actionItems: [],
+        passed: run.status === 0,
+        summary:
+          run.status === 0
+            ? "npm test passed."
+            : `npm test failed: ${summarizeExecutionOutput(output)}`,
         raw: output,
-      };
-    return {
-      attempted: true,
-      passed: false,
-      summary: `npm test failed: ${summarizeExecutionOutput(output)}`,
-      actionItems: [
-        "Fix failing tests reported by npm test.",
-        summarizeExecutionOutput(output),
-      ],
-      raw: output,
-    };
+      });
+    }
   }
 
   const hasPyTests =
     fs.existsSync(path.join(root, "tests")) ||
-    fs.existsSync(path.join(root, "test"));
+    fs.existsSync(path.join(root, "test")) ||
+    fs.existsSync(path.join(root, "pytest.ini"));
   if (hasPyTests) {
     const run = spawnSync("python3", ["-m", "pytest", "-q"], {
       cwd: root,
@@ -759,35 +753,44 @@ function runProjectTests(projectName) {
       timeout: 180000,
     });
     const output = `${run.stdout || ""}\n${run.stderr || ""}`.trim();
-    if (run.status === 0)
-      return {
-        attempted: true,
-        passed: true,
-        summary: "pytest passed.",
-        actionItems: [],
-        raw: output,
-      };
-    return {
+    results.push({
       attempted: true,
-      passed: false,
-      summary: `pytest failed: ${summarizeExecutionOutput(output)}`,
-      actionItems: [
-        "Fix failing tests reported by pytest.",
-        summarizeExecutionOutput(output),
-      ],
+      passed: run.status === 0,
+      summary:
+        run.status === 0
+          ? "pytest passed."
+          : `pytest failed: ${summarizeExecutionOutput(output)}`,
       raw: output,
-    };
+    });
   }
 
+  if (results.length === 0)
+    return {
+      attempted: false,
+      passed: true,
+      summary: "No test runners found.",
+      actionItems: [],
+    };
+
+  const allPassed = results.every((r) => !r.attempted || r.passed);
+  const aggregateSummary = results.map((r) => r.summary).join(" | ");
+  const aggregateRaw = results
+    .map((r) => `--- ${r.summary} ---\n${r.raw}`)
+    .join("\n\n");
+  const actionItems = [];
+  results.forEach((r) => {
+    if (!r.passed) {
+      actionItems.push(`Fix issues in ${r.summary}`);
+      actionItems.push(summarizeExecutionOutput(r.raw));
+    }
+  });
+
   return {
-    attempted: false,
-    passed: false,
-    summary:
-      "No runnable test command detected (expected package.json or pytest tests).",
-    actionItems: [
-      "Create runnable tests and declare how to run them (npm test or pytest).",
-    ],
-    raw: "",
+    attempted: true,
+    passed: allPassed,
+    summary: aggregateSummary,
+    actionItems,
+    raw: aggregateRaw,
   };
 }
 
@@ -849,8 +852,26 @@ function isBogusGeneratedPath(relPath = "") {
   if (/^(?:\d+\.\s*)?#?\s*File:\s*$/i.test(p)) return true;
   if (/^#\s*File:\s*$/i.test(p)) return true;
   if (!/[./]/.test(p) && /\bfile\b/i.test(p)) return true;
+
   // Reject filenames that are just section titles (no extension and no path slash)
-  if (!p.includes(".") && !p.includes("/")) return true;
+  // BUT: Allow common folder names like "src", "public", "tests", "config"
+  const commonFolders = [
+    "src",
+    "public",
+    "tests",
+    "test",
+    "config",
+    "docs",
+    "scripts",
+    "bin",
+    "lib",
+    "migrations",
+  ];
+  if (!p.includes(".") && !p.includes("/")) {
+    if (commonFolders.includes(p.toLowerCase())) return false;
+    return true;
+  }
+
   // Reject names containing section keywords if they lack an extension
   if (
     /\b(?:Frontend|Backend|Component|Setup|Contract|Requirement|Goal|Note)s?\b/i.test(
@@ -2886,8 +2907,9 @@ ${
               output,
               {
                 pathAllowList: [
-                  /^tests?\//i,
+                  /(^|\/)tests?\//i,
                   /(^|\/).+\.test\.(js|jsx|ts|tsx|py)$/i,
+                  /(^|\/)test_.+\.py$/i,
                   /(^|\/)(vitest|jest|pytest|playwright|cypress)\.config\.(js|cjs|mjs|ts)$/i,
                   /(^|\/)(pytest\.ini|tox\.ini|setup\.cfg)$/i,
                 ],

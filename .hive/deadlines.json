@@ -34,10 +34,9 @@
     "projectName": "devenv-setup-wizard",
     "stage": "review",
     "agent": "lens",
-    "dueAt": "2026-03-01T08:09:13.497Z",
-    "setAt": "2026-03-01T06:09:13.497Z",
-    "status": "complete",
-    "completedAt": "2026-03-01T06:13:45.026Z"
+    "dueAt": "2026-03-01T09:09:12.006Z",
+    "setAt": "2026-03-01T07:09:12.006Z",
+    "status": "active"
   },
   {
     "id": "devenv-setup-wizard::tests",
