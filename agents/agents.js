@@ -10,7 +10,7 @@ const os = require("os");
 
 function loadApplicableSkills(keywords = []) {
   try {
-    const skillsDir = path.join(__dirname, "..", "skills");
+    const skillsDir = path.join(__dirname, "..", "agent-skills");
     if (!fs.existsSync(skillsDir)) return "";
 
     let injectedContext = "";

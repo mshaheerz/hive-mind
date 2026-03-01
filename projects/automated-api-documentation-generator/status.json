@@ -1,7 +1,7 @@
 {
   "stage": "review",
   "stageOwner": "pulse",
-  "stageAttempt": 2,
+  "stageAttempt": 4,
   "blockedReason": null,
   "proposedBy": "nova",
   "approvedBy": "apex",
@@ -11,10 +11,10 @@
   "template": "",
   "lensVerdict": "APPROVED",
   "lensActionItems": [],
-  "lastHandoffRunId": "1772346688418-pulse-d7ltw",
+  "lastHandoffRunId": "1772347366974-pulse-7993l",
   "escalationLevel": "none",
   "approvedAt": "2026-02-28T13:45:42.726Z",
-  "updatedAt": "2026-03-01T06:31:28.418Z",
+  "updatedAt": "2026-03-01T06:42:46.976Z",
   "lensIssueRepeats": {
     "ID": 1,
     "L1": 2,
