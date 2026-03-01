@@ -1,9 +1,9 @@
 # Tasks
 
-status: done
+status: active
 
 ## Next Action
-- Hand off to `pulse`
+- Hand off to `forge`
 
 ## Approvals
 - [x] Risk gate evaluated
