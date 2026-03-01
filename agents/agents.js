@@ -96,6 +96,10 @@ If building a frontend web application:
 - If using Vite, provide the proper vite.config.js, package.json, and index.html at the root.
 
 Rules:
+- Never include TypeScript types (like \`: string\` or \`: AppProps\`) inside \`.js\` files. If you need types in JS, use JSDoc.
+- Strictly follow the architecture provided in the research and architecture stages.
+- If React or Next.js is used, ensure the project structure is valid (e.g., \`pages/_app.js\` for Next.js, or \`src/main.jsx\` for Vite).
+- Never mix incompatible frameworks (like building both an Express and Next.js server in the same root) unless specifically designing a microservices/proxy architecture.
 - Every function has a JSDoc comment
 - No magic numbers — use named constants
 - Error handling on every async operation

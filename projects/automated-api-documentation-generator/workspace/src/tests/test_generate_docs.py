@@ -1,7 +1,7 @@
 import pytest
-from api_doc_generator import generate_docs  # Assuming this is a function in src/generate_docs.py
+from src.api.generate_docs import fetch_api_data  # Assuming this is a function in src/api/generate_docs.py
 
-def test_generate_docs():
-    assert generate_docs("http://example.com/api") is not None, "Documentation generation should not return None"
-
-# Add more unit tests for other functions and edge cases here
+def test_fetch_api_data():
+    api_data = fetch_api_data()
+    assert isinstance(api_data, dict), "API data should be a dictionary"
+    assert "endpoints" in api_data, "API data should contain endpoints key"

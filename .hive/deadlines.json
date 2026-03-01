@@ -26,7 +26,8 @@
     "agent": "forge",
     "dueAt": "2026-03-01T13:29:19.630Z",
     "setAt": "2026-03-01T07:29:19.630Z",
-    "status": "active"
+    "status": "complete",
+    "completedAt": "2026-03-01T07:54:57.231Z"
   },
   {
     "id": "devenv-setup-wizard::review",
@@ -73,28 +74,28 @@
     "projectName": "automated-api-documentation-generator",
     "stage": "implementation",
     "agent": "forge",
-    "dueAt": "2026-03-01T12:22:44.330Z",
-    "setAt": "2026-03-01T06:22:44.330Z",
-    "status": "complete",
-    "completedAt": "2026-03-01T06:26:57.578Z"
+    "dueAt": "2026-03-01T16:44:13.362Z",
+    "setAt": "2026-03-01T10:44:13.362Z",
+    "status": "active"
   },
   {
     "id": "automated-api-documentation-generator::review",
     "projectName": "automated-api-documentation-generator",
     "stage": "review",
     "agent": "lens",
-    "dueAt": "2026-03-01T08:26:57.580Z",
-    "setAt": "2026-03-01T06:26:57.580Z",
+    "dueAt": "2026-03-01T12:35:13.792Z",
+    "setAt": "2026-03-01T10:35:13.792Z",
     "status": "complete",
-    "completedAt": "2026-03-01T06:31:28.416Z"
+    "completedAt": "2026-03-01T10:39:13.118Z"
   },
   {
     "id": "automated-api-documentation-generator::tests",
     "projectName": "automated-api-documentation-generator",
     "stage": "tests",
     "agent": "pulse",
-    "dueAt": "2026-03-01T08:42:46.977Z",
-    "setAt": "2026-03-01T06:42:46.977Z",
-    "status": "active"
+    "dueAt": "2026-03-01T12:39:13.138Z",
+    "setAt": "2026-03-01T10:39:13.138Z",
+    "status": "complete",
+    "completedAt": "2026-03-01T10:43:52.230Z"
   }
 ]

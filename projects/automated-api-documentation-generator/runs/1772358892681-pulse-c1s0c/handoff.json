@@ -1,0 +1,20 @@
+{
+  "fromAgent": "pulse",
+  "toAgent": "forge",
+  "project": "automated-api-documentation-generator",
+  "stage": "review",
+  "runId": "1772358892681-pulse-c1s0c",
+  "summary": "npm test failed: npm error Missing script: \"test\" | npm error | npm error To see a list of scripts, run: | npm error   npm run | npm error A complete log of this run can be found in: /home/zaigopc/.npm/_logs/2026-03-01T09_59_35_833Z-debug-0.log | pytest failed: /usr/bin/python3: No module named pytest",
+  "artifacts": [],
+  "requiredActions": [
+    "Fix issues in npm test failed: npm error Missing script: \"test\" | npm error | npm error To see a list of scripts, run: | npm error   npm run | npm error A complete log of this run can be found in: /home/zaigopc/.npm/_logs/2026-03-01T09_59_35_833Z-debug-0.log",
+    "npm error Missing script: \"test\" | npm error | npm error To see a list of scripts, run: | npm error   npm run | npm error A complete log of this run can be found in: /home/zaigopc/.npm/_logs/2026-03-01T09_59_35_833Z-debug-0.log",
+    "Fix issues in pytest failed: /usr/bin/python3: No module named pytest",
+    "/usr/bin/python3: No module named pytest"
+  ],
+  "acceptanceChecks": [],
+  "modelInfo": {
+    "provider": "local",
+    "model": "DeepSeek-Coder-V2"
+  }
+}

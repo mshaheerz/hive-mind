@@ -1,14 +1,15 @@
 {
-  "name": "dev-env-setup-wizard",
+  "name": "devenv-setup-wizard",
   "version": "1.0.0",
-  "description": "An automation tool to streamline the setup process for new projects",
-  "main": "index.js",
+  "description": "Dev environment setup wizard",
+  "main": "src/web-server/app.js",
   "scripts": {
-    "start": "node src/web-server/app.js"
+    "start": "node src/web-server/app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "express": "^4.17.1",
-    "body-parser": "^1.19.0",
+    "express": "^4.18.2",
+    "body-parser": "^1.20.1",
     "morgan": "^1.10.0"
   }
 }

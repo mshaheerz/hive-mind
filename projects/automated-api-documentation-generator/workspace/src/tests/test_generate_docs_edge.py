@@ -1,6 +1,6 @@
 import pytest
-from api_doc_generator import generate_docs  # Assuming this is a function in src/generate_docs.py
+from src.api.generate_docs import fetch_api_data  # Assuming this is a function in src/api/generate_docs.py
 
-def test_generate_docs_invalid_url():
-    with pytest.raises(ValueError):
-        assert not generate_docs("invalid-url"), "Invalid URL should raise an error"
+def test_fetch_api_data_empty():
+    with pytest.raises(Exception):
+        assert not fetch_api_data(), "Fetching empty API data should raise an error"

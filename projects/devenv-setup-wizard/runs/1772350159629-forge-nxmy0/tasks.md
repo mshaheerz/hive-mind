@@ -1,21 +1,19 @@
 # Tasks
 
-status: active
+status: done
 
 ## Next Action
-- Execute stage `architecture` by `forge`
-- Produce decision + handoff artifacts
-- Attach evidence for traceability
+- Hand off to `lens`
 
 ## Approvals
-- [ ] Risk gate evaluated
+- [x] Risk gate evaluated
 - [ ] High-risk actions explicitly approved by APEX (if required)
 
 ## Checklist
-- [ ] Execute architecture
-- [ ] Emit decision + handoff
-- [ ] Attach evidence
+- [x] Execute stage
+- [x] Emit decision + handoff
+- [x] Attach evidence
 
 ## Verification
-- [ ] Stage output persisted
-- [ ] Next stage owner identified
+- [x] Stage output persisted
+- [x] Next stage owner identified
