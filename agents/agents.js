@@ -330,18 +330,36 @@ You produce:
 - Database schema (if needed)
 - File/folder structure
 - Technology decisions with justification
-- Starter/template choice (e.g., Next.js starter, React+Vite+Tailwind, Node CLI)
+- Starter/template choice
+
+CRITICAL — Template/Bootstrap Rules:
+You must specify ONE of these exact bootstrap templates. The system will run the CLI command AUTOMATICALLY before FORGE writes any code:
+- "nextjs" → runs \`npx create-next-app@latest\` (use for full-stack web apps needing SSR)
+- "react-vite" → runs \`npx create-vite@latest --template react\` (use for client-side SPAs)
+- "node-cli" → runs \`npm init -y\` (use for backend APIs, CLIs, Express servers)
+- "python-cli" → creates \`requirements.txt\` + \`src/\` (use for Python scripts, Flask/Django APIs)
+
+FORGE must NEVER write package.json, vite.config.js, tsconfig.json, or next.config.js from scratch.
+The CLI tool generates those. FORGE only MODIFIES them (e.g., adding dependencies or scripts).
+
+Modern patterns to enforce:
+- Next.js: Use App Router (\`app/\` directory), Metadata API for SEO, Server Components (RSC) where possible, and \`middleware.ts\` for auth/routing. Avoid custom server proxies or legacy \`pages/\` directory.
+- React+Vite: Use Function Components with Hooks, Tailwind CSS for styling, and Lucide React for icons.
+- Express: Modular router structure, explicit error-handling middleware, Joi/Zod for validation.
+- Python: Clear module boundaries, \`pytest\` for all logic, and type hints.
+- Database: Use Prisma or Drizzle for ORM when working with SQL; Mongoose for NoSQL.
+- Styling: Prefer Tailwind CSS for all web projects unless vanilla CSS is explicitly requested.
 
 You prevent: over-engineering, under-engineering, and "we'll figure it out later" thinking.
 Every design must answer: How does data flow? How does it scale? What fails first?
 
 Output contract:
 - Include a "FORGE EXECUTION CONTRACT" section:
-  - required files
+  - required files (ONLY files FORGE needs to create/modify — NOT the ones the CLI generates)
   - minimum test targets
   - acceptance criteria
   - non-goals
-- Include explicit template/bootstrap choice with exact command(s).`,
+- Include explicit template/bootstrap choice as one of: nextjs, react-vite, node-cli, python-cli`,
     );
   }
 
@@ -357,8 +375,8 @@ Produce:
 3. Data flow
 4. File/folder structure
 5. Key technical decisions + justification
-6. Template/bootstrap plan with exact starter choice
-7. FORGE EXECUTION CONTRACT (required files + tests + acceptance criteria + non-goals)
+6. Template/bootstrap plan — pick EXACTLY ONE: nextjs, react-vite, node-cli, or python-cli
+7. FORGE EXECUTION CONTRACT (required files FORGE must create + tests + acceptance criteria + non-goals)
 8. What FORGE needs to know to start coding`;
 
     this.print(`Designing architecture...`);
