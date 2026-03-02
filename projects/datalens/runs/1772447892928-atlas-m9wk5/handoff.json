@@ -1,0 +1,18 @@
+{
+  "fromAgent": "atlas",
+  "toAgent": "forge",
+  "project": "datalens",
+  "stage": "research",
+  "runId": "1772447892928-atlas-m9wk5",
+  "summary": "datalens: research -> architecture",
+  "artifacts": [
+    "output/research.md",
+    "output/architecture.md"
+  ],
+  "requiredActions": [],
+  "acceptanceChecks": [],
+  "modelInfo": {
+    "provider": "groq",
+    "model": "meta-llama/llama-4-scout-17b-16e-instruct"
+  }
+}

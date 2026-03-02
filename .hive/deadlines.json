@@ -1,1 +1,60 @@
-[]
+[
+  {
+    "id": "datalens::research",
+    "projectName": "datalens",
+    "stage": "research",
+    "agent": "scout",
+    "dueAt": "2026-03-02T12:38:10.740Z",
+    "setAt": "2026-03-02T10:38:10.740Z",
+    "status": "complete",
+    "completedAt": "2026-03-02T10:38:12.923Z"
+  },
+  {
+    "id": "datalens::architecture",
+    "projectName": "datalens",
+    "stage": "architecture",
+    "agent": "atlas",
+    "dueAt": "2026-03-02T13:38:12.932Z",
+    "setAt": "2026-03-02T10:38:12.932Z",
+    "status": "complete",
+    "completedAt": "2026-03-02T10:38:15.007Z"
+  },
+  {
+    "id": "datalens::implementation",
+    "projectName": "datalens",
+    "stage": "implementation",
+    "agent": "forge",
+    "dueAt": "2026-03-02T16:38:15.012Z",
+    "setAt": "2026-03-02T10:38:15.012Z",
+    "status": "active"
+  },
+  {
+    "id": "codedocsx::research",
+    "projectName": "codedocsx",
+    "stage": "research",
+    "agent": "scout",
+    "dueAt": "2026-03-02T12:38:23.745Z",
+    "setAt": "2026-03-02T10:38:23.745Z",
+    "status": "complete",
+    "completedAt": "2026-03-02T10:38:26.599Z"
+  },
+  {
+    "id": "codedocsx::architecture",
+    "projectName": "codedocsx",
+    "stage": "architecture",
+    "agent": "atlas",
+    "dueAt": "2026-03-02T13:38:26.604Z",
+    "setAt": "2026-03-02T10:38:26.604Z",
+    "status": "complete",
+    "completedAt": "2026-03-02T10:38:28.863Z"
+  },
+  {
+    "id": "codedocsx::implementation",
+    "projectName": "codedocsx",
+    "stage": "implementation",
+    "agent": "forge",
+    "dueAt": "2026-03-02T16:38:28.868Z",
+    "setAt": "2026-03-02T10:38:28.868Z",
+    "status": "active"
+  }
+]

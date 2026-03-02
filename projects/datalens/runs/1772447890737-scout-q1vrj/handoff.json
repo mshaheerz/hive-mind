@@ -1,0 +1,18 @@
+{
+  "fromAgent": "scout",
+  "toAgent": "atlas",
+  "project": "datalens",
+  "stage": "approved",
+  "runId": "1772447890737-scout-q1vrj",
+  "summary": "datalens: approved -> research",
+  "artifacts": [
+    "output/approved.md",
+    "output/research.md"
+  ],
+  "requiredActions": [],
+  "acceptanceChecks": [],
+  "modelInfo": {
+    "provider": "groq",
+    "model": "llama-3.3-70b-versatile"
+  }
+}

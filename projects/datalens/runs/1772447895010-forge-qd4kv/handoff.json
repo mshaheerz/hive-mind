@@ -1,0 +1,15 @@
+{
+  "fromAgent": "forge",
+  "toAgent": "forge",
+  "project": "datalens",
+  "stage": "architecture",
+  "runId": "1772447895010-forge-qd4kv",
+  "summary": "Execution failed at architecture: 413 {\"error\":{\"message\":\"Request Entity Too Large\",\"type\":\"invalid_request_error\",\"code\":\"request_too_large\"}}",
+  "artifacts": [],
+  "requiredActions": [],
+  "acceptanceChecks": [],
+  "modelInfo": {
+    "provider": "groq",
+    "model": "openai/gpt-oss-120b"
+  }
+}

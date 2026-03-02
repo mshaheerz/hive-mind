@@ -1,0 +1,1 @@
+create-next-app failed: Could not create a project called ".bootstrap-next" because of npm naming restrictions: | * name cannot start with a period

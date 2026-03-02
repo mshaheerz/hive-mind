@@ -1,0 +1,29 @@
+{
+  "project": "datalens",
+  "stage": "approved",
+  "agent": "scout",
+  "runId": "1772447890737-scout-q1vrj",
+  "parentRunId": null,
+  "startedAt": "2026-03-02T10:38:10.737Z",
+  "provider": "groq",
+  "model": "llama-3.3-70b-versatile",
+  "statusSnapshot": {
+    "stage": "approved",
+    "stageOwner": "scout",
+    "stageAttempt": 1,
+    "blockedReason": null,
+    "proposedBy": "nova",
+    "approvedBy": "apex",
+    "approvalScore": 8,
+    "projectType": "web_app",
+    "preferredStack": "Next.js 15 + Tailwind CSS + Lucide Icons",
+    "template": "nextjs-starter",
+    "lensVerdict": null,
+    "lensActionItems": [],
+    "lastHandoffRunId": null,
+    "escalationLevel": "none",
+    "approvedAt": "2026-03-02T10:37:22.722Z",
+    "updatedAt": "2026-03-02T10:37:22.723Z",
+    "lensIssueRepeats": {}
+  }
+}
