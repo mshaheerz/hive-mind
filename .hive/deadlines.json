@@ -24,19 +24,48 @@
     "projectName": "pr-review-hub",
     "stage": "implementation",
     "agent": "forge",
-    "dueAt": "2026-03-03T13:14:26.198Z",
-    "setAt": "2026-03-03T07:14:26.198Z",
+    "dueAt": "2026-03-03T14:07:47.356Z",
+    "setAt": "2026-03-03T08:07:47.356Z",
     "status": "complete",
-    "completedAt": "2026-03-03T07:15:18.699Z"
+    "completedAt": "2026-03-03T08:07:55.097Z"
   },
   {
     "id": "pr-review-hub::review",
     "projectName": "pr-review-hub",
     "stage": "review",
     "agent": "lens",
-    "dueAt": "2026-03-03T09:15:18.703Z",
-    "setAt": "2026-03-03T07:15:18.703Z",
+    "dueAt": "2026-03-03T10:07:55.104Z",
+    "setAt": "2026-03-03T08:07:55.104Z",
+    "status": "active"
+  },
+  {
+    "id": "feature-flag-manager::research",
+    "projectName": "feature-flag-manager",
+    "stage": "research",
+    "agent": "scout",
+    "dueAt": "2026-03-03T10:08:00.652Z",
+    "setAt": "2026-03-03T08:08:00.652Z",
     "status": "complete",
-    "completedAt": "2026-03-03T07:16:18.946Z"
+    "completedAt": "2026-03-03T08:08:02.729Z"
+  },
+  {
+    "id": "feature-flag-manager::architecture",
+    "projectName": "feature-flag-manager",
+    "stage": "architecture",
+    "agent": "atlas",
+    "dueAt": "2026-03-03T11:08:02.734Z",
+    "setAt": "2026-03-03T08:08:02.734Z",
+    "status": "complete",
+    "completedAt": "2026-03-03T08:08:04.872Z"
+  },
+  {
+    "id": "feature-flag-manager::implementation",
+    "projectName": "feature-flag-manager",
+    "stage": "implementation",
+    "agent": "forge",
+    "dueAt": "2026-03-03T14:08:04.878Z",
+    "setAt": "2026-03-03T08:08:04.878Z",
+    "status": "complete",
+    "completedAt": "2026-03-03T08:09:42.396Z"
   }
 ]

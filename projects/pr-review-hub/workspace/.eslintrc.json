@@ -1,0 +1,16 @@
+{
+  "extends": ["next", "next/core-web-vitals", "eslint:recommended"],
+  "plugins": [],
+  "rules": {
+    "no-console": "warn",
+    "import/order": ["error", { "alphabetize": { "order": "asc", "caseInsensitive": true } }],
+    "react/react-in-jsx-scope": "off",
+    "consistent-return": "error",
+    "prefer-const": "error"
+  },
+  "env": {
+    "browser": true,
+    "node": true,
+    "jest": true
+  }
+}

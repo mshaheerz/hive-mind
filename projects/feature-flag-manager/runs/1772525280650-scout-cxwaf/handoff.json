@@ -1,0 +1,18 @@
+{
+  "fromAgent": "scout",
+  "toAgent": "atlas",
+  "project": "feature-flag-manager",
+  "stage": "approved",
+  "runId": "1772525280650-scout-cxwaf",
+  "summary": "feature-flag-manager: approved -> research",
+  "artifacts": [
+    "output/approved.md",
+    "output/research.md"
+  ],
+  "requiredActions": [],
+  "acceptanceChecks": [],
+  "modelInfo": {
+    "provider": "groq",
+    "model": "llama-3.3-70b-versatile"
+  }
+}

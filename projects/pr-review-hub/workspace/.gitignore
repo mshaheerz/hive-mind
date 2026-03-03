@@ -4,6 +4,9 @@
 .env.local
 .env.production
 
+# ignore any env file anywhere in the repo
+**/.env*
+
 node_modules/
 .next/
 out/

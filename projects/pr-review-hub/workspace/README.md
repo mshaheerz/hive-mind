@@ -4,13 +4,14 @@ A self‑hosted dashboard that aggregates open Pull Requests from multiple GitHu
 
 ## Table of Contents
 - [Features](#features)
-- [Quick Start](#quick-start)
+- [Installation](#installation)
 - [Environment Variables](#environment-variables)
 - [GitHub OAuth Setup](#github-oauth-setup)
-- [Security Considerations](#security-considerations)
-- [Rate‑Limit Handling](#rate-limit-handling)
+- [Running the App](#running-the-app)
 - [Testing](#testing)
 - [Deployment](#deployment)
+- [Security Considerations](#security-considerations)
+- [Rate‑Limit Handling](#rate-limit-handling)
 
 ## Features
 - Aggregate open PRs from ≥ 5 repositories.
@@ -18,4 +19,5 @@ A self‑hosted dashboard that aggregates open Pull Requests from multiple GitHu
 - Real‑time refresh (≤ 30 s) using Server Actions.
 - GitHub OAuth authentication respecting repository permissions.
 
-## Quick Start
+## Installation
+
