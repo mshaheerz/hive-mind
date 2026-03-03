@@ -3,7 +3,7 @@
 status: active
 
 ## Next Action
-- Execute stage `architecture` by `forge`
+- Execute stage `implementation` by `lens`
 - Produce decision + handoff artifacts
 - Attach evidence for traceability
 
@@ -12,7 +12,7 @@ status: active
 - [ ] High-risk actions explicitly approved by APEX (if required)
 
 ## Checklist
-- [ ] Execute architecture
+- [ ] Execute implementation
 - [ ] Emit decision + handoff
 - [ ] Attach evidence
 

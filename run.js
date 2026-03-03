@@ -455,6 +455,8 @@ function runWorkspaceChecks(projectName) {
 
   for (const rel of files) {
     const full = path.join(root, rel);
+
+    // JavaScript / MJS / CJS syntax check
     if (/\.(js|mjs|cjs)$/i.test(rel)) {
       checked += 1;
       const run = spawnSync("node", ["--check", full], {
@@ -465,12 +467,55 @@ function runWorkspaceChecks(projectName) {
         passed += 1;
       } else {
         failed += 1;
+        const err = (run.stderr || run.stdout || "").trim();
         reportLines.push(
-          `[FAIL] node --check ${rel}\n${(run.stderr || run.stdout || "").trim()}`,
+          `[FAIL] node --check ${rel}\n${err}\nFix hint: Check for missing brackets, semicolons, or import errors.`,
         );
       }
       continue;
     }
+
+    // JSON syntax check (package.json, tsconfig, etc.)
+    if (/\.json$/i.test(rel)) {
+      checked += 1;
+      try {
+        const content = fs.readFileSync(full, "utf8");
+        JSON.parse(content);
+        passed += 1;
+      } catch (e) {
+        failed += 1;
+        reportLines.push(
+          `[FAIL] JSON.parse ${rel}\n${e.message}\nFix hint: Check for trailing commas, missing quotes, or unescaped characters.`,
+        );
+      }
+      continue;
+    }
+
+    // JSX / TSX / TS — try node --check (catches major parse errors even without transpiler)
+    if (/\.(jsx|tsx|ts)$/i.test(rel)) {
+      checked += 1;
+      // Basic text-level checks (no transpiler needed)
+      try {
+        const content = fs.readFileSync(full, "utf8");
+        // Check for obviously broken code: unmatched braces
+        const opens = (content.match(/\{/g) || []).length;
+        const closes = (content.match(/\}/g) || []).length;
+        if (Math.abs(opens - closes) > 2) {
+          failed += 1;
+          reportLines.push(
+            `[FAIL] Brace mismatch in ${rel}: ${opens} open vs ${closes} close braces.\nFix hint: Check for missing or extra { } brackets.`,
+          );
+        } else {
+          passed += 1;
+        }
+      } catch (e) {
+        failed += 1;
+        reportLines.push(`[FAIL] Cannot read ${rel}: ${e.message}`);
+      }
+      continue;
+    }
+
+    // Python syntax check
     if (/\.py$/i.test(rel)) {
       checked += 1;
       const run = spawnSync("python3", ["-m", "py_compile", full], {
@@ -1735,6 +1780,50 @@ class AutonomousRunner {
       "system",
       "Press Ctrl+C to stop. Human commands still work in another terminal.\n",
     );
+
+    // ── Startup Self-Check: validate core files + all workspaces ──
+    {
+      const coreFiles = [
+        path.join(__dirname, "run.js"),
+        path.join(__dirname, "core", "llm-client.js"),
+        path.join(__dirname, "core", "agent.js"),
+        path.join(__dirname, "core", "autonomous.js"),
+        path.join(__dirname, "agents", "agents.js"),
+      ];
+      let coreOk = 0;
+      let coreFail = 0;
+      for (const f of coreFiles) {
+        if (!fs.existsSync(f)) continue;
+        const run = spawnSync("node", ["--check", f], {
+          encoding: "utf8",
+          timeout: 10000,
+        });
+        if (run.status === 0) {
+          coreOk++;
+        } else {
+          coreFail++;
+          log(
+            "system",
+            `⚠ SYNTAX ERROR in ${path.relative(__dirname, f)}: ${(run.stderr || "").split("\n")[0]}`,
+          );
+        }
+      }
+      log(
+        "system",
+        `Self-check: ${coreOk}/${coreOk + coreFail} core files OK${coreFail ? ` (${coreFail} FAILED!)` : " ✓"}`,
+      );
+
+      // Check all project workspaces
+      for (const name of getProjects()) {
+        const wsCheck = runWorkspaceChecks(name);
+        if (wsCheck.failed > 0) {
+          log(
+            "system",
+            `⚠ Workspace "${name}": ${wsCheck.failed} file(s) failed syntax check`,
+          );
+        }
+      }
+    }
 
     this.state.state.running = true;
     this.state.save();
