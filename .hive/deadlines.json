@@ -24,19 +24,19 @@
     "projectName": "pr-review-hub",
     "stage": "implementation",
     "agent": "forge",
-    "dueAt": "2026-03-03T16:05:52.571Z",
-    "setAt": "2026-03-03T10:05:52.571Z",
-    "status": "complete",
-    "completedAt": "2026-03-03T10:05:56.572Z"
+    "dueAt": "2026-03-03T17:16:22.529Z",
+    "setAt": "2026-03-03T11:16:22.529Z",
+    "status": "active"
   },
   {
     "id": "pr-review-hub::review",
     "projectName": "pr-review-hub",
     "stage": "review",
     "agent": "lens",
-    "dueAt": "2026-03-03T12:45:04.203Z",
-    "setAt": "2026-03-03T10:45:04.203Z",
-    "status": "active"
+    "dueAt": "2026-03-03T12:57:49.849Z",
+    "setAt": "2026-03-03T10:57:49.849Z",
+    "status": "complete",
+    "completedAt": "2026-03-03T11:01:33.818Z"
   },
   {
     "id": "feature-flag-manager::research",
@@ -82,9 +82,9 @@
     "projectName": "pr-review-hub",
     "stage": "tests",
     "agent": "pulse",
-    "dueAt": "2026-03-03T11:16:55.209Z",
-    "setAt": "2026-03-03T09:16:55.209Z",
+    "dueAt": "2026-03-03T13:01:33.821Z",
+    "setAt": "2026-03-03T11:01:33.821Z",
     "status": "complete",
-    "completedAt": "2026-03-03T09:17:05.362Z"
+    "completedAt": "2026-03-03T11:16:22.524Z"
   }
 ]
