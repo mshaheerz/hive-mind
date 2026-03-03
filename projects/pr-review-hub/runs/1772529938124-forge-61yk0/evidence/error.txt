@@ -1,0 +1,9 @@
+Error: All groq models failed for forge: 413 {"error":{"message":"Request too large for model `llama-3.1-8b-instant` in organization `org_01kjd3wc6yf1m9g663tc9324mn` service tier `on_demand` on tokens per minute (TPM): Limit 6000, Requested 6059, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing","type":"tokens","code":"rate_limit_exceeded"}}
+    at LLMClient.chat (/home/zaigopc/Desktop/my/hive-mind/core/llm-client.js:243:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ForgeAgent.think (/home/zaigopc/Desktop/my/hive-mind/core/agent.js:68:22)
+    at async ForgeAgent.implement (/home/zaigopc/Desktop/my/hive-mind/agents/agents.js:201:12)
+    at async AutonomousRunner.runProjectStage (/home/zaigopc/Desktop/my/hive-mind/run.js:2633:20)
+    at async AutonomousRunner.advanceProjects (/home/zaigopc/Desktop/my/hive-mind/run.js:2444:21)
+    at async AutonomousRunner.cycle (/home/zaigopc/Desktop/my/hive-mind/run.js:1922:7)
+    at async AutonomousRunner.start (/home/zaigopc/Desktop/my/hive-mind/run.js:1500:5)

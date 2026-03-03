@@ -1,0 +1,8 @@
+{
+  "outcome": "approved",
+  "rationale": "Escalation policy bypassed repeated rejection loop to progress pipeline.",
+  "risk": "safe",
+  "approvedBy": "system",
+  "approved": true,
+  "decidedAt": "2026-03-03T09:16:55.205Z"
+}

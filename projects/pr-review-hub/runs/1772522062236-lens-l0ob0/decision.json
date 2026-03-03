@@ -1,8 +1,0 @@
-{
-  "outcome": "rejected",
-  "rationale": "LENS found critical issues and sent implementation back to FORGE.",
-  "risk": "safe",
-  "approvedBy": "system",
-  "approved": true,
-  "decidedAt": "2026-03-03T07:14:26.193Z"
-}

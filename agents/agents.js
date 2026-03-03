@@ -8,6 +8,8 @@ const fs = require("fs");
 const path = require("path");
 const os = require("os");
 
+const STATE_FILE = path.join(__dirname, "..", ".hive", "autonomous-state.json");
+
 function loadApplicableSkills(keywords = [], limit = 5) {
   try {
     const skillsDir = path.join(__dirname, "..", "agent-skills");
@@ -35,9 +37,38 @@ function loadApplicableSkills(keywords = [], limit = 5) {
     const selected = skillsFound.slice(0, limit);
 
     let injectedContext = "";
+    let totalChars = 0;
+
+    // Load dynamic config from state if available
+    let TOTAL_BUDGET = 12000;
+    let PER_SKILL_LIMIT = 6000;
+    try {
+      if (fs.existsSync(STATE_FILE)) {
+        const state = JSON.parse(fs.readFileSync(STATE_FILE, "utf8"));
+        if (state.config) {
+          TOTAL_BUDGET = state.config.totalSkillBudget || TOTAL_BUDGET;
+          PER_SKILL_LIMIT = state.config.perSkillLimit || PER_SKILL_LIMIT;
+        }
+      }
+    } catch (e) {
+      // Fallback to defaults
+    }
+
     for (const skill of selected) {
-      const content = fs.readFileSync(skill.path, "utf8");
-      injectedContext += `\n\n--- SKILL DEFINITION: ${skill.folder} ---\n${content}\n-----------------------------------\n`;
+      if (totalChars > TOTAL_BUDGET) break;
+
+      let content = fs.readFileSync(skill.path, "utf8");
+      if (content.length > PER_SKILL_LIMIT) {
+        content =
+          content.slice(0, PER_SKILL_LIMIT) +
+          "\n... [SKILL TRUNCATED DUE TO SIZE] ...";
+      }
+
+      const chunk = `\n\n--- SKILL DEFINITION: ${skill.folder} ---\n${content}\n-----------------------------------\n`;
+      if (totalChars + chunk.length > TOTAL_BUDGET) continue;
+
+      injectedContext += chunk;
+      totalChars += chunk.length;
     }
 
     return injectedContext

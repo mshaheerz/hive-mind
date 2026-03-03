@@ -985,41 +985,60 @@ function hasRealProjectFiles(projectName) {
   return files.some((f) => !/\.md$/i.test(f));
 }
 
-function gatherWorkspaceForLLM(projectName, limit = 15000) {
+function gatherWorkspaceForLLM(projectName, opts = {}) {
+  const { priorityFiles = [], limit = 15000 } = opts;
   const files = listWorkspaceFiles(projectName);
-  let out = "";
+  let out =
+    "## CURRENT WORKSPACE MAP\n(Total workspace structure. Use this to identify where files belong.)\n";
+
+  // 1. Build a lightweight directory map first (VS Code strategy)
   for (const file of files) {
-    // Skip binary, cache, lock, and large files
+    if (file.includes("node_modules") || file.includes(".next")) continue;
+    out += `- ${file}\n`;
+  }
+
+  out += "\n## FILE CONTENTS (Relevant / Priority Only)\n";
+
+  // Core files that are almost always relevant to build/config issues
+  const coreFiles = [
+    "package.json",
+    "next.config.js",
+    "tailwind.config.js",
+    "README.md",
+    "jsconfig.json",
+    "tsconfig.json",
+  ];
+  const targetSet = new Set([...priorityFiles, ...coreFiles]);
+
+  for (const file of files) {
+    const isPriority = Array.from(targetSet).some((p) =>
+      file.toLowerCase().includes(String(p).toLowerCase()),
+    );
+    if (!isPriority) continue;
+
+    // Skip binary and massive files
     if (
-      /\.(png|jpe?g|gif|svg|ico|pdf|zip|tar|gz|mp4|webm|pyc|pyo|woff2?|ttf|eot|map|lock)$/i.test(
+      /\.(png|jpe?g|gif|svg|ico|pdf|zip|mp4|webm|pyc|woff2?|map|lock)$/i.test(
         file,
       )
     )
       continue;
-    if (
-      file === "package-lock.json" ||
-      file === "yarn.lock" ||
-      file === "pnpm-lock.yaml"
-    )
-      continue;
-    if (file.includes("__pycache__") || file.includes(".pytest_cache"))
-      continue;
-    if (file.includes("node_modules") || file.includes(".next")) continue;
+    if (file === "package-lock.json" || file.includes("__pycache__")) continue;
 
     const full = path.join(PROJECTS_DIR, projectName, "workspace", file);
     try {
       const stat = fs.statSync(full);
-      if (stat.size > 50000) continue; // Skip files larger than 50KB
+      if (stat.size > 100000) continue; // 100KB limit for priority files
       const content = fs.readFileSync(full, "utf8");
-      // Quick binary check: if content has null bytes, skip it
       if (content.includes("\0")) continue;
 
       const entry = `\n**File: \`${file}\`**\n\`\`\`\n${content}\n\`\`\`\n`;
-      if ((out + entry).length > limit) break; // Hard limit reached
+      if ((out + entry).length > limit) {
+        out += `\n... [Workspace truncated due to token limit. Ask if you need specific other files from the map above] ...\n`;
+        break;
+      }
       out += entry;
-    } catch (e) {
-      // Ignore read errors
-    }
+    } catch (e) {}
   }
   return out;
 }
@@ -2598,7 +2617,19 @@ ${
         case "architecture":
           const arch = readOutput(projectName, "architecture.md");
           const res = readOutput(projectName, "research.md");
-          const previousImplementation = gatherWorkspaceForLLM(projectName);
+
+          // Smart Retrieval: Only send full content for files being complained about
+          const remediationFiles = [
+            ...(status.lensActionItems || []).map((x) => x.file),
+            ...(status.pulseActionItems || []).map((x) =>
+              typeof x === "object" ? x.file : "",
+            ),
+          ].filter(Boolean);
+
+          const previousImplementation = gatherWorkspaceForLLM(projectName, {
+            priorityFiles: remediationFiles,
+            limit: 20000,
+          });
 
           const bootstrap = ensureProjectBootstrap(projectName, status, readme);
           appendRunEvidence(
@@ -2734,7 +2765,7 @@ ${
 
         case "implementation":
           const currentImpl =
-            gatherWorkspaceForLLM(projectName) ||
+            gatherWorkspaceForLLM(projectName, { limit: 20000 }) ||
             readOutput(projectName, "implementation.md");
           output = await this.agents.lens.review(currentImpl, readme);
           writeOutput(projectName, "review.md", output);
@@ -2891,7 +2922,7 @@ ${
 
         case "review":
           const testSubjectCode =
-            gatherWorkspaceForLLM(projectName) ||
+            gatherWorkspaceForLLM(projectName, { limit: 20000 }) ||
             readOutput(projectName, "implementation.md");
           output = await this.agents.pulse.generateTests(
             testSubjectCode,
@@ -3051,7 +3082,10 @@ ${
       return { worked: true, success: true };
     } catch (err) {
       const msg = String(err?.message || err).toLowerCase();
+      const code = this.agents.apex.client._errorCode(err);
       const isTransient =
+        code === 413 ||
+        msg.includes("too large") ||
         msg.includes("fetch failed") ||
         msg.includes("timeout") ||
         msg.includes("econnrefused");

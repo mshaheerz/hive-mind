@@ -154,7 +154,50 @@ class LLMClient {
     let lastError;
     for (const model of modelChain) {
       try {
-        let result = await this._callWithRetry(model, currentMessages, opts);
+        let result;
+
+        try {
+          result = await this._callWithRetry(model, currentMessages, opts);
+        } catch (err) {
+          if (this._isEntityTooLargeError(err) && !opts._isChunkRetry) {
+            const totalLen = this._totalLength(currentMessages);
+            let currentChunkSize = opts.chunkSize || 12000;
+            let lastChunkErr;
+
+            while (currentChunkSize >= 3000) {
+              console.log(
+                `  [${agentName.toUpperCase()}] ${model} error: Request too large (${Math.round(totalLen / 1024)} KB). Attempting chunked delivery (Chunk size: ${Math.round(currentChunkSize / 1024)} KB)...`,
+              );
+              try {
+                result = await this._chunkedChat(
+                  agentName,
+                  model,
+                  currentMessages,
+                  { ...opts, chunkSize: currentChunkSize },
+                );
+                lastChunkErr = null;
+                break; // Found a size that works!
+              } catch (chunkErr) {
+                lastChunkErr = chunkErr;
+                if (
+                  this._isEntityTooLargeError(chunkErr) &&
+                  currentChunkSize > 3000
+                ) {
+                  currentChunkSize = Math.floor(currentChunkSize / 2);
+                  console.log(
+                    `  [${agentName.toUpperCase()}] Chunk still too large for ${model}. Reducing size to ${Math.round(currentChunkSize / 1024)} KB...`,
+                  );
+                  continue;
+                }
+                throw chunkErr;
+              }
+            }
+            if (lastChunkErr) throw lastChunkErr;
+          } else {
+            throw err;
+          }
+        }
+
         fullOutput += result.content;
 
         let loopCount = 0;
@@ -186,6 +229,7 @@ class LLMClient {
         return fullOutput;
       } catch (err) {
         lastError = err;
+
         if (!this._shouldFallback(err)) {
           throw err;
         }
@@ -198,6 +242,80 @@ class LLMClient {
 
     throw new Error(
       `All ${this.provider} models failed for ${agentName}: ${lastError?.message}`,
+    );
+  }
+
+  async _chunkedChat(agentName, model, messages, opts = {}) {
+    // Identify the largest message to split (usually the user task/workspace dump)
+    let largestIdx = -1;
+    let maxLength = -1;
+    for (let i = 0; i < messages.length; i++) {
+      if (messages[i].content.length > maxLength) {
+        maxLength = messages[i].content.length;
+        largestIdx = i;
+      }
+    }
+
+    if (largestIdx === -1 || maxLength < 4000) {
+      throw new Error(
+        `Request too large but no large message found to chunk (Max=${maxLength}).`,
+      );
+    }
+
+    const originalMessage = messages[largestIdx];
+    // Conservative chunk size to avoid provider HTTP/token limits
+    const chunkSize = opts.chunkSize || 20000;
+    const chunks = [];
+    for (let i = 0; i < originalMessage.content.length; i += chunkSize) {
+      chunks.push(originalMessage.content.substring(i, i + chunkSize));
+    }
+
+    console.log(
+      `  [${agentName.toUpperCase()}] Splitting large message into ${chunks.length} chunks of ~${Math.round(chunkSize / 1024)}KB.`,
+    );
+
+    let currentHistory = [...messages.slice(0, largestIdx)];
+
+    for (let i = 0; i < chunks.length; i++) {
+      const isLast = i === chunks.length - 1;
+      const content = `[CHUNK ${i + 1}/${chunks.length}]\n${chunks[i]}\n\n${
+        isLast
+          ? "This is the final part. Please process the complete context above and perform the requested task now according to the original instructions."
+          : `There is more context coming in message ${i + 2}. Just reply with a brief "ACK PART ${i + 1}" and nothing else.`
+      }`;
+
+      currentHistory.push({ role: originalMessage.role, content });
+
+      const response = await this._callWithRetry(model, currentHistory, {
+        ...opts,
+        _isChunkRetry: true,
+      });
+
+      if (!isLast) {
+        currentHistory.push({ role: "assistant", content: response.content });
+        // Slow down slightly to avoid rate limits during chunking storm
+        await sleep(1500);
+      } else {
+        return response;
+      }
+    }
+  }
+
+  _totalLength(messages) {
+    return messages.reduce((acc, m) => acc + (m.content || "").length, 0);
+  }
+
+  _isEntityTooLargeError(err) {
+    const code = this._errorCode(err);
+    const msg = String(err?.message || "").toLowerCase();
+    return (
+      code === 413 ||
+      msg.includes("too large") ||
+      msg.includes("too_large") ||
+      msg.includes("request_too_large") ||
+      msg.includes("context_length_exceeded") ||
+      msg.includes("maximum context length") ||
+      msg.includes("413")
     );
   }
 

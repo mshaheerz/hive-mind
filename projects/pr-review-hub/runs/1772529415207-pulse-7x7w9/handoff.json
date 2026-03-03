@@ -1,0 +1,18 @@
+{
+  "fromAgent": "pulse",
+  "toAgent": "forge",
+  "project": "pr-review-hub",
+  "stage": "review",
+  "runId": "1772529415207-pulse-7x7w9",
+  "summary": "npm install failed: npm error code ERESOLVE | npm error ERESOLVE unable to resolve dependency tree | npm error | npm error While resolving: pr-review-hub@0.1.0 | npm error Found: eslint@9.5.0 | npm error node_modules/eslint",
+  "artifacts": [],
+  "requiredActions": [
+    "Fix issues in npm install failed: npm error code ERESOLVE | npm error ERESOLVE unable to resolve dependency tree | npm error | npm error While resolving: pr-review-hub@0.1.0 | npm error Found: eslint@9.5.0 | npm error node_modules/eslint",
+    "npm error code ERESOLVE | npm error ERESOLVE unable to resolve dependency tree | npm error | npm error While resolving: pr-review-hub@0.1.0 | npm error Found: eslint@9.5.0 | npm error node_modules/eslint"
+  ],
+  "acceptanceChecks": [],
+  "modelInfo": {
+    "provider": "groq",
+    "model": "openai/gpt-oss-20b"
+  }
+}

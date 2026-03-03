@@ -1,4 +1,20 @@
 {
-  "messages": [],
-  "updatedAt": "2026-03-03T07:08:08.492Z"
+  "messages": [
+    {
+      "id": "ceo_1772528906156_bvese",
+      "from": "ceo",
+      "message": "strict wake lens",
+      "at": "2026-03-03T09:08:26.156Z",
+      "handledAt": "2026-03-03T09:08:30.810Z",
+      "handledBy": "apex"
+    },
+    {
+      "id": "apex_1772528910810_2i5lj",
+      "from": "apex",
+      "message": "Strict order accepted. Forced wake: LENS.",
+      "at": "2026-03-03T09:08:30.810Z",
+      "inReplyTo": "ceo_1772528906156_bvese"
+    }
+  ],
+  "updatedAt": "2026-03-03T09:08:30.811Z"
 }

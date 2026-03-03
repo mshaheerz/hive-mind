@@ -1,0 +1,24 @@
+Summary: npm install failed: npm error code ERESOLVE | npm error ERESOLVE unable to resolve dependency tree | npm error | npm error While resolving: pr-review-hub@0.1.0 | npm error Found: eslint@9.5.0 | npm error node_modules/eslint
+
+--- npm install failed: npm error code ERESOLVE | npm error ERESOLVE unable to resolve dependency tree | npm error | npm error While resolving: pr-review-hub@0.1.0 | npm error Found: eslint@9.5.0 | npm error node_modules/eslint ---
+npm error code ERESOLVE
+npm error ERESOLVE unable to resolve dependency tree
+npm error
+npm error While resolving: pr-review-hub@0.1.0
+npm error Found: eslint@9.5.0
+npm error node_modules/eslint
+npm error   dev eslint@"9.5.0" from the root project
+npm error
+npm error Could not resolve dependency:
+npm error peer eslint@"^7.23.0 || ^8.0.0" from eslint-config-next@14.2.5
+npm error node_modules/eslint-config-next
+npm error   dev eslint-config-next@"14.2.5" from the root project
+npm error
+npm error Fix the upstream dependency conflict, or retry
+npm error this command with --force or --legacy-peer-deps
+npm error to accept an incorrect (and potentially broken) dependency resolution.
+npm error
+npm error
+npm error For a full report see:
+npm error /home/zaigopc/.npm/_logs/2026-03-03T09_16_59_668Z-eresolve-report.txt
+npm error A complete log of this run can be found in: /home/zaigopc/.npm/_logs/2026-03-03T09_16_59_668Z-debug-0.log
