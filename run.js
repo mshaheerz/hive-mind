@@ -2102,6 +2102,31 @@ ${text}`,
 
       const activeProjects = getActiveProjectsWithStatus();
       const capacityFull = activeProjects.length >= MAX_ACTIVE_PROJECTS;
+      const isLocal =
+        (
+          this.state.state.llmProvider ||
+          process.env.LLM_PROVIDER ||
+          ""
+        ).toLowerCase() === "local";
+
+      if (isLocal) {
+        log(
+          "system",
+          `🖥️  LOCAL MODE (Ollama): Sequential pipeline. Skipping intake. Advancing ${activeProjects.length} project(s).`,
+        );
+        // In local mode, mark all pipeline agents as due to avoid unnecessary waits
+        for (const name of [
+          "atlas",
+          "forge",
+          "lens",
+          "pulse",
+          "sage",
+          "echo",
+        ]) {
+          dueSnapshot[name] = true;
+        }
+      }
+
       if (capacityFull) {
         log(
           "system",
@@ -2112,53 +2137,57 @@ ${text}`,
       // 1. Check & enforce deadlines
       await this.checkDeadlines();
 
-      // 2. NOVA generates new ideas (if due)
-      if (dueSnapshot.nova && !capacityFull) {
-        const ok = await this.novaGeneratesIdeas();
-        this.state.markAgentRun("nova", {
-          worked: true,
-          success: ok !== false,
-        });
-      } else if (dueSnapshot.nova && capacityFull) {
-        log(
-          "nova",
-          `Skipping idea generation: active project limit reached (${activeProjects.length}/${MAX_ACTIVE_PROJECTS}).`,
-        );
-        this.state.markAgentRun("nova", { worked: false });
-      }
-
-      // 3. SCOUT validates pending proposals (if due)
-      if (dueSnapshot.scout && !capacityFull) {
-        const ok = await this.scoutValidatesProposals();
-        this.state.markAgentRun("scout", {
-          worked: true,
-          success: ok !== false,
-        });
-      } else if (dueSnapshot.scout && capacityFull) {
-        const pendingScout = loadQueue().filter(
-          (p) => p.status === "pending_scout",
-        ).length;
-        if (pendingScout) {
+      // 2-4. NOVA/SCOUT/APEX: Only run intake when NOT in local mode
+      // (Local mode focuses exclusively on advancing existing projects)
+      if (!isLocal) {
+        // 2. NOVA generates new ideas (if due)
+        if (dueSnapshot.nova && !capacityFull) {
+          const ok = await this.novaGeneratesIdeas();
+          this.state.markAgentRun("nova", {
+            worked: true,
+            success: ok !== false,
+          });
+        } else if (dueSnapshot.nova && capacityFull) {
           log(
-            "scout",
-            `Holding ${pendingScout} pending proposal(s): capacity gate active.`,
+            "nova",
+            `Skipping idea generation: active project limit reached (${activeProjects.length}/${MAX_ACTIVE_PROJECTS}).`,
           );
-        } else {
-          log("scout", "No proposal intake while capacity gate is active.");
+          this.state.markAgentRun("nova", { worked: false });
         }
-        this.state.markAgentRun("scout", { worked: false });
-      }
 
-      // 4. APEX reviews validated proposals (if due)
-      if (dueSnapshot.apex) {
-        const ok = await this.apexReviewsAndDecides({
-          blockApprovals: capacityFull,
-          activeCount: activeProjects.length,
-        });
-        this.state.markAgentRun("apex", {
-          worked: ok === true,
-          success: ok !== false,
-        });
+        // 3. SCOUT validates pending proposals (if due)
+        if (dueSnapshot.scout && !capacityFull) {
+          const ok = await this.scoutValidatesProposals();
+          this.state.markAgentRun("scout", {
+            worked: true,
+            success: ok !== false,
+          });
+        } else if (dueSnapshot.scout && capacityFull) {
+          const pendingScout = loadQueue().filter(
+            (p) => p.status === "pending_scout",
+          ).length;
+          if (pendingScout) {
+            log(
+              "scout",
+              `Holding ${pendingScout} pending proposal(s): capacity gate active.`,
+            );
+          } else {
+            log("scout", "No proposal intake while capacity gate is active.");
+          }
+          this.state.markAgentRun("scout", { worked: false });
+        }
+
+        // 4. APEX reviews validated proposals (if due)
+        if (dueSnapshot.apex) {
+          const ok = await this.apexReviewsAndDecides({
+            blockApprovals: capacityFull,
+            activeCount: activeProjects.length,
+          });
+          this.state.markAgentRun("apex", {
+            worked: ok === true,
+            success: ok !== false,
+          });
+        }
       }
 
       // 5. Advance active projects through pipeline

@@ -37,15 +37,17 @@ const PROVIDER_DEFAULT_MODELS = {
     echo: "llama-3.1-8b-instant",
   },
   local: {
-    apex: "DeepSeek-Coder-V2",
-    nova: "DeepSeek-Coder-V2",
-    scout: "DeepSeek-Coder-V2",
-    atlas: "DeepSeek-Coder-V2",
-    forge: "DeepSeek-Coder-V2",
-    lens: "DeepSeek-Coder-V2",
-    pulse: "DeepSeek-Coder-V2",
-    sage: "DeepSeek-Coder-V2",
-    echo: "DeepSeek-Coder-V2",
+    // All agents use the same model locally to avoid Ollama reloading
+    // Override with LOCAL_MODEL env var or LOCAL_MODEL_<AGENT> per agent
+    apex: "qwen2.5-coder:3b-instruct",
+    nova: "qwen2.5-coder:3b-instruct",
+    scout: "qwen2.5-coder:3b-instruct",
+    atlas: "qwen2.5-coder:3b-instruct",
+    forge: "qwen2.5-coder:3b-instruct",
+    lens: "qwen2.5-coder:3b-instruct",
+    pulse: "qwen2.5-coder:3b-instruct",
+    sage: "qwen2.5-coder:3b-instruct",
+    echo: "qwen2.5-coder:3b-instruct",
   },
 };
 
@@ -62,12 +64,7 @@ const PROVIDER_FALLBACK_MODELS = {
     "openai/gpt-oss-20b",
     "llama-3.1-8b-instant",
   ],
-  local: [
-    "DeepSeek-Coder-V2",
-    "DeepSeek-Coder-V2",
-    "DeepSeek-Coder-V2",
-    "DeepSeek-Coder-V2",
-  ],
+  local: [], // No fallbacks for local — single model, no swapping
 };
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -84,6 +81,9 @@ function buildAgentModels(provider) {
   const selected = normalizeProvider(provider);
   const models = { ...PROVIDER_DEFAULT_MODELS[selected] };
 
+  // For local: allow a single LOCAL_MODEL env var to override all agents
+  const globalLocalModel = process.env.LOCAL_MODEL;
+
   Object.keys(models).forEach((agentName) => {
     const upperAgent = agentName.toUpperCase();
     const providerPrefix = selected.toUpperCase();
@@ -91,11 +91,22 @@ function buildAgentModels(provider) {
     const globalEnvKey = `MODEL_${upperAgent}`;
     const legacyOpenRouterEnvKey = `OPENROUTER_MODEL_${upperAgent}`;
 
-    models[agentName] =
-      process.env[providerEnvKey] ||
-      process.env[globalEnvKey] ||
-      (selected === "openrouter" ? process.env[legacyOpenRouterEnvKey] : "") ||
-      models[agentName];
+    if (selected === "local") {
+      // Per-agent override > global LOCAL_MODEL > default
+      models[agentName] =
+        process.env[providerEnvKey] ||
+        process.env[globalEnvKey] ||
+        globalLocalModel ||
+        models[agentName];
+    } else {
+      models[agentName] =
+        process.env[providerEnvKey] ||
+        process.env[globalEnvKey] ||
+        (selected === "openrouter"
+          ? process.env[legacyOpenRouterEnvKey]
+          : "") ||
+        models[agentName];
+    }
   });
 
   return models;
@@ -330,9 +341,10 @@ class LLMClient {
               model,
               messages,
               stream: false,
+              keep_alive: "30m", // Keep model loaded for 30 min to avoid reload between agents
               options: {
                 temperature: opts.temperature ?? 0.7,
-                num_predict: opts.maxTokens || 4096,
+                num_predict: opts.maxTokens || 2048, // Lower default for local to be faster
                 top_p: opts.topP ?? 1,
               },
             }),

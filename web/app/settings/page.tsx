@@ -6,7 +6,10 @@ export default function SettingsPage() {
   const [config, setConfig] = useState({
     totalSkillBudget: 12000,
     perSkillLimit: 6000,
+    contextLimit: 20000,
   });
+  const [provider, setProvider] = useState("groq");
+  const [localModel, setLocalModel] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -16,6 +19,8 @@ export default function SettingsPage() {
       .then((res) => res.json())
       .then((data) => {
         if (data.config) setConfig(data.config);
+        if (data.provider) setProvider(data.provider);
+        if (data.localModel) setLocalModel(data.localModel);
         setLoading(false);
       })
       .catch(() => {
@@ -31,11 +36,11 @@ export default function SettingsPage() {
       const res = await fetch("/api/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(config),
+        body: JSON.stringify({ ...config, provider, localModel }),
       });
       const data = await res.json();
       if (data.success) {
-        setMessage("Settings saved successfully!");
+        setMessage("Settings saved! Changes take effect on next agent cycle.");
       } else {
         setMessage("Error: " + (data.error || "Failed to save"));
       }
@@ -75,10 +80,58 @@ export default function SettingsPage() {
           </div>
 
           <form onSubmit={handleSave} className="space-y-10">
+            {/* === Provider Section === */}
+            <div className="space-y-4">
+              <label className="text-sm font-bold tracking-[0.2em] text-(--text-dim) block">
+                LLM PROVIDER
+              </label>
+              <div className="grid grid-cols-3 gap-3">
+                {(["groq", "openrouter", "local"] as const).map((p) => (
+                  <button
+                    type="button"
+                    key={p}
+                    onClick={() => setProvider(p)}
+                    className={`py-3 rounded-xl font-display font-black tracking-[0.12em] text-sm transition-all border ${
+                      provider === p
+                        ? "bg-(--atlas-color)/20 border-(--atlas-color) text-(--atlas-color) shadow-[0_0_15px_var(--atlas-color)]/20"
+                        : "bg-black/20 border-(--border-dim) text-(--text-dim) hover:bg-white/5"
+                    }`}
+                  >
+                    {p.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[0.7rem] text-(--text-dim) italic opacity-70">
+                groq = Free cloud API | openrouter = Free multi-model | local =
+                Ollama on your machine
+              </p>
+            </div>
+
+            {/* === Local Model === */}
+            {provider === "local" && (
+              <div className="space-y-4 p-5 rounded-xl border border-[#ffd93d]/20 bg-[#ffd93d]/5">
+                <label className="text-sm font-bold tracking-[0.2em] text-[#ffd93d] block">
+                  🖥️ OLLAMA MODEL NAME
+                </label>
+                <input
+                  type="text"
+                  value={localModel}
+                  onChange={(e) => setLocalModel(e.target.value)}
+                  placeholder="e.g. deepseek-coder-v2, qwen2.5-coder:7b"
+                  className="w-full px-4 py-3 bg-black/40 border border-(--border-dim) rounded-xl text-sm font-mono text-(--text-primary) placeholder:text-(--text-dim)/40 focus:outline-none focus:border-[#ffd93d]/50"
+                />
+                <p className="text-[0.7rem] text-[#ffd93d]/60 italic">
+                  All agents will use the same model to prevent Ollama from
+                  reloading. Model stays loaded for 30 minutes between calls.
+                </p>
+              </div>
+            )}
+
+            {/* === Skill Budget === */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <label className="text-sm font-bold tracking-[0.2em] text-(--text-dim)">
-                  TOTAL SKILL BUDGET (CHARS)
+                  SKILL BUDGET (CHARS)
                 </label>
                 <span className="text-xs text-(--atlas-color) font-bold">
                   {config.totalSkillBudget.toLocaleString()}
@@ -98,12 +151,9 @@ export default function SettingsPage() {
                 }
                 className="w-full h-2 bg-black/40 rounded-lg appearance-none cursor-pointer accent-(--atlas-color) border border-white/5"
               />
-              <p className="text-[0.7rem] text-(--text-dim) italic opacity-70">
-                Max combined characters of all skill definitions injected into
-                an agent&apos;s prompt.
-              </p>
             </div>
 
+            {/* === Per-Skill Limit === */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <label className="text-sm font-bold tracking-[0.2em] text-(--text-dim)">
@@ -127,12 +177,39 @@ export default function SettingsPage() {
                 }
                 className="w-full h-2 bg-black/40 rounded-lg appearance-none cursor-pointer accent-(--nova-color) border border-white/5"
               />
+            </div>
+
+            {/* === Context Limit === */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-bold tracking-[0.2em] text-(--text-dim)">
+                  CONTEXT WINDOW (CHARS)
+                </label>
+                <span className="text-xs text-(--scout-color) font-bold">
+                  {config.contextLimit.toLocaleString()}
+                </span>
+              </div>
+              <input
+                type="range"
+                min="5000"
+                max="60000"
+                step="1000"
+                value={config.contextLimit}
+                onChange={(e) =>
+                  setConfig({
+                    ...config,
+                    contextLimit: parseInt(e.target.value),
+                  })
+                }
+                className="w-full h-2 bg-black/40 rounded-lg appearance-none cursor-pointer accent-(--scout-color) border border-white/5"
+              />
               <p className="text-[0.7rem] text-(--text-dim) italic opacity-70">
-                Max characters for a single skill definition before it gets
-                truncated.
+                Max workspace code sent to agents. Lower = faster + cheaper.
+                Higher = more context.
               </p>
             </div>
 
+            {/* === Save === */}
             <div className="pt-6 border-t border-white/5">
               <button
                 type="submit"
