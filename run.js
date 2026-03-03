@@ -985,61 +985,285 @@ function hasRealProjectFiles(projectName) {
   return files.some((f) => !/\.md$/i.test(f));
 }
 
-function gatherWorkspaceForLLM(projectName, opts = {}) {
-  const { priorityFiles = [], limit = 15000 } = opts;
-  const files = listWorkspaceFiles(projectName);
-  let out =
-    "## CURRENT WORKSPACE MAP\n(Total workspace structure. Use this to identify where files belong.)\n";
+// ─── AGENTIC CONTEXT RETRIEVAL (Cursor/Windsurf Strategy) ─────
+// Instead of dumping all files blindly, we:
+// 1. Extract keywords from the task/action items
+// 2. Search workspace files for those keywords (like grep)
+// 3. Follow import/require dependency chains
+// 4. Score and rank files by relevance
+// 5. Only include the top-N most relevant files
 
-  // 1. Build a lightweight directory map first (VS Code strategy)
-  for (const file of files) {
-    if (file.includes("node_modules") || file.includes(".next")) continue;
+const SKIP_EXTENSIONS =
+  /\.(png|jpe?g|gif|svg|ico|pdf|zip|tar|gz|mp4|webm|pyc|pyo|woff2?|ttf|eot|map|lock)$/i;
+const CORE_FILES = [
+  "package.json",
+  "next.config.js",
+  "next.config.mjs",
+  "tailwind.config.js",
+  "tailwind.config.ts",
+  "tsconfig.json",
+  "jsconfig.json",
+  ".eslintrc.json",
+  ".env.example",
+];
+
+/**
+ * Extract meaningful keywords from a task description or action items.
+ * This mimics how Cursor extracts search terms from your prompt.
+ */
+function extractSearchKeywords(text = "") {
+  const keywords = new Set();
+  // Extract file paths mentioned (e.g., `app/page.js`, `src/utils.ts`)
+  const filePaths = text.match(
+    /(?:^|[\s`"'(])([\w./-]+\.\w{1,6})(?:[\s`"'),:]|$)/gm,
+  );
+  if (filePaths) {
+    filePaths.forEach((fp) => {
+      const cleaned = fp.trim().replace(/[`"'(),: ]/g, "");
+      if (cleaned.includes("/") || cleaned.includes(".")) {
+        keywords.add(cleaned);
+      }
+    });
+  }
+  // Extract function/class/variable names (camelCase, PascalCase, snake_case)
+  const symbols = text.match(/\b[A-Z][a-zA-Z0-9]{2,30}\b/g); // PascalCase
+  if (symbols) symbols.forEach((s) => keywords.add(s));
+  const camel = text.match(/\b[a-z][a-zA-Z0-9]{3,30}\b/g); // camelCase
+  if (camel) {
+    camel
+      .filter(
+        (w) =>
+          !["this", "from", "with", "that", "what", "then", "else"].includes(w),
+      )
+      .forEach((s) => keywords.add(s));
+  }
+  // Extract quoted strings
+  const quoted = text.match(/["'`]([^"'`]{2,60})["'`]/g);
+  if (quoted) {
+    quoted.forEach((q) => {
+      const inner = q.slice(1, -1).trim();
+      if (inner.length > 2) keywords.add(inner);
+    });
+  }
+  return Array.from(keywords).slice(0, 30); // Cap at 30 keywords
+}
+
+/**
+ * Extract import/require references from file content.
+ * This lets us follow dependency chains like Cursor does.
+ */
+function extractImports(content = "") {
+  const imports = new Set();
+  // ES6: import X from './path'
+  const esImports = content.matchAll(
+    /(?:import|export)\s+.*?from\s+['"]([^'"]+)['"]/g,
+  );
+  for (const m of esImports) imports.add(m[1]);
+  // CJS: require('./path')
+  const cjsImports = content.matchAll(/require\s*\(\s*['"]([^'"]+)['"]\s*\)/g);
+  for (const m of cjsImports) imports.add(m[1]);
+  // Dynamic import: import('./path')
+  const dynImports = content.matchAll(/import\s*\(\s*['"]([^'"]+)['"]\s*\)/g);
+  for (const m of dynImports) imports.add(m[1]);
+  return Array.from(imports).filter(
+    (p) => p.startsWith("./") || p.startsWith("../") || p.startsWith("@/"),
+  );
+}
+
+/**
+ * Score a workspace file's relevance to a task.
+ * Higher score = more relevant. This is the core "re-ranking" step.
+ */
+function scoreFileRelevance(filePath, fileContent, keywords, actionItemFiles) {
+  let score = 0;
+
+  // 1. Directly mentioned in action items → highest priority
+  if (
+    actionItemFiles.some(
+      (af) => af && filePath.toLowerCase().includes(af.toLowerCase()),
+    )
+  ) {
+    score += 100;
+  }
+
+  // 2. Core config file → always relevant
+  if (CORE_FILES.some((cf) => filePath.endsWith(cf) || filePath === cf)) {
+    score += 50;
+  }
+
+  // 3. Keyword matches in file path (like searching by filename)
+  for (const kw of keywords) {
+    if (filePath.toLowerCase().includes(kw.toLowerCase())) {
+      score += 20;
+    }
+  }
+
+  // 4. Keyword matches in file content (like grep search)
+  for (const kw of keywords) {
+    if (
+      kw.length >= 3 &&
+      fileContent.toLowerCase().includes(kw.toLowerCase())
+    ) {
+      score += 5;
+    }
+  }
+
+  // 5. File type relevance boosts
+  if (/\.(jsx?|tsx?|mjs)$/.test(filePath)) score += 3; // Source code
+  if (/test|spec/i.test(filePath)) score += 2; // Test files
+  if (/page|layout|route/i.test(filePath)) score += 4; // Next.js entry points
+
+  // 6. Penalize deep nesting (shallow files are usually more important)
+  const depth = (filePath.match(/\//g) || []).length;
+  score -= depth * 1;
+
+  return score;
+}
+
+/**
+ * Main context retrieval function.
+ * Implements the full Cursor/Windsurf pipeline:
+ * File Map → Keyword Search → Import Following → Scoring → Top-N Selection
+ */
+function gatherWorkspaceForLLM(projectName, opts = {}) {
+  const {
+    priorityFiles = [],
+    limit = 15000,
+    taskDescription = "",
+    actionItems = [],
+  } = opts;
+
+  const files = listWorkspaceFiles(projectName);
+  const wsRoot = path.join(PROJECTS_DIR, projectName, "workspace");
+
+  // ── Step 1: Build the Workspace Map (lightweight directory tree) ──
+  let out = "## WORKSPACE MAP\n";
+  const filteredFiles = files.filter(
+    (f) => !f.includes("node_modules") && !f.includes(".next"),
+  );
+  for (const file of filteredFiles) {
     out += `- ${file}\n`;
   }
 
-  out += "\n## FILE CONTENTS (Relevant / Priority Only)\n";
-
-  // Core files that are almost always relevant to build/config issues
-  const coreFiles = [
-    "package.json",
-    "next.config.js",
-    "tailwind.config.js",
-    "README.md",
-    "jsconfig.json",
-    "tsconfig.json",
-  ];
-  const targetSet = new Set([...priorityFiles, ...coreFiles]);
-
-  for (const file of files) {
-    const isPriority = Array.from(targetSet).some((p) =>
-      file.toLowerCase().includes(String(p).toLowerCase()),
-    );
-    if (!isPriority) continue;
-
-    // Skip binary and massive files
-    if (
-      /\.(png|jpe?g|gif|svg|ico|pdf|zip|mp4|webm|pyc|woff2?|map|lock)$/i.test(
-        file,
-      )
+  // ── Step 2: Extract search keywords from task + action items ──
+  const actionItemText = actionItems
+    .map((x) =>
+      typeof x === "object"
+        ? `${x.file || ""} ${x.issue || ""} ${x.requirement || ""}`
+        : String(x),
     )
-      continue;
+    .join("\n");
+  const allTaskText = `${taskDescription}\n${actionItemText}`;
+  const keywords = extractSearchKeywords(allTaskText);
+
+  // Action item files (directly mentioned)
+  const actionFileHints = [
+    ...priorityFiles,
+    ...actionItems
+      .map((x) => (typeof x === "object" ? x.file : ""))
+      .filter(Boolean),
+  ];
+
+  // ── Step 3: Read files, score them, follow imports ──
+  const scored = [];
+  const fileContents = {};
+
+  for (const file of filteredFiles) {
+    if (SKIP_EXTENSIONS.test(file)) continue;
     if (file === "package-lock.json" || file.includes("__pycache__")) continue;
 
-    const full = path.join(PROJECTS_DIR, projectName, "workspace", file);
+    const full = path.join(wsRoot, file);
     try {
       const stat = fs.statSync(full);
-      if (stat.size > 100000) continue; // 100KB limit for priority files
+      if (stat.size > 100000) continue;
       const content = fs.readFileSync(full, "utf8");
       if (content.includes("\0")) continue;
 
-      const entry = `\n**File: \`${file}\`**\n\`\`\`\n${content}\n\`\`\`\n`;
-      if ((out + entry).length > limit) {
-        out += `\n... [Workspace truncated due to token limit. Ask if you need specific other files from the map above] ...\n`;
-        break;
-      }
-      out += entry;
+      fileContents[file] = content;
+      const relevance = scoreFileRelevance(
+        file,
+        content,
+        keywords,
+        actionFileHints,
+      );
+      scored.push({ file, relevance, size: content.length });
     } catch (e) {}
   }
+
+  // ── Step 4: Follow import chains from high-relevance files ──
+  const importBoosts = new Map();
+  const topFiles = scored.filter((s) => s.relevance >= 50).map((s) => s.file);
+
+  for (const topFile of topFiles) {
+    const content = fileContents[topFile];
+    if (!content) continue;
+    const imports = extractImports(content);
+    for (const imp of imports) {
+      // Resolve relative import to workspace path
+      const resolved = path.posix.normalize(
+        path.posix.join(path.posix.dirname(topFile), imp),
+      );
+      // Try common extensions
+      for (const ext of [
+        "",
+        ".js",
+        ".jsx",
+        ".ts",
+        ".tsx",
+        "/index.js",
+        "/index.tsx",
+      ]) {
+        const candidate = resolved + ext;
+        if (fileContents[candidate]) {
+          importBoosts.set(candidate, (importBoosts.get(candidate) || 0) + 30);
+        }
+      }
+    }
+  }
+
+  // Apply import boosts
+  for (const s of scored) {
+    s.relevance += importBoosts.get(s.file) || 0;
+  }
+
+  // ── Step 5: Sort by relevance, select top files within budget ──
+  scored.sort((a, b) => b.relevance - a.relevance);
+
+  out += `\n## FILE CONTENTS (${scored.filter((s) => s.relevance > 0).length} files scored, showing top relevant)\n`;
+
+  let charBudget = limit - out.length;
+  let included = 0;
+
+  for (const { file, relevance } of scored) {
+    if (relevance <= 0 && included >= 3) break; // Stop including irrelevant files after core ones
+    const content = fileContents[file];
+    if (!content) continue;
+
+    const entry = `\n**File: \`${file}\`** (relevance: ${relevance})\n\`\`\`\n${content}\n\`\`\`\n`;
+
+    if (entry.length > charBudget) {
+      // If a single important file is too large, truncate it
+      if (relevance >= 50) {
+        const truncated = `\n**File: \`${file}\`** (relevance: ${relevance}, truncated)\n\`\`\`\n${content.slice(0, Math.max(2000, charBudget - 200))}\n... [FILE TRUNCATED - ${content.length} chars total]\n\`\`\`\n`;
+        if (truncated.length < charBudget) {
+          out += truncated;
+          charBudget -= truncated.length;
+          included++;
+        }
+      }
+      continue;
+    }
+
+    out += entry;
+    charBudget -= entry.length;
+    included++;
+    if (charBudget < 500) break;
+  }
+
+  if (charBudget < 500 && included < scored.length) {
+    out += `\n... [${scored.length - included} lower-relevance files omitted. See WORKSPACE MAP above for full list.]\n`;
+  }
+
   return out;
 }
 
@@ -2618,7 +2842,7 @@ ${
           const arch = readOutput(projectName, "architecture.md");
           const res = readOutput(projectName, "research.md");
 
-          // Smart Retrieval: Only send full content for files being complained about
+          // Agentic Context Retrieval: pass task + action items for smart search
           const remediationFiles = [
             ...(status.lensActionItems || []).map((x) => x.file),
             ...(status.pulseActionItems || []).map((x) =>
@@ -2629,6 +2853,13 @@ ${
           const previousImplementation = gatherWorkspaceForLLM(projectName, {
             priorityFiles: remediationFiles,
             limit: 20000,
+            taskDescription: readme,
+            actionItems: [
+              ...(status.lensActionItems || []),
+              ...(status.pulseActionItems || []).map((x) =>
+                typeof x === "string" ? { issue: x } : x,
+              ),
+            ],
           });
 
           const bootstrap = ensureProjectBootstrap(projectName, status, readme);
@@ -2765,8 +2996,10 @@ ${
 
         case "implementation":
           const currentImpl =
-            gatherWorkspaceForLLM(projectName, { limit: 20000 }) ||
-            readOutput(projectName, "implementation.md");
+            gatherWorkspaceForLLM(projectName, {
+              limit: 20000,
+              taskDescription: readme,
+            }) || readOutput(projectName, "implementation.md");
           output = await this.agents.lens.review(currentImpl, readme);
           writeOutput(projectName, "review.md", output);
           appendRunEvidence(
@@ -2922,8 +3155,10 @@ ${
 
         case "review":
           const testSubjectCode =
-            gatherWorkspaceForLLM(projectName, { limit: 20000 }) ||
-            readOutput(projectName, "implementation.md");
+            gatherWorkspaceForLLM(projectName, {
+              limit: 20000,
+              taskDescription: readme,
+            }) || readOutput(projectName, "implementation.md");
           output = await this.agents.pulse.generateTests(
             testSubjectCode,
             readme,
