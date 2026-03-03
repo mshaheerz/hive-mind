@@ -1,0 +1,30 @@
+{
+  "project": "pr-review-hub",
+  "stage": "architecture",
+  "agent": "forge",
+  "runId": "1772521741304-forge-jipfx",
+  "parentRunId": "1772521738636-atlas-uydql",
+  "startedAt": "2026-03-03T07:09:01.304Z",
+  "provider": "groq",
+  "model": "openai/gpt-oss-120b",
+  "statusSnapshot": {
+    "stage": "architecture",
+    "stageOwner": "forge",
+    "stageAttempt": 1,
+    "blockedReason": null,
+    "proposedBy": "nova",
+    "approvedBy": "apex",
+    "approvalScore": 8,
+    "projectType": "web_app",
+    "preferredStack": "Next.js 15 + Tailwind CSS + Lucide Icons",
+    "template": "nextjs-starter",
+    "lensVerdict": null,
+    "lensActionItems": [],
+    "lastHandoffRunId": "1772521738636-atlas-uydql",
+    "escalationLevel": "none",
+    "approvedAt": "2026-03-03T07:08:50.548Z",
+    "updatedAt": "2026-03-03T07:09:01.302Z",
+    "lensIssueRepeats": {},
+    "transitionReason": "agent execution started"
+  }
+}

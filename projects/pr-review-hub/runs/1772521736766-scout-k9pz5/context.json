@@ -1,0 +1,29 @@
+{
+  "project": "pr-review-hub",
+  "stage": "approved",
+  "agent": "scout",
+  "runId": "1772521736766-scout-k9pz5",
+  "parentRunId": null,
+  "startedAt": "2026-03-03T07:08:56.766Z",
+  "provider": "groq",
+  "model": "llama-3.3-70b-versatile",
+  "statusSnapshot": {
+    "stage": "approved",
+    "stageOwner": "scout",
+    "stageAttempt": 1,
+    "blockedReason": null,
+    "proposedBy": "nova",
+    "approvedBy": "apex",
+    "approvalScore": 8,
+    "projectType": "web_app",
+    "preferredStack": "Next.js 15 + Tailwind CSS + Lucide Icons",
+    "template": "nextjs-starter",
+    "lensVerdict": null,
+    "lensActionItems": [],
+    "lastHandoffRunId": null,
+    "escalationLevel": "none",
+    "approvedAt": "2026-03-03T07:08:50.548Z",
+    "updatedAt": "2026-03-03T07:08:50.548Z",
+    "lensIssueRepeats": {}
+  }
+}

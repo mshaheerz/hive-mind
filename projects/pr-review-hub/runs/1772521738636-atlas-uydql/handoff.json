@@ -1,0 +1,18 @@
+{
+  "fromAgent": "atlas",
+  "toAgent": "forge",
+  "project": "pr-review-hub",
+  "stage": "research",
+  "runId": "1772521738636-atlas-uydql",
+  "summary": "pr-review-hub: research -> architecture",
+  "artifacts": [
+    "output/research.md",
+    "output/architecture.md"
+  ],
+  "requiredActions": [],
+  "acceptanceChecks": [],
+  "modelInfo": {
+    "provider": "groq",
+    "model": "meta-llama/llama-4-scout-17b-16e-instruct"
+  }
+}

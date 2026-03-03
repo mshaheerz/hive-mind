@@ -1,0 +1,18 @@
+{
+  "fromAgent": "scout",
+  "toAgent": "atlas",
+  "project": "pr-review-hub",
+  "stage": "approved",
+  "runId": "1772521736766-scout-k9pz5",
+  "summary": "pr-review-hub: approved -> research",
+  "artifacts": [
+    "output/approved.md",
+    "output/research.md"
+  ],
+  "requiredActions": [],
+  "acceptanceChecks": [],
+  "modelInfo": {
+    "provider": "groq",
+    "model": "llama-3.3-70b-versatile"
+  }
+}

@@ -8,24 +8,38 @@ const fs = require("fs");
 const path = require("path");
 const os = require("os");
 
-function loadApplicableSkills(keywords = []) {
+function loadApplicableSkills(keywords = [], limit = 5) {
   try {
     const skillsDir = path.join(__dirname, "..", "agent-skills");
     if (!fs.existsSync(skillsDir)) return "";
 
-    let injectedContext = "";
-    for (const folder of fs.readdirSync(skillsDir)) {
-      const isApplicable = keywords.some((k) =>
+    let skillsFound = [];
+    const folders = fs.readdirSync(skillsDir);
+
+    for (const folder of folders) {
+      const match = keywords.find((k) =>
         folder.toLowerCase().includes(k.toLowerCase()),
       );
-      if (isApplicable) {
+      if (match) {
         const skillPath = path.join(skillsDir, folder, "SKILL.md");
         if (fs.existsSync(skillPath)) {
-          const content = fs.readFileSync(skillPath, "utf8");
-          injectedContext += `\n\n--- SKILL DEFINITION: ${folder} ---\n${content}\n-----------------------------------\n`;
+          // Prioritize exact or specific matches over generic ones
+          const priority = folder.toLowerCase() === match.toLowerCase() ? 2 : 1;
+          skillsFound.push({ folder, path: skillPath, priority });
         }
       }
     }
+
+    // Sort by priority and take top N
+    skillsFound.sort((a, b) => b.priority - a.priority);
+    const selected = skillsFound.slice(0, limit);
+
+    let injectedContext = "";
+    for (const skill of selected) {
+      const content = fs.readFileSync(skill.path, "utf8");
+      injectedContext += `\n\n--- SKILL DEFINITION: ${skill.folder} ---\n${content}\n-----------------------------------\n`;
+    }
+
     return injectedContext
       ? `\n\nYou have access to the following specialized skills. Follow them critically:\n${injectedContext}`
       : "";
@@ -67,15 +81,20 @@ Output contract (always):
   }
 
   async research(topic, projectContext = "") {
+    const skillsContext = loadApplicableSkills(
+      ["research-", "web-", "frontend"],
+      3,
+    );
     const prompt = `Research this topic for our development team:
 
 **Topic:** ${topic}
 ${projectContext ? `**Project Context:** ${projectContext}` : ""}
+${skillsContext}
 
 Provide:
 1. Overview (2-3 sentences)
 2. Key findings (bullet points)
-3. Tech stack recommendations
+3. Tech stack recommendations (Next.js/React only)
 4. Potential risks/pitfalls
 5. Existing tools/libraries to leverage
 6. Acceptance criteria seed (testable, measurable)
@@ -117,15 +136,12 @@ Always provide:
   }
 
   async implement(task, architecture = "", researchNotes = "") {
-    const skillsContext = loadApplicableSkills([
-      "tool-",
-      "workflow-",
-      "stripe",
-      "supabase",
-      "cloudflare",
-      "clean-code",
-      "best-practices",
-    ]);
+    // Highly targeted skill loading to prevent token limits
+    const skillsContext = loadApplicableSkills(
+      ["nextjs", "react-best-practices", "tailwind", "lucide", "clean-code"],
+      3,
+    );
+
     const prompt = `Implement the following task:
 
 **Task:** ${task}

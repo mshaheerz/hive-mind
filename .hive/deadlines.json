@@ -1,60 +1,42 @@
 [
   {
-    "id": "datalens::research",
-    "projectName": "datalens",
+    "id": "pr-review-hub::research",
+    "projectName": "pr-review-hub",
     "stage": "research",
     "agent": "scout",
-    "dueAt": "2026-03-02T12:38:10.740Z",
-    "setAt": "2026-03-02T10:38:10.740Z",
+    "dueAt": "2026-03-03T09:08:56.768Z",
+    "setAt": "2026-03-03T07:08:56.768Z",
     "status": "complete",
-    "completedAt": "2026-03-02T10:38:12.923Z"
+    "completedAt": "2026-03-03T07:08:58.632Z"
   },
   {
-    "id": "datalens::architecture",
-    "projectName": "datalens",
+    "id": "pr-review-hub::architecture",
+    "projectName": "pr-review-hub",
     "stage": "architecture",
     "agent": "atlas",
-    "dueAt": "2026-03-02T13:38:12.932Z",
-    "setAt": "2026-03-02T10:38:12.932Z",
+    "dueAt": "2026-03-03T10:08:58.637Z",
+    "setAt": "2026-03-03T07:08:58.637Z",
     "status": "complete",
-    "completedAt": "2026-03-02T10:38:15.007Z"
+    "completedAt": "2026-03-03T07:09:01.302Z"
   },
   {
-    "id": "datalens::implementation",
-    "projectName": "datalens",
+    "id": "pr-review-hub::implementation",
+    "projectName": "pr-review-hub",
     "stage": "implementation",
     "agent": "forge",
-    "dueAt": "2026-03-02T16:38:15.012Z",
-    "setAt": "2026-03-02T10:38:15.012Z",
-    "status": "active"
-  },
-  {
-    "id": "codedocsx::research",
-    "projectName": "codedocsx",
-    "stage": "research",
-    "agent": "scout",
-    "dueAt": "2026-03-02T12:38:23.745Z",
-    "setAt": "2026-03-02T10:38:23.745Z",
+    "dueAt": "2026-03-03T13:14:26.198Z",
+    "setAt": "2026-03-03T07:14:26.198Z",
     "status": "complete",
-    "completedAt": "2026-03-02T10:38:26.599Z"
+    "completedAt": "2026-03-03T07:15:18.699Z"
   },
   {
-    "id": "codedocsx::architecture",
-    "projectName": "codedocsx",
-    "stage": "architecture",
-    "agent": "atlas",
-    "dueAt": "2026-03-02T13:38:26.604Z",
-    "setAt": "2026-03-02T10:38:26.604Z",
+    "id": "pr-review-hub::review",
+    "projectName": "pr-review-hub",
+    "stage": "review",
+    "agent": "lens",
+    "dueAt": "2026-03-03T09:15:18.703Z",
+    "setAt": "2026-03-03T07:15:18.703Z",
     "status": "complete",
-    "completedAt": "2026-03-02T10:38:28.863Z"
-  },
-  {
-    "id": "codedocsx::implementation",
-    "projectName": "codedocsx",
-    "stage": "implementation",
-    "agent": "forge",
-    "dueAt": "2026-03-02T16:38:28.868Z",
-    "setAt": "2026-03-02T10:38:28.868Z",
-    "status": "active"
+    "completedAt": "2026-03-03T07:16:18.946Z"
   }
 ]

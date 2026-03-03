@@ -1,0 +1,19 @@
+{
+  "stage": "approved",
+  "stageOwner": "scout",
+  "stageAttempt": 1,
+  "blockedReason": null,
+  "proposedBy": "nova",
+  "approvedBy": "apex",
+  "approvalScore": 8.25,
+  "projectType": "web_app",
+  "preferredStack": "Next.js 15 + Tailwind CSS + Lucide Icons",
+  "template": "nextjs-starter",
+  "lensVerdict": null,
+  "lensActionItems": [],
+  "lastHandoffRunId": null,
+  "escalationLevel": "none",
+  "approvedAt": "2026-03-03T07:57:16.301Z",
+  "updatedAt": "2026-03-03T07:57:16.301Z",
+  "lensIssueRepeats": {}
+}

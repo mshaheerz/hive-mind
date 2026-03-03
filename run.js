@@ -792,38 +792,58 @@ function safeWorkspacePath(projectName, relPath) {
 function isBogusGeneratedPath(relPath = "") {
   const p = String(relPath || "").trim();
   if (!p) return true;
+
+  // Hard flags for obvious LLM artifacts
   if (/^(?:\d+\.\s*)?File:\s*$/i.test(p)) return true;
   if (/^(?:\d+\.\s*)?#?\s*File:\s*$/i.test(p)) return true;
   if (/^#\s*File:\s*$/i.test(p)) return true;
-  if (!/[./]/.test(p) && /\bfile\b/i.test(p)) return true;
 
-  // Reject filenames that are just section titles (no extension and no path slash)
-  // BUT: Allow common folder names like "src", "public", "tests", "config"
-  const commonFolders = [
-    "src",
-    "public",
-    "tests",
-    "test",
-    "config",
-    "docs",
-    "scripts",
-    "bin",
-    "lib",
-    "migrations",
+  // If it has an extension, it's a real file. Spared.
+  if (p.includes(".")) return false;
+
+  // If it has a slash, it's a path. Spared.
+  if (p.includes("/")) return false;
+
+  const lower = p.toLowerCase();
+
+  // Very specific "trash" words that LLMs use as section titles but
+  // mistakenly get parsed as filenames if headers are poorly formatted.
+  const trashWords = [
+    "implementation",
+    "architecture",
+    "setup",
+    "instruction",
+    "requirement",
+    "overview",
+    "evaluation",
+    "discovery",
+    "feasibility",
+    "context",
+    "contract",
+    "rationale",
+    "summary",
+    "findings",
+    "risk",
+    "value",
+    "outcome",
+    "rationale",
+    "logic",
+    "goal",
+    "note",
   ];
-  if (!p.includes(".") && !p.includes("/")) {
-    if (commonFolders.includes(p.toLowerCase())) return false;
+
+  // If it matches a trash word exactly or contains "implementation details", etc.
+  if (
+    trashWords.some(
+      (t) =>
+        lower === t ||
+        lower.includes(`${t} details`) ||
+        lower.includes(`${t} notes`),
+    )
+  ) {
     return true;
   }
 
-  // Reject names containing section keywords if they lack an extension
-  if (
-    /\b(?:Frontend|Backend|Component|Setup|Contract|Requirement|Goal|Note)s?\b/i.test(
-      p,
-    ) &&
-    !p.includes(".")
-  )
-    return true;
   return false;
 }
 
@@ -949,8 +969,12 @@ function cleanupWorkspaceArtifacts(projectName) {
     if (!isBogusGeneratedPath(rel)) continue;
     const full = path.join(root, name);
     try {
-      fs.rmSync(full, { recursive: true, force: true });
-      removed += 1;
+      const st = fs.statSync(full);
+      // NEVER delete directories automatically. Only delete bogus FILES.
+      if (!st.isDirectory()) {
+        fs.rmSync(full, { force: true });
+        removed += 1;
+      }
     } catch {}
   }
   return removed;
@@ -961,7 +985,7 @@ function hasRealProjectFiles(projectName) {
   return files.some((f) => !/\.md$/i.test(f));
 }
 
-function gatherWorkspaceForLLM(projectName) {
+function gatherWorkspaceForLLM(projectName, limit = 15000) {
   const files = listWorkspaceFiles(projectName);
   let out = "";
   for (const file of files) {
@@ -980,6 +1004,8 @@ function gatherWorkspaceForLLM(projectName) {
       continue;
     if (file.includes("__pycache__") || file.includes(".pytest_cache"))
       continue;
+    if (file.includes("node_modules") || file.includes(".next")) continue;
+
     const full = path.join(PROJECTS_DIR, projectName, "workspace", file);
     try {
       const stat = fs.statSync(full);
@@ -987,9 +1013,12 @@ function gatherWorkspaceForLLM(projectName) {
       const content = fs.readFileSync(full, "utf8");
       // Quick binary check: if content has null bytes, skip it
       if (content.includes("\0")) continue;
-      out += `\n**File: \`${file}\`**\n\`\`\`\n${content}\n\`\`\`\n`;
+
+      const entry = `\n**File: \`${file}\`**\n\`\`\`\n${content}\n\`\`\`\n`;
+      if ((out + entry).length > limit) break; // Hard limit reached
+      out += entry;
     } catch (e) {
-      // Ignore read errors (e.g. binary files that fail utf8)
+      // Ignore read errors
     }
   }
   return out;

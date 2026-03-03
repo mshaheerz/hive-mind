@@ -1,0 +1,20 @@
+{
+  "fromAgent": "forge",
+  "toAgent": "lens",
+  "project": "pr-review-hub",
+  "stage": "architecture",
+  "runId": "1772521741304-forge-jipfx",
+  "summary": "pr-review-hub: architecture -> implementation",
+  "artifacts": [
+    "output/architecture.md",
+    "output/implementation.md"
+  ],
+  "requiredActions": [],
+  "acceptanceChecks": [
+    "Workspace files materialized"
+  ],
+  "modelInfo": {
+    "provider": "groq",
+    "model": "openai/gpt-oss-120b"
+  }
+}
