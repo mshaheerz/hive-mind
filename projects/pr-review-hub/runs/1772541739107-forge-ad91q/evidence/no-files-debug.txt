@@ -1,0 +1,4 @@
+Attempt 1
+
+First 800 chars of output:
+To start the review process, please provide the codebase you would like me to analyze.

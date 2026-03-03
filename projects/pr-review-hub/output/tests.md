@@ -1,140 +1,185 @@
----
+### Unit Tests for Each Function
 
-### Test Plan
-
-#### Unit Tests
-
-Each function in `app/actions/fetchPullRequests.js` is covered by unit tests. This includes scenarios like empty repo list, null/undefined token, network error, and pagination.
-
-**File: `app/actions/fetchPullRequests.unit.test.js`**
+**File: `app/actions/fetchPullRequests.test.js`**
 ```javascript
-/**
- * @jest-environment node
- */
-
 import { fetchPullRequests } from '../app/actions/fetchPullRequests';
-import { Octokit } from '@octokit/rest';
+import Octokit from '@octokit/rest';
 
-jest.mock('@octokit/rest');
-
-describe('fetchPullRequests – Unit Tests', () => {
-  const repos = [
-    { owner: 'vercel', repo: 'next.js' },
-    { owner: 'facebook', repo: 'react' },
-  ];
+describe('fetchPullRequests', () => {
   const token = 'dummy-token';
+  let octokit;
 
   beforeEach(() => {
-    Octokit.mockClear();
+    octokit = new Octokit({ auth: token });
   });
 
-  it('should return combined PR list from multiple repos', async () => {
+  it('should fetch open pull requests for a list of repositories', async () => {
+    const repos = [
+      { owner: 'vercel', repo: 'next.js' },
+      { owner: 'facebook', repo: 'react' },
+    ];
     const mockPrs = [
       { id: 1, number: 123, title: 'PR 1' },
       { id: 2, number: 456, title: 'PR 2' },
     ];
-    Octokit.mockImplementation(() => ({
-      pulls: {
-        list: jest.fn().mockResolvedValue({ data: mockPrs }),
-      },
-    }));
+
+    // Mock the Octokit pulls.list method
+    octokit.pulls.list.mockResolvedValue({ data: mockPrs });
 
     const result = await fetchPullRequests(repos, token);
     expect(result).toHaveLength(4); // 2 repos × 2 PRs each
     expect(result).toEqual(expect.arrayContaining(mockPrs));
   });
 
-  it('should handle empty repo list', async () => {
-    const result = await fetchPullRequests([], token);
+  it('should handle empty response from Octokit', async () => {
+    const repos = [
+      { owner: 'empty', repo: 'repo1' },
+      { owner: 'empty', repo: 'repo2' },
+    ];
+
+    // Mock the Octokit pulls.list method to return an empty array
+    octokit.pulls.list.mockResolvedValue({ data: [] });
+
+    const result = await fetchPullRequests(repos, token);
     expect(result).toEqual([]);
   });
 
-  it('should throw when token is null/undefined', async () => {
-    await expect(fetchPullRequests(repos, null)).rejects.toThrow();
-  });
+  it('should handle rate-limit errors gracefully', async () => {
+    const rateLimitError = new Error('API rate limit exceeded');
+    rateLimitError.status = 403;
+    octokit.pulls.list.mockRejectedValue(rateLimitError);
 
-  it('should propagate Octokit errors', async () => {
-    Octokit.mockImplementation(() => ({
-      pulls: { list: jest.fn().mockRejectedValue(new Error('API Error')) },
-    }));
-    await expect(fetchPullRequests(repos, token)).rejects.toThrow('API Error');
+    await expect(fetchPullRequests(repos, token)).rejects.toThrow(
+      'API rate limit exceeded'
+    );
   });
+});
+```
 
-  it('should respect per_page limit and return all PRs', async () => {
-    const mockPrs = Array.from({ length: 50 }, (_, i) => ({
+### Edge Cases (Empty, Null, Overflow, etc.)
+
+**File: `app/actions/fetchPullRequests.edge.test.js`**
+```javascript
+import { fetchPullRequests } from '../app/actions/fetchPullRequests';
+import Octokit from '@octokit/rest';
+
+describe('fetchPullRequests – Edge Cases', () => {
+  const token = 'edge-token';
+
+  // Helper to generate many PRs
+  const generatePrs = (count) =>
+    Array.from({ length: count }, (_, i) => ({
       id: i,
-      number: 100 + i,
-      title: `PR ${i}`,
+      number: 200 + i,
+      title: `Edge PR ${i}`,
     }));
-    Octokit.mockImplementation(() => ({
-      pulls: { list: jest.fn().mockResolvedValue({ data: mockPrs }) },
+
+  it('handles a very large number of repos (200)', async () => {
+    const repos = Array.from({ length: 200 }, (_, i) => ({
+      owner: `owner${i}`,
+      repo: `repo${i}`,
     }));
+    octokit.pulls.list.mockResolvedValue({ data: generatePrs(1) });
+
     const result = await fetchPullRequests(repos, token);
-    expect(result).toHaveLength(100); // 2 repos × 50 PRs each
+    expect(result).toHaveLength(200); // 200 repos × 1 PR each
+  });
+
+  it('returns empty array when Octokit returns empty data per repo', async () => {
+    const repos = [
+      { owner: 'empty', repo: 'repo1' },
+      { owner: 'empty', repo: 'repo2' },
+    ];
+    octokit.pulls.list.mockResolvedValue({ data: [] });
+
+    const result = await fetchPullRequests(repos, token);
+    expect(result).toEqual([]);
+  });
+
+  it('handles rate‑limit errors gracefully', async () => {
+    const rateLimitError = new Error('API rate limit exceeded');
+    rateLimitError.status = 403;
+    octokit.pulls.list.mockRejectedValue(rateLimitError);
+
+    await expect(fetchPullRequests(repos, token)).rejects.toThrow(
+      'API rate limit exceeded'
+    );
+  });
+
+  it('cancels all requests if one fails', async () => {
+    const repos = [
+      { owner: 'good', repo: 'repo1' },
+      { owner: 'bad', repo: 'repo2' },
+    ];
+    octokit.pulls.list.mockImplementation((opts) => {
+      if (opts.repo === 'repo2')
+        return Promise.reject(new Error('Failed repo'));
+      return Promise.resolve({ data: [] });
+    });
+
+    await expect(fetchPullRequests(repos, token)).rejects.toThrow('Failed repo');
   });
 });
 ```
 
-#### Edge Cases
+### Integration Tests
 
-- **Empty Repo List**: Tests that an empty array of repos results in an empty array of PRs.
-- **Null/Undefined Token**: Ensures the function handles a null or undefined token gracefully by throwing an error.
-- **Network Error**: Verifies that the function can handle network errors gracefully.
-- **Pagination**: Confirms that pagination is handled correctly with `per_page`.
-
-**File: `app/actions/fetchPullRequests.unit.test.js`**
+**File: `app/actions/fetchPullRequests.integration.test.js`**
 ```javascript
-// ... existing tests ...
+import { fetchPullRequests } from '../app/actions/fetchPull Requests';
+import Octokit from '@octokit/rest';
 
-it('should respect per_page limit and return all PRs', async () => {
-  const mockPrs = Array.from({ length: 50 }, (_, i) => ({
-    id: i,
-    number: 100 + i,
-    title: `PR ${i}`,
-  }));
-  Octokit.mockImplementation(() => ({
-    pulls: { list: jest.fn().mockResolvedValue({ data: mockPrs }) },
-  }));
-  const result = await fetchPullRequests(repos, token);
-  expect(result).toHaveLength(100); // 2 repos × 50 PRs each
+describe('fetchPullRequests Integration Tests', () => {
+  const token = 'dummy-token';
+  let octokit;
+
+  beforeEach(() => {
+    octokit = new Octokit({ auth: token });
+  });
+
+  it('should fetch and process PRs for multiple repos', async () => {
+    const repos = [
+      { owner: 'vercel', repo: 'next.js' },
+      { owner: 'facebook', repo: 'react' },
+    ];
+    const mockPrs = [
+      { id: 1, number: 123, title: 'PR 1' },
+      { id: 2, number: 456, title: 'PR 2' },
+    ];
+
+    // Mock the Octokit pulls.list method
+    octokit.pulls.list.mockResolvedValue({ data: mockPrs });
+
+    const result = await fetchPullRequests(repos, token);
+    expect(result).toHaveLength(4); // 2 repos × 2 PRs each
+    expect(result).toEqual(expect.arrayContaining(mockPrs));
+  });
 });
 ```
 
-#### Integration Tests
+### Test Plan for Manual Testing
 
-No integration tests are provided in the given codebase. However, to ensure that all functions work together correctly, a minimal runnable smoke test can be created.
+1. **Basic Functionality**: Ensure that the function correctly processes a list of repositories and returns an array of pull requests.
+2. **Edge Cases**:
+   - Empty repository list: Verify that it handles this gracefully by returning an empty array.
+   - Rate-limit errors: Simulate API rate limit errors to ensure the function can handle them and return appropriate error messages.
+3. **Concurrency**: Test concurrent requests for multiple repositories to ensure they are processed efficiently without conflicts.
 
-**File: `app/smoke-test.js`**
-```javascript
-// Ensure all actions work together correctly
-const fetchPullRequests = require('../app/actions/fetchPullRequests');
-const Octokit = require('@octokit/rest');
+### Minimal Runnable Smoke Test
 
-(async () => {
-  const octokit = new Octokit({ auth: 'your-github-pat' });
-  const repos = [
-    { owner: 'vercel', repo: 'next.js' },
-    { owner: 'facebook', repo: 'react' },
-  ];
-
-  try {
-    const prs = await fetchPullRequests(repos, octokit);
-    console.log('PRs:', prs);
-  } catch (error) {
-    console.error('Error fetching PRs:', error.message);
-  }
-})();
+```bash
+TEST_COMMAND: npm test
+EXPECTED_RESULT: All tests pass with no failures
+FAILURE_ACTION_ITEMS:
+- Check that all test files exist in the specified directories.
+- Ensure that the necessary environment variables (like `NEXTAUTH_SECRET`) are set correctly.
+- Verify that Octokit is properly mocked and that the error handling is working as expected.
 ```
 
-#### Test Command and Expected Result
+### Additional Notes
 
-TEST_COMMAND: `node app/smoke-test.js`
+- **Environment Variables**: Ensure that any sensitive information like tokens or secrets are not hard-coded in test files. Consider using a `.env.local` file for local testing.
+- **Logging**: Implement logging within the function to capture debug messages during execution, which can be helpful for troubleshooting issues.
+- **Error Handling**: Test various error scenarios to ensure robustness of the function.
 
-EXPECTED_RESULT:
-- The script should run successfully without errors, printing the list of PRs from GitHub.
-- If an error occurs, it should log an error message to the console indicating the failure.
-
-FAILURE_ACTION_ITEMS:
-- Ensure that the GitHub personal access token (`your-github-pat`) is correctly set in your environment or configuration file.
-- Verify that the network connection to GitHub is stable and that the repository names are valid.
-- Check for any rate limiting issues that might prevent the request from completing.
+This setup provides a comprehensive test suite that covers the core functionality and edge cases of the `fetchPullRequests` function.

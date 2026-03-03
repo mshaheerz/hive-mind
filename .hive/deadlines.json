@@ -24,20 +24,19 @@
     "projectName": "pr-review-hub",
     "stage": "implementation",
     "agent": "forge",
-    "dueAt": "2026-03-03T17:16:22.529Z",
-    "setAt": "2026-03-03T11:16:22.529Z",
+    "dueAt": "2026-03-03T21:04:59.481Z",
+    "setAt": "2026-03-03T15:04:59.481Z",
     "status": "complete",
-    "completedAt": "2026-03-03T11:21:22.497Z"
+    "completedAt": "2026-03-03T15:08:10.448Z"
   },
   {
     "id": "pr-review-hub::review",
     "projectName": "pr-review-hub",
     "stage": "review",
     "agent": "lens",
-    "dueAt": "2026-03-03T12:57:49.849Z",
-    "setAt": "2026-03-03T10:57:49.849Z",
-    "status": "complete",
-    "completedAt": "2026-03-03T11:01:33.818Z"
+    "dueAt": "2026-03-03T17:08:10.451Z",
+    "setAt": "2026-03-03T15:08:10.451Z",
+    "status": "active"
   },
   {
     "id": "feature-flag-manager::research",
@@ -64,38 +63,39 @@
     "projectName": "feature-flag-manager",
     "stage": "implementation",
     "agent": "forge",
-    "dueAt": "2026-03-03T14:08:04.878Z",
-    "setAt": "2026-03-03T08:08:04.878Z",
+    "dueAt": "2026-03-03T20:46:58.285Z",
+    "setAt": "2026-03-03T14:46:58.285Z",
     "status": "complete",
-    "completedAt": "2026-03-03T08:09:42.396Z"
+    "completedAt": "2026-03-03T14:50:48.652Z"
   },
   {
     "id": "feature-flag-manager::review",
     "projectName": "feature-flag-manager",
     "stage": "review",
     "agent": "lens",
-    "dueAt": "2026-03-03T13:21:22.500Z",
-    "setAt": "2026-03-03T11:21:22.500Z",
+    "dueAt": "2026-03-03T16:50:48.656Z",
+    "setAt": "2026-03-03T14:50:48.656Z",
     "status": "complete",
-    "completedAt": "2026-03-03T11:36:27.995Z"
+    "completedAt": "2026-03-03T14:59:34.615Z"
   },
   {
     "id": "pr-review-hub::tests",
     "projectName": "pr-review-hub",
     "stage": "tests",
     "agent": "pulse",
-    "dueAt": "2026-03-03T13:01:33.821Z",
-    "setAt": "2026-03-03T11:01:33.821Z",
+    "dueAt": "2026-03-03T17:00:33.412Z",
+    "setAt": "2026-03-03T15:00:33.412Z",
     "status": "complete",
-    "completedAt": "2026-03-03T11:16:22.524Z"
+    "completedAt": "2026-03-03T15:04:59.476Z"
   },
   {
     "id": "feature-flag-manager::tests",
     "projectName": "feature-flag-manager",
     "stage": "tests",
     "agent": "pulse",
-    "dueAt": "2026-03-03T13:36:27.998Z",
-    "setAt": "2026-03-03T11:36:27.998Z",
-    "status": "active"
+    "dueAt": "2026-03-03T16:21:58.507Z",
+    "setAt": "2026-03-03T14:21:58.507Z",
+    "status": "complete",
+    "completedAt": "2026-03-03T14:46:58.282Z"
   }
 ]

@@ -1,0 +1,73 @@
+{
+  "project": "feature-flag-manager",
+  "stage": "architecture",
+  "agent": "forge",
+  "runId": "1772549218284-forge-pk3sd",
+  "parentRunId": "1772547718506-pulse-15nl7",
+  "startedAt": "2026-03-03T14:46:58.284Z",
+  "provider": "local",
+  "model": "qwen2.5-coder:3b-instruct",
+  "statusSnapshot": {
+    "stage": "architecture",
+    "stageOwner": "forge",
+    "stageAttempt": 2,
+    "blockedReason": {
+      "code": "tests_failed",
+      "message": "npm test failed: > feature-flag-manager@0.1.0 test | > node -e \"console.log('Tests passed')\" --watch=false | node: either --watch or --eval can be used, not both"
+    },
+    "proposedBy": "nova",
+    "approvedBy": "apex",
+    "approvalScore": 8.25,
+    "projectType": "web_app",
+    "preferredStack": "Next.js 15 + Tailwind CSS + Lucide Icons",
+    "template": "nextjs-starter",
+    "lensVerdict": "APPROVED",
+    "lensActionItems": [],
+    "lastHandoffRunId": "1772547718506-pulse-15nl7",
+    "escalationLevel": "none",
+    "approvedAt": "2026-03-03T07:57:16.301Z",
+    "updatedAt": "2026-03-03T14:46:58.282Z",
+    "lensIssueRepeats": {},
+    "transitionReason": "agent execution started",
+    "workspaceFiles": [
+      "src/pages/index.js"
+    ],
+    "workspaceUpdatedAt": "2026-03-03T12:29:33.851Z",
+    "bootstrapTemplate": "nextjs",
+    "bootstrapNotes": [
+      "Bootstrap already present."
+    ],
+    "workspaceCheck": {
+      "checked": 20,
+      "passed": 20,
+      "failed": 0,
+      "ranAt": "2026-03-03T12:29:33.851Z"
+    },
+    "lensRejected": false,
+    "lensApproved": true,
+    "lensAcceptedAt": "2026-03-03T14:05:33.272Z",
+    "lensReviewSummary": null,
+    "lensBypassed": false,
+    "lensBypassReason": null,
+    "lensBypassedAt": null,
+    "pulseRejected": true,
+    "pulseApproved": false,
+    "pulseAcceptedAt": null,
+    "pulseSummary": "npm test failed: > feature-flag-manager@0.1.0 test | > node -e \"console.log('Tests passed')\" --watch=false | node: either --watch or --eval can be used, not both",
+    "pulseActionItems": [
+      "Fix issues in npm test failed: > feature-flag-manager@0.1.0 test | > node -e \"console.log('Tests passed')\" --watch=false | node: either --watch or --eval can be used, not both",
+      "> feature-flag-manager@0.1.0 test | > node -e \"console.log('Tests passed')\" --watch=false | node: either --watch or --eval can be used, not both"
+    ],
+    "lensRejectCount": 0,
+    "lensReviewedAt": "2026-03-03T14:05:33.272Z",
+    "escalationNeeded": false,
+    "escalationReason": null,
+    "pulseReviewedAt": "2026-03-03T14:46:58.281Z",
+    "generatedTestFiles": [
+      "app/utils/featureFlags.test.js",
+      "app/pages/api/featureFlags.test.js",
+      "app/components/Dashboard.test.js"
+    ],
+    "forgeNoFileAttempts": 1
+  }
+}

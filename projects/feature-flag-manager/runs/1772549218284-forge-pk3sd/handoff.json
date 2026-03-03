@@ -1,0 +1,20 @@
+{
+  "fromAgent": "forge",
+  "toAgent": "lens",
+  "project": "feature-flag-manager",
+  "stage": "architecture",
+  "runId": "1772549218284-forge-pk3sd",
+  "summary": "feature-flag-manager: architecture -> implementation",
+  "artifacts": [
+    "output/architecture.md",
+    "output/implementation.md"
+  ],
+  "requiredActions": [],
+  "acceptanceChecks": [
+    "Workspace files materialized"
+  ],
+  "modelInfo": {
+    "provider": "local",
+    "model": "qwen2.5-coder:3b-instruct"
+  }
+}

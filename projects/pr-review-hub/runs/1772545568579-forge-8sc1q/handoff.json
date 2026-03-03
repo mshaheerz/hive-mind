@@ -1,0 +1,20 @@
+{
+  "fromAgent": "forge",
+  "toAgent": "lens",
+  "project": "pr-review-hub",
+  "stage": "architecture",
+  "runId": "1772545568579-forge-8sc1q",
+  "summary": "pr-review-hub: architecture -> implementation",
+  "artifacts": [
+    "output/architecture.md",
+    "output/implementation.md"
+  ],
+  "requiredActions": [],
+  "acceptanceChecks": [
+    "Workspace files materialized"
+  ],
+  "modelInfo": {
+    "provider": "local",
+    "model": "qwen2.5-coder:3b-instruct"
+  }
+}

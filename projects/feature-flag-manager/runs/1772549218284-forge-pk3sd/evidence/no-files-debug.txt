@@ -1,0 +1,45 @@
+Attempt 2
+
+First 800 chars of output:
+### File: `package.json`
+
+```json
+{
+  "name": "your-project-name",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "next",
+    "build": "next build",
+    "dev": "next dev",
+    "clean": "rm -rf .next dist"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.10.3",
+    "@emotion/styled": "^11.10.2",
+    "next": "latest",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/next": "latest",
+    "@types/react": "^18.0.0",
+    "eslint": "^8.43.0",
+    "eslint-config-next": "13.4.5",
+    "typescript": "^4.9.2"
+  }
+}
+```
+
+### File: `next.config.js`
+
+```javascript
+const { withContentlayer } = require('next-contentlayer')
+
+module.exports = withContentlayer({
+  images: {
+    domains: ['images.unsplash.com']
+  },
+})
+`

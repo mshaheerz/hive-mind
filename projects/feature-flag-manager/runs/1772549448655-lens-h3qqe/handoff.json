@@ -1,0 +1,18 @@
+{
+  "fromAgent": "lens",
+  "toAgent": "pulse",
+  "project": "feature-flag-manager",
+  "stage": "implementation",
+  "runId": "1772549448655-lens-h3qqe",
+  "summary": "feature-flag-manager: implementation -> review",
+  "artifacts": [
+    "output/implementation.md",
+    "output/review.md"
+  ],
+  "requiredActions": [],
+  "acceptanceChecks": [],
+  "modelInfo": {
+    "provider": "local",
+    "model": "qwen2.5-coder:3b-instruct"
+  }
+}

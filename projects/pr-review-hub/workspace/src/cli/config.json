@@ -1,0 +1,6 @@
+{
+  "severityThreshold": "Medium",
+  "reviewProgress": {
+    "searchRules": ["waterfall", "Promise.all", "defer await"]
+  }
+}

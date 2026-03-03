@@ -1,0 +1,42 @@
+Attempt 2
+
+First 800 chars of output:
+### File: `package.json`
+
+```json
+{
+  "name": "your-project-name",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "next start",
+    "dev": "next dev",
+    "build": "next build",
+    "lint": "eslint . --ext js,jsx"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.10.5",
+    "@emotion/styled": "^11.10.7",
+    "next": "latest",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.35",
+    "@types/next": "latest",
+    "eslint": "^8.47.0",
+    "eslint-config-next": "13.4.9",
+    "prettier-plugin-jsx": "^5.0.1"
+  }
+}
+```
+
+### File: `.eslintrc.js`
+
+```javascript
+module.exports = {
+  extends: ['next', 'plugin:@emotion/react/recommended'],
+  rules: {
+    '@emotion/jsx/no-undef': 'error',
+    'react

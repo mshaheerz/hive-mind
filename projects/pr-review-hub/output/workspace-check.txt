@@ -1,1 +1,12 @@
-Checked=21 Passed=21 Failed=0
+Checked=28 Passed=27 Failed=1
+[FAIL] node --check src/components/PullRequestCard.unit.test.js
+/home/zaigopc/Desktop/my/hive-mind/projects/pr-review-hub/workspace/src/components/PullRequestCard.unit.test.js:11
+      <div data-testid="card" data-token={token}>
+      ^
+
+SyntaxError: Unexpected token '<'
+    at wrapSafe (node:internal/modules/cjs/loader:1692:18)
+    at checkSyntax (node:internal/main/check_syntax:76:3)
+
+Node.js v24.12.0
+Fix hint: Check for missing brackets, semicolons, or import errors.
