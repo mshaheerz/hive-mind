@@ -215,30 +215,4 @@ body {
 }
 ```
 
-### **File: `src/pages/ProfilePage.js`**
-```javascript
-// File: src/pages/ProfilePage.js
-export async function getServerSideProps({ params }) {
-  const profileData = await fetch(`/api/profile/${params.id}`);
-  return { props: { data: profileData.json() } };
-}
-
-function ProfilePage({ data }) {
-  useEffect(() => {...}, [data]);
-}
-```
-
-### **File: `src/services/apiService.ts`**
-```typescript
-// File: src/services/apiService.ts
-async function fetchData(url) {
-  const response = await fetch(url);
-  return response.json();
-}
-```
-
-## FIX_MAP
-
-- `processData` -> Rename to `handleDataProcessing`
-- `useEffect` inside `getServerSideProps` -> Move outside
-- Simplify `.then()` in `fetchData`
+### **File: `src/pages/Prof

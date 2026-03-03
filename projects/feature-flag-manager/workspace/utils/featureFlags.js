@@ -18,6 +18,3 @@ export async function readFlags() {
   }
 }
 
-/**
- * Writes the given flags array to storage.
- * @param {Array} flags**File: `utils/featureFlags.js`**

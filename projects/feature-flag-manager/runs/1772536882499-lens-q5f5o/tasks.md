@@ -3,7 +3,7 @@
 status: done
 
 ## Next Action
-- Hand off to `lens`
+- Hand off to `pulse`
 
 ## Approvals
 - [x] Risk gate evaluated
