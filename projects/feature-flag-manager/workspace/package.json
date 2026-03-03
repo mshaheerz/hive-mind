@@ -9,7 +9,7 @@
     "test": "node -e \"console.log('Tests passed')\""
   },
   "dependencies": {
-    "next": "15.0.0",
+    "next": "15.5.10",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "lucide-react": "^0.361.0",
