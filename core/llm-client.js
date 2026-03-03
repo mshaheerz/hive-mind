@@ -69,6 +69,23 @@ const PROVIDER_FALLBACK_MODELS = {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/**
+ * Quick health check for local Ollama — avoids hanging on a busy/down instance.
+ * Returns true if Ollama is reachable, false otherwise.
+ */
+async function pingOllama(baseUrl, timeoutMs = 5000) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(`${baseUrl}/api/tags`, { signal: ctrl.signal });
+    return res.ok;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 function normalizeProvider(provider) {
   const normalized = String(provider || "")
     .trim()
@@ -331,24 +348,44 @@ class LLMClient {
   }
 
   async _callWithRetry(model, messages, opts = {}, maxRetries = 5) {
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    // Local Ollama: fewer retries with shorter waits — long waits kill the cycle
+    const effectiveMaxRetries = this.provider === "local" ? 3 : maxRetries;
+    for (let attempt = 0; attempt <= effectiveMaxRetries; attempt++) {
       try {
         if (this.provider === "local") {
-          const response = await fetch(`${this.localBaseUrl}/api/chat`, {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({
-              model,
-              messages,
-              stream: false,
-              keep_alive: "30m", // Keep model loaded for 30 min to avoid reload between agents
-              options: {
-                temperature: opts.temperature ?? 0.7,
-                num_predict: opts.maxTokens || 2048, // Lower default for local to be faster
-                top_p: opts.topP ?? 1,
-              },
-            }),
-          });
+          // ── Pre-call health check: fail fast if Ollama is unreachable ──
+          const ollamaAlive = await pingOllama(this.localBaseUrl);
+          if (!ollamaAlive) {
+            throw new Error(
+              `Ollama unreachable at ${this.localBaseUrl}. Is 'ollama serve' running?`,
+            );
+          }
+
+          // ── Hard timeout: abort if model takes >4 minutes ──
+          const ctrl = new AbortController();
+          const abortTimer = setTimeout(() => ctrl.abort(), 4 * 60 * 1000);
+
+          let response;
+          try {
+            response = await fetch(`${this.localBaseUrl}/api/chat`, {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              signal: ctrl.signal,
+              body: JSON.stringify({
+                model,
+                messages,
+                stream: false,
+                keep_alive: "30m", // Keep model loaded to avoid reload between agents
+                options: {
+                  temperature: opts.temperature ?? 0.7,
+                  num_predict: opts.maxTokens || 1536, // Capped for speed on consumer hardware
+                  top_p: opts.topP ?? 1,
+                },
+              }),
+            });
+          } finally {
+            clearTimeout(abortTimer);
+          }
 
           if (!response.ok) {
             const body = await response.text();
@@ -396,16 +433,29 @@ class LLMClient {
         };
       } catch (err) {
         const isTransient = this._isTransientError(err);
+        const isAborted = err?.name === "AbortError";
+        if (isAborted) {
+          console.log(
+            `  [${model}] ⏱ Request timed out after 4 minutes. Ollama may be overloaded.`,
+          );
+          throw new Error(
+            `Local LLM timeout: ${model} took >4 minutes to respond.`,
+          );
+        }
         if (
           (this._isRateLimitError(err) || isTransient) &&
-          attempt < maxRetries
+          attempt < effectiveMaxRetries
         ) {
-          const waitMs = isTransient
-            ? Math.min(15000, Math.pow(2, attempt) * 3000) // 3s, 6s, 12s, 15s...
-            : Math.pow(2, attempt) * 5000;
+          // Shorter waits for local: 5s, 10s, 20s (not 3s, 6s, 12s, 15s)
+          const waitMs =
+            this.provider === "local"
+              ? Math.min(20000, Math.pow(2, attempt) * 5000)
+              : isTransient
+                ? Math.min(15000, Math.pow(2, attempt) * 3000)
+                : Math.pow(2, attempt) * 5000;
           const reason = isTransient ? "connection error" : "rate limit";
           console.log(
-            `  [${model}] ${reason} on attempt ${attempt + 1}/${maxRetries}. Retrying in ${waitMs / 1000}s...`,
+            `  [${model}] ${reason} on attempt ${attempt + 1}/${effectiveMaxRetries}. Retrying in ${waitMs / 1000}s...`,
           );
           await sleep(waitMs);
           continue;
