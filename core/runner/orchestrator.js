@@ -369,6 +369,7 @@ class AutonomousRunner {
     let progressed = false;
 
     for (const { name, status } of prioritized) {
+      if (progressed) break; // Focus on one project per cycle if progress was made
       let currentStatus = status;
       let hops = 0;
 
@@ -420,7 +421,9 @@ class AutonomousRunner {
           worked: true,
           success: run?.success !== false,
         });
-        progressed = progressed || run?.worked !== false;
+
+        // Mark progress. If something substantial happened, we might stop the cycle for other projects.
+        if (run?.worked !== false) progressed = true;
 
         currentStatus = getProjectStatus(name);
         hops++;

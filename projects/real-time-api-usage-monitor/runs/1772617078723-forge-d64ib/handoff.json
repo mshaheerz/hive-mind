@@ -1,0 +1,15 @@
+{
+  "fromAgent": "system",
+  "toAgent": null,
+  "project": "real-time-api-usage-monitor",
+  "stage": "architecture",
+  "runId": "1772617078723-forge-d64ib",
+  "summary": "",
+  "artifacts": [],
+  "requiredActions": [],
+  "acceptanceChecks": [],
+  "modelInfo": {
+    "provider": "groq",
+    "model": "unknown"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "project": "feature-flag-dashboard",
+  "stage": "approved",
+  "agent": "scout",
+  "runId": "1772616120166-scout-8mbvh",
+  "parentRunId": null,
+  "startedAt": "2026-03-04T09:22:00.166Z",
+  "provider": "groq",
+  "model": {
+    "id": "llama-3.3-70b-versatile",
+    "contextWindow": 128000,
+    "maxTokens": 4096,
+    "supportsImages": false,
+    "supportsReasoning": false
+  },
+  "statusSnapshot": {
+    "stage": "approved",
+    "proposedBy": "nova",
+    "approvedAt": "2026-03-04T09:21:39.122Z",
+    "updatedAt": "2026-03-04T09:21:39.122Z",
+    "stageAttempt": 1,
+    "lensVerdict": null,
+    "lensActionItems": [],
+    "blockedReason": null,
+    "escalationLevel": "none",
+    "lastHandoffRunId": null,
+    "stageOwner": "scout",
+    "lensIssueRepeats": {},
+    "workspaceFiles": []
+  }
+}

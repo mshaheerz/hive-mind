@@ -1,0 +1,15 @@
+{
+  "fromAgent": "system",
+  "toAgent": null,
+  "project": "feature-flag-dashboard",
+  "stage": "implementation",
+  "runId": "1772616471348-lens-zeavm",
+  "summary": "**VERDICT:** NEEDS_CHANGES | | 1 | **Critical** | `app/pages/index.js` | Missing `\"use client\"` directive on a component that uses `useState` / `useEffect`. Next 13 App Router will treat this file as a Server Component and throw at runtime. | Add `'use client';` as the first line of the file. | | ### CRITICAL | The codebase is functional and follows basic Next.js patterns, but the critical missing client directive, unnecessary server‑action wrapper, and mixed JavaScript/TypeScript files are the primary blockers for",
+  "artifacts": [],
+  "requiredActions": [],
+  "acceptanceChecks": [],
+  "modelInfo": {
+    "provider": "groq",
+    "model": "unknown"
+  }
+}

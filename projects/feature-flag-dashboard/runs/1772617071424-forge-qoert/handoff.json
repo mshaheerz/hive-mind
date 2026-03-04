@@ -1,0 +1,15 @@
+{
+  "fromAgent": "system",
+  "toAgent": null,
+  "project": "feature-flag-dashboard",
+  "stage": "architecture",
+  "runId": "1772617071424-forge-qoert",
+  "summary": "",
+  "artifacts": [],
+  "requiredActions": [],
+  "acceptanceChecks": [],
+  "modelInfo": {
+    "provider": "groq",
+    "model": "unknown"
+  }
+}

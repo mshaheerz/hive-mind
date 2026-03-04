@@ -1,1 +1,80 @@
-[]
+[
+  {
+    "id": "feature-flag-dashboard::research",
+    "projectName": "feature-flag-dashboard",
+    "stage": "research",
+    "agent": "scout",
+    "dueAt": "2026-03-04T13:22:00.169Z",
+    "setAt": "2026-03-04T09:22:00.169Z",
+    "status": "complete",
+    "completedAt": "2026-03-04T09:22:02.803Z"
+  },
+  {
+    "id": "feature-flag-dashboard::architecture",
+    "projectName": "feature-flag-dashboard",
+    "stage": "architecture",
+    "agent": "atlas",
+    "dueAt": "2026-03-04T13:22:02.808Z",
+    "setAt": "2026-03-04T09:22:02.808Z",
+    "status": "complete",
+    "completedAt": "2026-03-04T09:22:05.192Z"
+  },
+  {
+    "id": "feature-flag-dashboard::implementation",
+    "projectName": "feature-flag-dashboard",
+    "stage": "implementation",
+    "agent": "forge",
+    "dueAt": "2026-03-04T13:37:51.426Z",
+    "setAt": "2026-03-04T09:37:51.426Z",
+    "status": "complete",
+    "completedAt": "2026-03-04T09:37:58.720Z"
+  },
+  {
+    "id": "real-time-api-usage-monitor::research",
+    "projectName": "real-time-api-usage-monitor",
+    "stage": "research",
+    "agent": "scout",
+    "dueAt": "2026-03-04T13:22:22.079Z",
+    "setAt": "2026-03-04T09:22:22.079Z",
+    "status": "complete",
+    "completedAt": "2026-03-04T09:22:24.616Z"
+  },
+  {
+    "id": "real-time-api-usage-monitor::architecture",
+    "projectName": "real-time-api-usage-monitor",
+    "stage": "architecture",
+    "agent": "atlas",
+    "dueAt": "2026-03-04T13:22:24.619Z",
+    "setAt": "2026-03-04T09:22:24.619Z",
+    "status": "complete",
+    "completedAt": "2026-03-04T09:22:27.303Z"
+  },
+  {
+    "id": "real-time-api-usage-monitor::implementation",
+    "projectName": "real-time-api-usage-monitor",
+    "stage": "implementation",
+    "agent": "forge",
+    "dueAt": "2026-03-04T13:37:58.725Z",
+    "setAt": "2026-03-04T09:37:58.725Z",
+    "status": "complete",
+    "completedAt": "2026-03-04T09:38:12.950Z"
+  },
+  {
+    "id": "feature-flag-dashboard::review",
+    "projectName": "feature-flag-dashboard",
+    "stage": "review",
+    "agent": "lens",
+    "dueAt": "2026-03-04T13:27:51.350Z",
+    "setAt": "2026-03-04T09:27:51.350Z",
+    "status": "active"
+  },
+  {
+    "id": "real-time-api-usage-monitor::review",
+    "projectName": "real-time-api-usage-monitor",
+    "stage": "review",
+    "agent": "lens",
+    "dueAt": "2026-03-04T13:27:56.415Z",
+    "setAt": "2026-03-04T09:27:56.415Z",
+    "status": "active"
+  }
+]
