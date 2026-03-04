@@ -4,6 +4,7 @@
  */
 
 const Agent = require("../core/agent");
+const { loadApplicableSkills } = require("./utils");
 
 class NovaAgent extends Agent {
   constructor() {
@@ -42,6 +43,7 @@ Enthusiastic but grounded. You love finding the gap between "this is annoying" a
   }
 
   async generateProposals(context = "") {
+    const skills = loadApplicableSkills(["innovation", "saas", "web-apps"], 3);
     const prompt = `You are autonomously generating new project proposals for the Hive Mind team.
 
 CRITICAL DIRECTIVE:
@@ -51,7 +53,7 @@ We ONLY build modern web applications.
 - Every project must include a modern UI with Tailwind CSS and Lucide React icons.
 - If a project needs a backend, it MUST be built using Next.js Server Actions or API routes.
 
-${context ? `## Context (avoid duplicating these)\n${context}\n` : ""}
+${skills}\n\n${context ? `## Context (avoid duplicating these)\n${context}\n` : ""}
 
 Generate exactly 3 new, original project ideas. Each must be different in domain but follow the modern web directive.
 
@@ -80,6 +82,10 @@ Complexity options: Small (1-2 days), Medium (3-7 days), Large (2+ weeks).`;
   }
 
   async refineProposal(originalProposal, apexFeedback) {
+    const skills = loadApplicableSkills(
+      ["refinement", "feedback-loop", "problem-solving"],
+      3,
+    );
     const prompt = `APEX has requested revisions to your proposal.
 
 ## Original Proposal
@@ -88,7 +94,7 @@ Description: ${originalProposal.description}
 Goal: ${originalProposal.goal}
 
 ## APEX Feedback
-${apexFeedback}
+${apexFeedback}\n\n${skills}
 
 Refine this proposal to address the feedback. Make it meaningfully better, not just slightly reworded.
 

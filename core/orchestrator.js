@@ -18,9 +18,14 @@ const {
   NovaAgent,
 } = require("../agents/agents");
 
-const PROJECTS_DIR = path.join(__dirname, "..", "projects");
-const HIVE_DIR = path.join(__dirname, "..", ".hive");
-const QUEUE_FILE = path.join(HIVE_DIR, "queue.json");
+const {
+  PROJECTS_DIR,
+  QUEUE_FILE,
+  STAGE_RESPONSIBLE_AGENT,
+} = require("./runner/config");
+
+const { loadQueue, saveQueue } = require("./runner/queue");
+const { setProjectStatus } = require("./runner/project-status");
 
 class HiveOrchestrator {
   constructor() {
@@ -270,12 +275,12 @@ class HiveOrchestrator {
   // ─── Proposal queue ───────────────────────────────────────────
 
   async submitProposal(proposal) {
-    const queue = this._loadQueue();
+    const queue = loadQueue();
     proposal.id = `prop_${Date.now()}`;
     proposal.submittedAt = new Date().toISOString();
     proposal.status = "pending";
     queue.push(proposal);
-    this._saveQueue(queue);
+    saveQueue(queue);
     console.log(
       `\n📬 Proposal "${proposal.title}" added to queue (ID: ${proposal.id})`,
     );
@@ -283,7 +288,7 @@ class HiveOrchestrator {
   }
 
   async runApexReview() {
-    const queue = this._loadQueue().filter((p) => p.status === "pending");
+    const queue = loadQueue().filter((p) => p.status === "pending");
 
     if (!queue.length) {
       console.log("\n📭 No pending proposals in queue.");
@@ -303,8 +308,8 @@ class HiveOrchestrator {
       }
     }
 
-    this._saveQueue(
-      this._loadQueue().map((p) => {
+    saveQueue(
+      loadQueue().map((p) => {
         const updated = queue.find((q) => q.id === p.id);
         return updated || p;
       }),
@@ -384,7 +389,7 @@ ${proposal.complexity || "To be determined"}
     }
 
     // Queue
-    const queue = this._loadQueue();
+    const queue = loadQueue();
     const pending = queue.filter((q) => q.status === "pending");
     console.log(`\n📬 Pending proposals: ${pending.length}`);
     pending.forEach((p) => console.log(`  • "${p.title}" by ${p.proposedBy}`));
@@ -472,16 +477,11 @@ ${proposal.complexity || "To be determined"}
   // ─── Helpers ──────────────────────────────────────────────────
 
   _loadQueue() {
-    if (!fs.existsSync(QUEUE_FILE)) return [];
-    try {
-      return JSON.parse(fs.readFileSync(QUEUE_FILE, "utf8"));
-    } catch {
-      return [];
-    }
+    return loadQueue();
   }
 
   _saveQueue(queue) {
-    fs.writeFileSync(QUEUE_FILE, JSON.stringify(queue, null, 2));
+    saveQueue(queue);
   }
 
   _updateProjectStatus(projectName, updates) {

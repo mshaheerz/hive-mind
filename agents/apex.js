@@ -5,6 +5,7 @@
  */
 
 const Agent = require("../core/agent");
+const { loadApplicableSkills } = require("./utils");
 
 const APEX_PROMPT = `You are APEX, the Operations Head of a multi-agent AI development team called Hive Mind.
 
@@ -54,7 +55,7 @@ class ApexAgent extends Agent {
 **Proposed by:** ${proposal.proposedBy?.toUpperCase() || "UNKNOWN"}
 **Description:** ${proposal.description}
 **Goal:** ${proposal.goal || "Not specified"}
-**Estimated Complexity:** ${proposal.complexity || "Not specified"}
+**Estimated Complexity:** ${proposal.complexity || "Not specified"}\n\n${loadApplicableSkills(["evaluation", "management", "risk-assessment"], 3)}
 
 Review this proposal and respond with a JSON object in this exact format:
 {
@@ -140,7 +141,7 @@ Review this proposal and respond with a JSON object in this exact format:
 **Code Review Status:** ${project.lensApproved ? "✅ Approved by LENS" : "❌ Pending LENS review"}
 **Tests Status:** ${project.pulseApproved ? "✅ Passed PULSE tests" : "❌ Tests not passed"}
 **Docs Status:** ${project.sageComplete ? "✅ Documented by SAGE" : "⚠️ Docs pending"}
-**Summary:** ${project.summary || "No summary provided"}
+**Summary:** ${project.summary || "No summary provided"}\n\n${loadApplicableSkills(["ship-readiness", "qa", "compliance"], 3)}
 
 Can this project ship? Respond JSON:
 {

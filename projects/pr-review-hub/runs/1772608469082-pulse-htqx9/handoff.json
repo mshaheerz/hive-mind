@@ -1,0 +1,18 @@
+{
+  "fromAgent": "pulse",
+  "toAgent": "forge",
+  "project": "pr-review-hub",
+  "stage": "review",
+  "runId": "1772608469082-pulse-htqx9",
+  "summary": "npm test failed: > pr-review-hub@0.1.0 test | > jest --coverage --watch=false | ---------------------------------|---------|----------|---------|---------|------------------- | File                             | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s | ---------------------------------|---------|----------|---------|---------|------------------- | All files                        |   10.34 |        0 |   10.52 |   10.52 |",
+  "artifacts": [],
+  "requiredActions": [
+    "Fix issues in npm test failed: > pr-review-hub@0.1.0 test | > jest --coverage --watch=false | ---------------------------------|---------|----------|---------|---------|------------------- | File                             | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s | ---------------------------------|---------|----------|---------|---------|------------------- | All files                        |   10.34 |        0 |   10.52 |   10.52 |",
+    "> pr-review-hub@0.1.0 test | > jest --coverage --watch=false | ---------------------------------|---------|----------|---------|---------|------------------- | File                             | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s | ---------------------------------|---------|----------|---------|---------|------------------- | All files                        |   10.34 |        0 |   10.52 |   10.52 |"
+  ],
+  "acceptanceChecks": [],
+  "modelInfo": {
+    "provider": "groq",
+    "model": "openai/gpt-oss-20b"
+  }
+}

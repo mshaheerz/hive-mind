@@ -1,11 +1,10 @@
-/** @type {import('jest').Config} */
 module.exports = {
-  testEnvironment: 'jsdom',
+  testEnvironment: 'node',
+  moduleFileExtensions: ['js', 'jsx', 'ts', 'tsx'],
   transform: {
-    '^.+\\.[tj]sx?$': 'babel-jest',
+    '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { presets: ['@babel/preset-env', '@babel/preset-react'] }],
   },
-  moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/$1',
-  },
-  setupFilesAfterEnv: ['@testing-library/jest-dom/extend-expect'],
+  testPathIgnorePatterns: ['/node_modules/', '/dist/'],
+  coverageDirectory: 'coverage',
+  collectCoverageFrom: ['app/**/*.js', 'src/**/*.ts', 'src/**/*.js'],
 };
