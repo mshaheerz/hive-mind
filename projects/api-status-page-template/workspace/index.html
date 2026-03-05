@@ -2,25 +2,115 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <title>Acme Dashboard – Home</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Static Dashboard UI</title>
-
-  <!-- Global & component styles -->
-  <link rel="stylesheet" href="styles/global.css">
-  <link rel="stylesheet" href="styles/components.css">
+  <link rel="stylesheet" href="/styles/reset.css">
+  <link rel="stylesheet" href="/styles/variables.css">
+  <link rel="stylesheet" href="/styles/layout.css">
+  <link rel="stylesheet" href="/styles/components.css">
+  <link rel="stylesheet" href="/styles/pages.css">
+  <link rel="stylesheet" href="/styles/utilities.css">
 </head>
-<body>
-  <!-- Layout placeholders – they will be filled by JavaScript -->
-  <div id="header"></div>
+<body data-page="home">
+  <div id="nav-placeholder"></div>
 
-  <main>
-    <div id="hero"></div>
-    <div id="features"></div>
+  <main class="container">
+    <section class="home-stats grid grid-3">
+      <div class="card stat-card">
+        <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+        <div>
+          <div class="value" id="stat-users">0</div>
+          <div class="label">Total Users</div>
+        </div>
+      </div>
+      <div class="card stat-card">
+        <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 8h14v-2H7v2zm0-4h14v-2H7v2zm0-6v2h14V7H7z"/></svg>
+        <div>
+          <div class="value" id="stat-sessions">0</div>
+          <div class="label">Active Sessions</div>
+        </div>
+      </div>
+      <div class="card stat-card">
+        <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>
+        <div>
+          <div class="value" id="stat-projects">0</div>
+          <div class="label">Projects</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mt-4">
+      <h2>Recent Activity</h2>
+      <table class="table mt-2">
+        <thead>
+          <tr><th>Time</th><th>Action</th><th>User</th></tr>
+        </thead>
+        <tbody id="activity-body">
+          <!-- Filled by JS -->
+        </tbody>
+      </table>
+    </section>
+
+    <section class="mt-4">
+      <h2>Quick Actions</h2>
+      <div class="flex gap-2 mt-2">
+        <button class="btn btn-primary" data-modal-open="generic-modal">Create User</button>
+        <button class="btn btn-outline">View Reports</button>
+      </div>
+    </section>
+
+    <div class="mt-4 flex items-center">
+      <label class="mr-2">Dark Mode</label>
+      <label class="toggle">
+        <input type="checkbox" id="theme-toggle">
+        <span class="slider"></span>
+      </label>
+    </div>
   </main>
 
-  <div id="footer"></div>
+  <div id="footer-placeholder"></div>
 
-  <!-- Main script (module) -->
-  <script type="module" src="scripts/main.js"></script>
+  <!-- Shared modal -->
+  <div id="generic-modal" class="modal" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <button class="close-btn" aria-label="Close modal" onclick="closeModal('generic-modal')">&times;</button>
+      <h2 class="modal-title">Create New User</h2>
+      <div class="modal-body">
+        <form id="create-user-form">
+          <div class="mb-2">
+            <label>Name</label>
+            <input type="text" required class="w-full p-2 border rounded">
+          </div>
+          <div class="mb-2">
+            <label>Email</label>
+            <input type="email" required class="w-full p-2 border rounded">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer mt-3">
+        <button class="btn btn-outline" onclick="closeModal('generic-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="showToast('User created (demo)', 'success')">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/scripts/data.js"></script>
+  <script type="module" src="/scripts/app.js"></script>
+  <script type="module">
+    // Populate home stats & activity list
+    document.addEventListener('DOMContentLoaded', () => {
+      const { stats, activities } = window.DUMMY_DATA;
+      document.getElementById('stat-users').textContent = stats.users;
+      document.getElementById('stat-sessions').textContent = stats.activeSessions;
+      document.getElementById('stat-projects').textContent = stats.projects;
+
+      const tbody = document.getElementById('activity-body');
+      activities.forEach(act => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${act.time}</td><td>${act.action}</td><td>${act.user}</td>`;
+        tbody.appendChild(tr);
+      });
+    });
+  </script>
 </body>
 </html>

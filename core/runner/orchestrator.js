@@ -132,6 +132,7 @@ class AutonomousRunner {
 
     this._syncProviderState();
     this.cycleInProgress = false;
+    this._hasWorkPending = false;
   }
 
   // ─── Internal Sync ───────────────────────────────────────────
@@ -190,9 +191,15 @@ class AutonomousRunner {
 
     await this.cycle();
 
-    this.intervalId = setInterval(async () => {
-      if (!this.cycleInProgress) await this.cycle();
-    }, CHECK_INTERVAL_MS);
+    // Adaptive interval: re-cycle quickly when work was done, slow down when idle
+    const scheduleNext = () => {
+      const delay = this._hasWorkPending ? Math.min(CHECK_INTERVAL_MS, 15_000) : CHECK_INTERVAL_MS;
+      this.intervalId = setTimeout(async () => {
+        if (!this.cycleInProgress) await this.cycle();
+        scheduleNext();
+      }, delay);
+    };
+    scheduleNext();
 
     this.bridgeInProgress = false;
     this.bridgeIntervalId = setInterval(async () => {
@@ -209,7 +216,7 @@ class AutonomousRunner {
 
     const shutdown = () => {
       log("system", "Shutting down gracefully...");
-      clearInterval(this.intervalId);
+      clearTimeout(this.intervalId);
       clearInterval(this.bridgeIntervalId);
       this.state.state.running = false;
       this.state.save();
@@ -271,9 +278,10 @@ class AutonomousRunner {
     this.state.state.lastCycle = new Date().toISOString();
     this.state.save();
 
+    const modeTag = this._hasWorkPending ? "FAST" : "IDLE";
     log(
       "system",
-      `\n── Cycle #${this.state.state.cycleCount} (Mode: ${HIVE_FORCED_LEVEL.toUpperCase()}) ─────────────────────────`,
+      `\n── Cycle #${this.state.state.cycleCount} (Mode: ${HIVE_FORCED_LEVEL.toUpperCase()}, ${modeTag}) ─────────────────────────`,
     );
 
     const dueSnapshot = Object.fromEntries(
@@ -327,9 +335,10 @@ class AutonomousRunner {
         }
       }
 
-      await this.advanceProjects(dueSnapshot);
+      this._hasWorkPending = await this.advanceProjects(dueSnapshot);
     } catch (err) {
       log("system", `Cycle error: ${err.message}`);
+      this._hasWorkPending = false;
     } finally {
       this.cycleInProgress = false;
     }
@@ -368,9 +377,30 @@ class AutonomousRunner {
     );
     const prioritized = all.slice(0, MAX_ACTIVE_PROJECTS);
     let progressed = false;
+    let moreWorkPending = false;
+
+    // Force pipeline agents "due" when any active project needs them.
+    // This prevents agents from sleeping through their cadence while work is waiting.
+    for (const { status } of prioritized) {
+      const stage = status.stage;
+      if (["complete", "failed", "new"].includes(stage)) continue;
+      const pipelineAgents = {
+        approved: "scout", research: "atlas", architecture: "forge",
+        implementation: "lens", review: "pulse", tests: "sage", docs: "echo",
+      };
+      const needed = pipelineAgents[stage];
+      if (needed && !dueSnapshot[needed]) {
+        dueSnapshot[needed] = true;
+        log("system", `Waking ${needed.toUpperCase()} — project work pending.`);
+      }
+    }
 
     for (const { name, status } of prioritized) {
-      if (progressed) break; // Focus on one project per cycle if progress was made
+      if (progressed) {
+        // There's more work but we already progressed one project this cycle
+        if (!["complete", "failed", "new"].includes(status.stage)) moreWorkPending = true;
+        break;
+      }
       let currentStatus = status;
       let hops = 0;
 
@@ -400,16 +430,7 @@ class AutonomousRunner {
         }
 
         if (!dueSnapshot[stageInfo.agentKey]) {
-          const force =
-            STRICT_ORDER_OVERRIDE ||
-            currentStatus.escalationLevel === "force_progress";
-          if (force) {
-            log(
-              "apex",
-              `Strict order: Waking ${stageInfo.agentKey.toUpperCase()} for "${name}".`,
-            );
-            dueSnapshot[stageInfo.agentKey] = true;
-          } else break;
+          dueSnapshot[stageInfo.agentKey] = true;
         }
 
         const run = await this.runProjectStage(
@@ -430,7 +451,14 @@ class AutonomousRunner {
         hops++;
         if (run?.haltProjectThisCycle) break;
       }
+
+      // Check if this project still has more stages to go
+      if (!["complete", "failed", "new", "launch"].includes(currentStatus.stage)) {
+        moreWorkPending = true;
+      }
     }
+
+    return moreWorkPending;
   }
 
   _finalizeProject(name) {
@@ -584,7 +612,20 @@ class AutonomousRunner {
     });
 
     const bootstrap = ensureProjectBootstrap(projectName, status, readme);
-    const forgeTask = `Task: ${readme}\n\nExisting Implementation:\n${context}`;
+
+    // Determine if FORGE should rebuild from scratch or iterate
+    const fileCount = (status.workspaceFiles || []).length;
+    const hasActionItems =
+      (status.lensActionItems || []).length > 0 ||
+      (status.pulseActionItems || []).length > 0;
+    const isThinImpl = (status.level === "easy" && fileCount < 15) ||
+      (status.level === "medium" && fileCount < 10);
+    const rebuildHint =
+      isThinImpl && (status.stageAttempt || 0) >= 2
+        ? `\n\nIMPORTANT: The current implementation is INSUFFICIENT (only ${fileCount} files). You must COMPLETELY REBUILD from scratch with a proper multi-page structure. Do NOT patch the existing files — generate ALL new files from the ground up.\n`
+        : "";
+
+    const forgeTask = `Task: ${readme}${rebuildHint}\n\nExisting Implementation:\n${context}`;
     const output = await this.agents.forge.implement(
       forgeTask,
       readOutput(projectName, "architecture.md"),

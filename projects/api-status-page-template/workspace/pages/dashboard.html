@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Acme Dashboard – Users</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/styles/reset.css">
+  <link rel="stylesheet" href="/styles/variables.css">
+  <link rel="stylesheet" href="/styles/layout.css">
+  <link rel="stylesheet" href="/styles/components.css">
+  <link rel="stylesheet" href="/styles/pages.css">
+  <link rel="stylesheet" href="/styles/utilities.css">
+</head>
+<body data-page="dashboard">
+  <div id="nav-placeholder"></div>
+
+  <main class="container">
+    <h1 class="mt-3">User Management</h1>
+
+    <section class="dashboard-filters mt-3">
+      <input type="text" id="search-input" placeholder="Search users..." class="flex-1">
+      <select id="role-filter">
+        <option value="">All Roles</option>
+        <option value="Admin">Admin</option>
+        <option value="Editor">Editor</option>
+        <option value="Viewer">Viewer</option>
+      </select>
+    </section>
+
+    <section class="mt-3">
+      <table class="table" id="users-table">
+        <thead>
+          <tr>
+            <th data-sort="id">ID</th>
+            <th data-sort="name">Name</th>
+            <th data-sort="email">Email</th>
+            <th data-sort="role">Role</th>
+            <th data-sort="status">Status</th>
+          </tr>
+        </thead>
+        <tbody id="users-body">
+          <!-- Filled by JS -->
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <div id="footer-placeholder"></div>
+
+  <script type="module" src="/scripts/data.js"></script>
+  <script type="module" src="/scripts/app.js"></script>
+  <script type="module">
+    // Render user rows and add filter logic
+    document.addEventListener('DOMContentLoaded', () => {
+      const { users } = window.DUMMY_DATA;
+      const tbody = document.getElementById('users-body');
+
+      function renderRows(filterText = "", role = "") {
+        tbody.innerHTML = "";
+        const filtered = users.filter(u => {
+          const matchesText = `${u.id} ${u.name} ${u.email}`.toLowerCase().includes(filterText.toLowerCase());
+          const matchesRole = role ? u.role === role : true;
+          return matchesText && matchesRole;
+        });
+        filtered.forEach(u => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td data-col="id">${u.id}</td>
+            <td data-col="name">${u.name}</td>
+            <td data-col="email">${u.email}</td>
+            <td data-col="role">${u.role}</td>
+            <td data-col="status"><span class="badge badge-${u.status === 'active' ? 'success' : u.status === 'pending' ? 'warning' : 'danger'}">${u.status}</span></td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      // Initial render
+      renderRows();
+
+      // Search filter
+      const searchInput = document.getElementById('search-input');
+      const roleFilter = document.getElementById('role-filter');
+      searchInput.addEventListener('input', () => renderRows(searchInput.value, roleFilter.value));
+      roleFilter.addEventListener('change', () => renderRows(searchInput.value, roleFilter.value));
+    });
+  </script>
+</body>
+</html>

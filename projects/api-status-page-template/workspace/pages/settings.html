@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Acme Dashboard – Settings</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/styles/reset.css">
+  <link rel="stylesheet" href="/styles/variables.css">
+  <link rel="stylesheet" href="/styles/layout.css">
+  <link rel="stylesheet" href="/styles/components.css">
+  <link rel="stylesheet" href="/styles/pages.css">
+  <link rel="stylesheet" href="/styles/utilities.css">
+</head>
+<body data-page="settings">
+  <div id="nav-placeholder"></div>
+
+  <main class="container">
+    <h1 class="mt-3">Settings</h1>
+
+    <section class="settings-section mt-4">
+      <h2>Profile</h2>
+      <form id="settings-form">
+        <div class="mb-2">
+          <label>Full Name</label>
+          <input type="text" name="fullName" required class="w-full p-2 border rounded" placeholder="Enter your name">
+        </div>
+        <div class="mb-2">
+          <label>Email Address</label>
+          <input type="email" name="email" required class="w-full p-2 border rounded" placeholder="you@example.com">
+        </div>
+        <div class="mb-2 flex items-center">
+          <label class="mr-2">Enable notifications</label>
+          <label class="toggle">
+            <input type="checkbox" name="notifications" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="mt-3">
+          <button type="submit" class="btn btn-primary mr-2">Save Changes</button>
+          <button type="reset" class="btn btn-outline">Reset</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="settings-section mt-4">
+      <h2>Preferences</h2>
+      <div class="flex items-center mb-2">
+        <label class="mr-2">Dark Mode</label>
+        <label class="toggle">
+          <input type="checkbox" id="theme-toggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </section>
+  </main>
+
+  <div id="footer-placeholder"></div>
+
+  <script type="module" src="/scripts/data.js"></script>
+  <script type="module" src="/scripts/app.js"></script>
+</body>
+</html>

@@ -14,28 +14,38 @@
     "projectName": "api-status-page-template",
     "stage": "architecture",
     "agent": "atlas",
-    "dueAt": "2026-03-05T14:12:50.422Z",
-    "setAt": "2026-03-05T10:12:50.422Z",
+    "dueAt": "2026-03-05T15:07:13.581Z",
+    "setAt": "2026-03-05T11:07:13.581Z",
     "status": "complete",
-    "completedAt": "2026-03-05T10:12:53.056Z"
+    "completedAt": "2026-03-05T11:07:16.298Z"
   },
   {
     "id": "api-status-page-template::implementation",
     "projectName": "api-status-page-template",
     "stage": "implementation",
     "agent": "forge",
-    "dueAt": "2026-03-05T14:12:53.059Z",
-    "setAt": "2026-03-05T10:12:53.059Z",
+    "dueAt": "2026-03-05T15:07:54.146Z",
+    "setAt": "2026-03-05T11:07:54.146Z",
     "status": "complete",
-    "completedAt": "2026-03-05T10:13:08.745Z"
+    "completedAt": "2026-03-05T11:08:44.142Z"
   },
   {
     "id": "api-status-page-template::review",
     "projectName": "api-status-page-template",
     "stage": "review",
     "agent": "lens",
-    "dueAt": "2026-03-05T14:18:08.799Z",
-    "setAt": "2026-03-05T10:18:08.799Z",
+    "dueAt": "2026-03-05T15:08:44.147Z",
+    "setAt": "2026-03-05T11:08:44.147Z",
     "status": "active"
+  },
+  {
+    "id": "sprint-board-ui-kit--plain-css-::research",
+    "projectName": "sprint-board-ui-kit--plain-css-",
+    "stage": "research",
+    "agent": "scout",
+    "dueAt": "2026-03-05T14:59:05.701Z",
+    "setAt": "2026-03-05T10:59:05.701Z",
+    "status": "complete",
+    "completedAt": "2026-03-05T10:59:07.683Z"
   }
 ]

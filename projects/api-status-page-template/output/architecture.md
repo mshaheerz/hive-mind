@@ -1,161 +1,186 @@
-# EASY Project Architecture
+# EASY Tech Stack Requirements
 
-## Overview
+The project requirements specify a static multi-page site architecture with 4-6 separate HTML pages, shared navigation, and rich interactive content using Vanilla HTML, CSS, and JavaScript.
 
-The proposed EASY project uses a Vanilla HTML, CSS, and JavaScript tech stack to create a complete, beautiful static UI template with dummy data and interactive CSS. The goal is to design a visually appealing and functional user interface.
+## Project Overview
 
-## Tech Stack
+The proposed project is a static website with multiple pages, shared navigation, and interactive features. The tech stack consists of:
 
-* HTML: For structuring the content
-* CSS: For styling and layout
-* JavaScript: For adding interactivity
+* Vanilla HTML
+* CSS (with custom properties for theming)
+* JavaScript
 
-## Project Structure
+## File Structure
 
-```markdown
-src/
-|---- index.html
-|---- styles/
-|       |---- global.css
-|       |---- components.css
-|---- scripts/
-|       |---- main.js
-|---- components/
-|       |---- header.html
-|       |---- hero.html
-|       |---- features.html
-|       |---- footer.html
-|---- data/
-|       |---- dummyData.js
-|---- images/
-|       |---- logo.png
-|       |---- background.jpg
-```
+The following file structure is proposed:
 
-## CSS Layout Strategy
-
-* Use a utility-first approach with CSS classes to style components
-* Use CSS grid and flexbox for layout
-* Use CSS variables for theming and customization
+* `index.html`
+* `pages/`
+	+ `dashboard.html`
+	+ `details.html`
+	+ `settings.html`
+	+ `about.html`
+* `components/`
+	+ `nav.html`
+	+ `footer.html`
+	+ `modal.html`
+	+ `tabs.html`
+* `styles/`
+	+ `global.css`
+	+ `variables.css`
+* `scripts/`
+	+ `main.js`
+	+ `utils.js`
+* `data/`
+	+ `dummy-data.json`
 
 ## Component Structure
 
-* `header.html`: Navigation bar with logo and links
-* `hero.html`: Hero section with background image and call-to-action
-* `features.html`: Features section with cards and icons
-* `footer.html`: Footer section with copyright information and social media links
+The following components are proposed:
+
+* `nav.html`: Shared navigation component
+* `footer.html`: Shared footer component
+* `modal.html`: Modal component for displaying pop-up content
+* `tabs.html`: Tabs component for displaying multiple content sections
+
+## CSS Layout Strategy
+
+The CSS layout strategy will utilize:
+
+* Custom properties (variables) for theming
+* Flexbox and grid for layout
+* Utility classes for styling
 
 ## Data Structures
 
-* Use JavaScript objects or arrays to store dummy data
-* Example: `dummyData.js` file with a JavaScript object containing data for the features section
+The data structures will consist of:
 
-```javascript
-// dummyData.js
-const featuresData = [
-  {
-    id: 1,
-    title: 'Feature 1',
-    description: 'This is feature 1',
-    icon: 'icon1.png'
-  },
-  {
-    id: 2,
-    title: 'Feature 2',
-    description: 'This is feature 2',
-    icon: 'icon2.png'
-  },
-  {
-    id: 3,
-    title: 'Feature 3',
-    description: 'This is feature 3',
-    icon: 'icon3.png'
-  }
-];
+* Dummy data in JSON format for populating components
+* JavaScript objects for managing state and interactions
 
-export default featuresData;
-```
+## Interactive Features
 
-## Decision Plan
+The interactive features will include:
 
-1. Plan the layout and design of the UI template
-2. Create the HTML structure for each component
-3. Write CSS styles for each component using a utility-first approach
-4. Add interactivity to components using JavaScript
-5. Populate components with dummy data
-
-## Bootstrap Choice
-
-Since the project uses a Vanilla HTML, CSS, and JavaScript tech stack, no specific bootstrap framework is required. However, we can use a simple CSS reset and normalize.css to ensure cross-browser compatibility.
+* Tabs component with clickable tabs and content sections
+* Modal component with pop-up content
+* Search and filter functionality
+* Forms with validation
+* Sortable tables
 
 ## FORGE EXECUTION CONTRACT
 
-### Deliverables
-
-* Complete HTML, CSS, and JavaScript code for the UI template
-* Dummy data for populating components
-* Interactive CSS styles for hover effects, clicks, and other user interactions
+The following is the FORGE EXECUTION CONTRACT:
 
 ### File List
 
 * `index.html`
-* `styles/global.css`
-* `styles/components.css`
-* `scripts/main.js`
-* `components/header.html`
-* `components/hero.html`
-* `components/features.html`
+* `pages/dashboard.html`
+* `pages/details.html`
+* `pages/settings.html`
+* `pages/about.html`
+* `components/nav.html`
 * `components/footer.html`
-* `data/dummyData.js`
-* `images/logo.png`
-* `images/background.jpg`
+* `components/modal.html`
+* `components/tabs.html`
+* `styles/global.css`
+* `styles/variables.css`
+* `scripts/main.js`
+* `scripts/utils.js`
+* `data/dummy-data.json`
 
 ### Architecture
 
-* Use a modular component-based structure
-* Use a utility-first approach with CSS classes
-* Use CSS grid and flexbox for layout
-* Use JavaScript objects or arrays to store dummy data
+* Static multi-page site architecture with 4-6 separate HTML pages
+* Shared navigation and footer components
+* Interactive features using JavaScript
 
 ### Component Structure
 
-* `header.html`: Navigation bar with logo and links
-* `hero.html`: Hero section with background image and call-to-action
-* `features.html`: Features section with cards and icons
-* `footer.html`: Footer section with copyright information and social media links
+* `nav.html`: Shared navigation component
+* `footer.html`: Shared footer component
+* `modal.html`: Modal component for displaying pop-up content
+* `tabs.html`: Tabs component for displaying multiple content sections
 
 ### CSS Layout Strategy
 
-* Use CSS grid and flexbox for layout
-* Use CSS variables for theming and customization
+* Custom properties (variables) for theming
+* Flexbox and grid for layout
+* Utility classes for styling
 
 ### Data Structures
 
-* Use JavaScript objects or arrays to store dummy data
+* Dummy data in JSON format for populating components
+* JavaScript objects for managing state and interactions
 
-### Acceptance Criteria
+## Decision Plan
 
-1. The application renders correctly in a web browser, with no errors or warnings.
-2. The UI components are responsive and adaptable to different screen sizes and devices.
-3. The application uses a consistent and customizable styling system (CSS).
-4. The UI components are interactive and respond to user input (e.g., clicks, hover effects).
-5. The application uses a modular and maintainable code structure, with separate components and files for each feature.
+The decision plan includes:
 
-### Timeline
+* Reviewing project requirements and tech stack
+* Designing file structure and component structure
+* Creating CSS layout strategy and data structures
+* Implementing interactive features using JavaScript
 
-* Planning and design: 1 day
-* HTML structure: 1 day
-* CSS styles: 2 days
-* JavaScript interactivity: 1 day
-* Dummy data population: 1 day
-* Testing and debugging: 2 days
+## Bootstrap Choice
 
-### Milestones
+No bootstrap framework will be used. Instead, Vanilla HTML, CSS, and JavaScript will be used to build the static website.
 
-* Complete HTML structure
-* Complete CSS styles
-* Complete JavaScript interactivity
-* Complete dummy data population
-* Complete testing and debugging
+## Diagrams
 
-By following this FORGE EXECUTION CONTRACT, we can ensure that the EASY project is completed on time and meets the required acceptance criteria.
+The following diagrams illustrate the proposed architecture:
+
+### File Structure Diagram
+```markdown
+.
+├── index.html
+├── pages
+│   ├── dashboard.html
+│   ├── details.html
+│   ├── settings.html
+│   └── about.html
+├── components
+│   ├── nav.html
+│   ├── footer.html
+│   ├── modal.html
+│   └── tabs.html
+├── styles
+│   ├── global.css
+│   └── variables.css
+├── scripts
+│   ├── main.js
+│   └── utils.js
+└── data
+    └── dummy-data.json
+```
+
+### Component Structure Diagram
+```markdown
+.
+├── nav.html
+├── footer.html
+├── modal.html
+└── tabs.html
+  ├── tab1.html
+  ├── tab2.html
+  └── ...
+```
+
+### CSS Layout Strategy Diagram
+```markdown
+.
+├── global.css
+└── variables.css
+  ├── --primary-color
+  ├── --secondary-color
+  └── ...
+```
+
+### Data Structures Diagram
+```markdown
+.
+└── dummy-data.json
+  ├── key1
+  ├── key2
+  └── ...
+```

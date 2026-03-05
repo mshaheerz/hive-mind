@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Acme Dashboard – User Details</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/styles/reset.css">
+  <link rel="stylesheet" href="/styles/variables.css">
+  <link rel="stylesheet" href="/styles/layout.css">
+  <link rel="stylesheet" href="/styles/components.css">
+  <link rel="stylesheet" href="/styles/pages.css">
+  <link rel="stylesheet" href="/styles/utilities.css">
+</head>
+<body data-page="details">
+  <div id="nav-placeholder"></div>
+
+  <main class="container">
+    <nav aria-label="breadcrumb" class="mt-3">
+      <a href="/index.html">Home</a> / <a href="/pages/dashboard.html">Users</a> / <span>John Doe</span>
+    </nav>
+
+    <section class="mt-3 flex flex-between align-center">
+      <h1>John Doe <span class="badge badge-success ml-2">Active</span></h1>
+      <div>
+        <button class="btn btn-outline mr-2" data-modal-open="generic-modal">Edit</button>
+        <button class="btn btn-danger" onclick="showToast('User deleted (demo)', 'danger')">Delete</button>
+      </div>
+    </section>
+
+    <section class="mt-4">
+      <!-- Tabs component -->
+      <div class="tabs" role="tablist">
+        <div class="tab active" data-tab="overview">Overview</div>
+        <div class="tab" data-tab="history">History</div>
+        <div class="tab" data-tab="config">Config</div>
+      </div>
+      <div class="tab-panels">
+        <div class="tab-panel active" data-panel="overview">
+          <p><strong>Email:</strong> john.doe@example.com</p>
+          <p><strong>Role:</strong> Editor</p>
+          <p><strong>Joined:</strong> Jan 15, 2022</p>
+        </div>
+        <div class="tab-panel" data-panel="history">
+          <ul class="mt-2">
+            <li>2026-02-28 – Updated profile</li>
+            <li>2026-01-12 – Changed password</li>
+            <li>2025-11-05 – Created a project</li>
+          </ul>
+        </div>
+        <div class="tab-panel" data-panel="config">
+          <p>Configuration settings are not available in the demo.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="footer-placeholder"></div>
+
+  <!-- Edit modal (reusing generic) -->
+  <div id="generic-modal" class="modal" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <button class="close-btn" aria-label="Close modal" onclick="closeModal('generic-modal')">&times;</button>
+      <h2 class="modal-title">Edit User (Demo)</h2>
+      <div class="modal-body">
+        <form id="edit-user-form">
+          <div class="mb-2">
+            <label>Name</label>
+            <input type="text" required class="w-full p-2 border rounded" value="John Doe">
+          </div>
+          <div class="mb-2">
+            <label>Email</label>
+            <input type="email" required class="w-full p-2 border rounded" value="john.doe@example.com">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer mt-3">
+        <button class="btn btn-outline" onclick="closeModal('generic-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="showToast('User updated (demo)', 'success')">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/scripts/data.js"></script>
+  <script type="module" src="/scripts/app.js"></script>
+</body>
+</html>
