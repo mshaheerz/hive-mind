@@ -20,15 +20,17 @@ class LensAgent extends Agent {
     );
   }
 
-  async review(code, context = "") {
+  async review(code, context = "", level = "medium") {
     const skills = loadApplicableSkills([
       "review",
       "security",
       "best-practices",
     ]);
-    const prompt = `Review this code:\n${context ? `Context: ${context}\n` : ""}\n${skills}\n\n\`\`\`\n${code}\n\`\`\`\n\nDeliver review in strict format.`;
-    this.print(`Reviewing code...`);
-    return await this.think(prompt);
+    const prompt = `Review this code (Project Level: ${level.toUpperCase()}):\n${context ? `Context: ${context}\n` : ""}\n${skills}\n\n\`\`\`\n${code}\n\`\`\`\n\nDeliver review in strict format. Ensure code matches the ${level.toUpperCase()} tech stack requirements.`;
+    this.print(`Reviewing code (${level})...`);
+    return await this.think(prompt, [], {
+      tier: level === "advanced" ? "advanced" : "standard",
+    });
   }
 }
 

@@ -92,11 +92,19 @@ function ensureWorkspaceScaffold(projectName, stack = "") {
  *
  * @param {object} [status={}]
  * @param {string} [readme=""]
- * @returns {"nextjs"|"react-vite"}
+ * @returns {"nextjs"|"react-vite"|"vanilla-static"}
  */
 function inferBootstrapTemplate(status = {}, readme = "") {
   const raw =
-    `${status.preferredStack || ""} ${status.template || ""} ${readme || ""}`.toLowerCase();
+    `${status.preferredStack || ""} ${status.template || ""} ${status.level || ""} ${readme || ""}`.toLowerCase();
+
+  if (
+    raw.includes("vanilla") ||
+    raw.includes("easy") ||
+    raw.includes("vanilla-static")
+  ) {
+    return "vanilla-static";
+  }
 
   if (
     raw.includes("next.js") ||
@@ -161,6 +169,15 @@ function ensureProjectBootstrap(projectName, status = {}, readme = "") {
   const packageJson = path.join(root, "package.json");
   const template = inferBootstrapTemplate(status, readme);
   const notes = [];
+
+  // ── Vanilla / Easy: No bootstrap needed ──────────────────────────────────
+  if (template === "vanilla-static") {
+    return {
+      ok: true,
+      template,
+      notes: ["Vanilla static project: Skipping framework bootstrap."],
+    };
+  }
 
   // ── Next.js via create-next-app ───────────────────────────────────────────
   if (template === "nextjs" && !fs.existsSync(packageJson)) {

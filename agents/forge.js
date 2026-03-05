@@ -7,26 +7,39 @@ class ForgeAgent extends Agent {
     super(
       "forge",
       "FORGE",
-      `You are FORGE, the Lead Developer. You exclusively build modern Next.js web apps.
-- **Stack**: Next.js (App Router), React, Tailwind CSS, Lucide Icons.
-- **Strict Logic**: 
-  - ONLY use **App Router**. Prohibited: \`app/pages/\` or any legacy \`pages/\` directory mixtures.
-  - File Extensions: Use \`.jsx\` for all React components. Use \`.js\` ONLY for pure logic/configs.
-  - No Type-Mixing: Do NOT include TypeScript syntax (interfaces, types, colon-annotations) in \`.js\` or \`.jsx\` files. 
-  - App Structure: Use \`app/layout.jsx\`, \`app/page.jsx\`, and feature folders like \`app/dashboard/page.jsx\`.
-- **Handoff**: Deliver full files using **File: \`path/to/file.ext\`** + \`\`\`language.
-- **Rules**: Use functional components + hooks, Metadata API. No standalone Python/Express.`,
+      `You are FORGE, the Lead Developer. You build based on the PROJECT LEVEL:
+- **EASY (Template)**:
+  - Tech: Vanilla HTML, CSS, JavaScript ONLY.
+  - RULE: No libraries, no React, no Tailwind. Minimalist, futuristic, static.
+- **MEDIUM (Template)**:
+  - Tech: React + Tailwind CSS.
+  - RULE: Build polished UI components with dummy dynamic data. No real backend.
+- **ADVANCED (Full-Stack)**:
+  - Tech: Next.js (App Router), Tailwind CSS, Lucide Icons.
+  - RULE: Implement real API routes, server actions, and full application logic.
+
+Handoff format: Use **File: \`path/to/file.ext\`** + \`\`\`language for every file. Deliver full code, not snippets. Constraint: Use .jsx for React; .js for Vanilla.
+`,
     );
   }
 
-  async implement(task, architecture = "", researchNotes = "") {
-    const skills = loadApplicableSkills(
-      ["nextjs", "react", "tailwind", "clean-code"],
-      3,
-    );
-    const prompt = `Implement this task:\nTask: ${task}\nArch: ${architecture}\nNotes: ${researchNotes}\n${skills}\n\nDeliver full files using **File: \`path\`** header format.`;
-    this.print(`Implementing: ${task}`);
-    return await this.think(prompt);
+  async implement(
+    task,
+    architecture = "",
+    researchNotes = "",
+    level = "medium",
+  ) {
+    let skillKeys = ["nextjs", "react", "tailwind", "clean-code"];
+    if (level === "easy")
+      skillKeys = ["html", "css", "javascript", "web-design"];
+    if (level === "medium") skillKeys = ["react", "tailwind", "components"];
+
+    const skills = loadApplicableSkills(skillKeys, 3);
+    const prompt = `Implement this task:\nProject Level: ${level.toUpperCase()}\nTask: ${task}\nArch: ${architecture}\nNotes: ${researchNotes}\n${skills}\n\nDeliver full files matching the ${level.toUpperCase()} tech stack requirements. Use **File: \`path\`** header format.`;
+    this.print(`Implementing (${level}): ${task.slice(0, 50)}...`);
+    return await this.think(prompt, [], {
+      tier: level === "advanced" ? "advanced" : "standard",
+    });
   }
 }
 

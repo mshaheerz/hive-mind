@@ -53,6 +53,7 @@ const {
   MAX_LENS_REJECTS_BEFORE_BYPASS,
   APPROVAL_MODE,
   STRICT_ORDER_OVERRIDE,
+  HIVE_FORCED_LEVEL,
 } = require("./config");
 
 const { log } = require("./logger");
@@ -272,7 +273,7 @@ class AutonomousRunner {
 
     log(
       "system",
-      `\n── Cycle #${this.state.state.cycleCount} ─────────────────────────`,
+      `\n── Cycle #${this.state.state.cycleCount} (Mode: ${HIVE_FORCED_LEVEL.toUpperCase()}) ─────────────────────────`,
     );
 
     const dueSnapshot = Object.fromEntries(
@@ -490,6 +491,7 @@ class AutonomousRunner {
           output = await this.agents.atlas.design(
             readme,
             readOutput(projectName, "research.md"),
+            status.level || "medium",
           );
           writeOutput(projectName, "architecture.md", output);
           break;
@@ -524,18 +526,24 @@ class AutonomousRunner {
           if (!output) return { worked: true, success: true };
           break;
         case "tests":
-          output = await this.agents.sage.writeReadme({
-            name: projectName,
-            description: readme,
-          });
+          output = await this.agents.sage.writeReadme(
+            {
+              name: projectName,
+              description: readme,
+            },
+            status.level || "medium",
+          );
           writeOutput(projectName, "docs.md", output);
           break;
         case "docs":
-          output = await this.agents.echo.createLaunchContent({
-            name: projectName,
-            description: readme,
-            features: readOutput(projectName, "docs.md"),
-          });
+          output = await this.agents.echo.createLaunchContent(
+            {
+              name: projectName,
+              description: readme,
+              features: readOutput(projectName, "docs.md"),
+            },
+            status.level || "medium",
+          );
           writeOutput(projectName, "launch.md", output);
           break;
       }
@@ -580,6 +588,8 @@ class AutonomousRunner {
     const output = await this.agents.forge.implement(
       forgeTask,
       readOutput(projectName, "architecture.md"),
+      readOutput(projectName, "research.md"),
+      status.level || "medium",
     );
 
     writeOutput(projectName, "implementation.md", output);
@@ -606,7 +616,11 @@ class AutonomousRunner {
       workingSet: status.workspaceFiles,
       modelInfo: this.state.state.activeAgentModels?.lens,
     });
-    const output = await this.agents.lens.review(context, readme);
+    const output = await this.agents.lens.review(
+      context,
+      readme,
+      status.level || "medium",
+    );
     writeOutput(projectName, "review.md", output);
 
     if (
@@ -641,7 +655,11 @@ class AutonomousRunner {
       workingSet: status.workspaceFiles,
       modelInfo: this.state.state.activeAgentModels?.pulse,
     });
-    const output = await this.agents.pulse.generateTests(context, readme);
+    const output = await this.agents.pulse.generateTests(
+      context,
+      readme,
+      status.level || "medium",
+    );
     writeOutput(projectName, "tests.md", output);
 
     materializeForgeFiles(projectName, output, {
@@ -669,6 +687,7 @@ class AutonomousRunner {
     const existing = getProjects().join(", ");
     const proposals = await this.agents.nova.generateProposals(
       `Existing projects: ${existing}`,
+      HIVE_FORCED_LEVEL,
     );
     if (!Array.isArray(proposals)) return false;
 
@@ -693,8 +712,12 @@ class AutonomousRunner {
     if (!pending.length) return;
 
     for (const p of pending) {
-      log("scout", `Researching ${p.title}`);
-      const research = await this.agents.scout.research(p.description);
+      log("scout", `Researching ${p.title} (${p.level})`);
+      const research = await this.agents.scout.research(
+        p.description,
+        "",
+        p.level || "medium",
+      );
       const queue = loadQueue();
       const idx = queue.findIndex((x) => x.id === p.id);
       queue[idx].status = "pending_apex";
@@ -709,14 +732,17 @@ class AutonomousRunner {
     if (!pending.length) return;
 
     for (const p of pending) {
-      const decision = await this.agents.apex.think(
-        `Decide on project: ${p.title}\n\n${p.scoutNotes}`,
-      );
+      // Use the specialized reviewProposal method instead of raw think
+      const review = await this.agents.apex.reviewProposal(p);
       const queue = loadQueue();
       const idx = queue.findIndex((x) => x.id === p.id);
-      if (decision.toLowerCase().includes("approve")) {
+
+      if (review.decision === "APPROVED") {
         queue[idx].status = "approved";
-        this._initProject(p, decision);
+        this._initProject(p, review.reasoning);
+      } else if (review.decision === "REVISION_REQUESTED") {
+        queue[idx].status = "pending_revision";
+        queue[idx].apexFeedback = review.feedback;
       } else {
         queue[idx].status = "rejected";
       }
@@ -730,14 +756,20 @@ class AutonomousRunner {
     fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(
       path.join(dir, "README.md"),
-      `# ${proposal.title}\n\n${proposal.description}`,
+      `# ${proposal.title}\n\n**Level:** ${proposal.level || "Medium"}\n\n${proposal.description}`,
     );
     setProjectStatus(slug, {
       stage: "approved",
       proposedBy: "nova",
+      level: proposal.level || "medium",
       approvedAt: new Date().toISOString(),
+      preferredStack: proposal.preferredStack,
+      template: proposal.template,
     });
-    log("apex", `📁 Created project: ${slug}`);
+    log(
+      "apex",
+      `📁 Created project: ${slug} (Level: ${proposal.level || "medium"})`,
+    );
   }
 
   // ─── Helpers: Deadlines, Maintenance, Bridge ─────────────────

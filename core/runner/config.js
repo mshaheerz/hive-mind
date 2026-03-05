@@ -3,8 +3,19 @@
  * core/runner/config.js
  * ─────────────────────
  * All environment-driven constants and static lookup tables for the
- * autonomous runner.  Nothing here has side-effects — pure config.
+ * autonomous runner.
+ *
+ * HIVE PROJECT LEVELS:
+ * - EASY: Vanilla HTML/CSS/JS ONLY. Futuristic UI templates, dummy data, no backend.
+ * - MEDIUM: React + Tailwind CSS. Component-level templates, static data, no real backend.
+ * - ADVANCED: Next.js + API/Actions. Full-stack logic, data persistence, complex state.
  */
+
+const HIVE_LEVELS = {
+  easy: { stack: "HTML/JS", template: "vanilla-static" },
+  medium: { stack: "React/Tailwind", template: "react-static-tailwind" },
+  advanced: { stack: "Next.js/FullStack", template: "nextjs-fullstack" },
+};
 
 const path = require("path");
 
@@ -58,6 +69,11 @@ const APPROVAL_MODE = String(
 const STRICT_ORDER_OVERRIDE = /^(1|true|yes|on)$/i.test(
   String(process.env.HIVE_STRICT_ORDER_OVERRIDE || "false"),
 );
+
+/** Global project level filter: "easy" | "medium" | "advanced" | "automatic". */
+const HIVE_FORCED_LEVEL = String(
+  process.env.HIVE_FORCED_LEVEL || "automatic",
+).toLowerCase();
 
 /** Runner cycle interval in milliseconds (default: 5 minutes). */
 const CHECK_INTERVAL_MS = 5 * 60 * 1000;
@@ -128,5 +144,7 @@ module.exports = {
   CHECK_INTERVAL_MS,
   STAGE_RESPONSIBLE_AGENT,
   PIPELINE_STAGE_ORDER,
+  HIVE_LEVELS,
+  HIVE_FORCED_LEVEL,
   AGENT_SCHEDULE,
 };

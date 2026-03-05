@@ -70,7 +70,19 @@ class LLMClient {
    * Main chat entry point. Logic for falling back to cheaper/faster models on failure.
    */
   async chat(agentName, messages, opts = {}) {
-    const primaryModel = opts.model || this.agentModels[agentName];
+    let primaryModel = opts.model || this.agentModels[agentName];
+
+    // Tier-based model overrides (Advanced projects get stronger models)
+    if (opts.tier === "advanced") {
+      const advancedOverrides = {
+        openrouter: "anthropic/claude-3-7-sonnet",
+        groq: "llama-3.3-70b-versatile",
+      };
+      if (advancedOverrides[this.provider]) {
+        primaryModel = advancedOverrides[this.provider];
+      }
+    }
+
     if (!primaryModel) throw new Error(`Unknown agent: ${agentName}`);
 
     const modelChain = [

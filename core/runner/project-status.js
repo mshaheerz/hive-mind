@@ -39,6 +39,11 @@ function stageRank(stage) {
 function schemaNormalizedStatus(status = {}) {
   const normalized = { ...(status || {}) };
 
+  // Ensure level is one of the three HIVE_LEVELS (defaults to medium)
+  const validLevels = ["easy", "medium", "advanced"];
+  normalized.level = String(normalized.level || "medium").toLowerCase();
+  if (!validLevels.includes(normalized.level)) normalized.level = "medium";
+
   // Ensure stage is a lowercase string
   normalized.stage = String(normalized.stage || "new").toLowerCase();
 

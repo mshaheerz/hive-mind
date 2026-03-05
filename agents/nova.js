@@ -42,40 +42,55 @@ Enthusiastic but grounded. You love finding the gap between "this is annoying" a
     );
   }
 
-  async generateProposals(context = "") {
-    const skills = loadApplicableSkills(["innovation", "saas", "web-apps"], 3);
+  async generateProposals(context = "", forcedLevel = "automatic") {
+    const skills = loadApplicableSkills(
+      ["innovation", "trends", "web-design"],
+      3,
+    );
+
+    let levelInstruction = `Generate exactly 3 project ideas, one for each of these strict levels:
+1. **EASY (Pure UI Template)**: 
+   - Stack: Vanilla HTML, CSS, and Vanilla JavaScript ONLY. 
+   - Constraint: NO external libraries. NO backend. NO localStorage/persistence.
+   - Nature: A **STATIC DESIGN TEMPLATE**. It shouldn't DO anything functional; it should just LOOK futuristic and professional with dummy data.
+2. **MEDIUM (UI Component Template)**: 
+   - Stack: React + Tailwind CSS. 
+   - Constraint: NO backend. NO complex state persistence.
+   - Nature: A **STATIC COMPONENT TEMPLATE**. High-quality UI/UX with dummy data.
+3. **ADVANCED (Full Functional Application)**: 
+   - Stack: Next.js (App Router) + API Routes/Actions. 
+   - Nature: A **REAL FUNCTIONAL APP**. Data persistence, real logic, complex state.`;
+
+    if (forcedLevel !== "automatic") {
+      levelInstruction = `CRITICAL: You are FORCED to ONLY propose projects at the **${forcedLevel.toUpperCase()}** level. 
+If Easy or Medium, they MUST be **STATIC UI TEMPLATES** with dummy data only. NO functional logic/persistence.
+Generate 3 unique ideas all at the ${forcedLevel.toUpperCase()} tier.`;
+    }
+
     const prompt = `You are autonomously generating new project proposals for the Hive Mind team.
 
 CRITICAL DIRECTIVE:
-We ONLY build modern web applications. 
-- You MUST only propose projects using Next.js (preferred) or React.
-- You MUST NOT propose Python, Node-CLI, Flask, Django, or generic library projects.
-- Every project must include a modern UI with Tailwind CSS and Lucide React icons.
-- If a project needs a backend, it MUST be built using Next.js Server Actions or API routes.
+${levelInstruction}
 
 ${skills}\n\n${context ? `## Context (avoid duplicating these)\n${context}\n` : ""}
 
-Generate exactly 3 new, original project ideas. Each must be different in domain but follow the modern web directive.
-
-Respond ONLY with a valid JSON array — no other text:
+Respond ONLY with a valid JSON array:
 [
   {
-    "title": "Short project name (3-6 words)",
-    "description": "What it does in 2 sentences max",
-    "problem": "The specific pain point it solves",
-    "audience": "Who benefits most",
-    "complexity": "Small | Medium | Large",
-    "reasoning": "Why this should be built now",
-    "acceptanceSignals": ["3-5 measurable outcomes that prove value"],
+    "title": "Short project name",
+    "description": "2 sentences max",
+    "problem": "Pain point it solves",
+    "audience": "Who benefits",
+    "level": "${forcedLevel === "automatic" ? "easy | medium | advanced" : forcedLevel.toLowerCase()}",
+    "reasoning": "Why this idea fits this level",
+    "acceptanceSignals": ["3-5 measurable outcomes"],
     "projectType": "web_app",
-    "preferredStack": "Next.js 15 + Tailwind CSS + Lucide Icons",
-    "template": "nextjs-starter | react-vite-tailwind"
+    "preferredStack": "HTML/JS | React/Tailwind | Next.js/API",
+    "template": "vanilla-static | react-static-tailwind | nextjs-fullstack"
   },
   { ... },
   { ... }
-]
-
-Complexity options: Small (1-2 days), Medium (3-7 days), Large (2+ weeks).`;
+]`;
 
     this.print("Generating autonomous project proposals...");
     return await this.thinkJSON(prompt);
