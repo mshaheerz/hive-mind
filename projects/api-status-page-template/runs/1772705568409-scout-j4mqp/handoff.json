@@ -1,0 +1,15 @@
+{
+  "fromAgent": "system",
+  "toAgent": null,
+  "project": "api-status-page-template",
+  "stage": "approved",
+  "runId": "1772705568409-scout-j4mqp",
+  "summary": "",
+  "artifacts": [],
+  "requiredActions": [],
+  "acceptanceChecks": [],
+  "modelInfo": {
+    "provider": "groq",
+    "model": "unknown"
+  }
+}

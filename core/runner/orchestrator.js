@@ -683,6 +683,39 @@ class AutonomousRunner {
 
   async novaGeneratesIdeas(capacityFull) {
     if (capacityFull) return false;
+
+    const queue = loadQueue();
+    const revisions = queue.filter((p) => p.status === "pending_revision");
+
+    // Address revisions first
+    if (revisions.length > 0) {
+      log(
+        "nova",
+        `Processing ${revisions.length} revision(s) requested by APEX...`,
+      );
+      for (const p of revisions) {
+        const refined = await this.agents.nova.refineProposal(
+          p,
+          p.apexFeedback,
+        );
+        const currentQueue = loadQueue();
+        const idx = currentQueue.findIndex((x) => x.id === p.id);
+        if (idx >= 0) {
+          currentQueue[idx] = {
+            ...currentQueue[idx],
+            ...refined,
+            status: "pending_scout",
+            apexFeedback: null,
+            revisionCount: (currentQueue[idx].revisionCount || 0) + 1,
+            proposedAt: new Date().toISOString(), // refresh timestamp
+          };
+          saveQueue(currentQueue);
+          log("nova", `🔄 Refined Idea: ${refined.title}`);
+        }
+      }
+      return true; // Return early after doing revisions, let them propagate
+    }
+
     log("nova", "Thinking of new ideas...");
     const existing = getProjects().join(", ");
     const proposals = await this.agents.nova.generateProposals(

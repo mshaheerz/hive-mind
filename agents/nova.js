@@ -67,6 +67,24 @@ If Easy or Medium, they MUST be **STATIC UI TEMPLATES** with dummy data only. NO
 Generate 3 unique ideas all at the ${forcedLevel.toUpperCase()} tier.`;
     }
 
+    const stackInstruction =
+      forcedLevel === "easy"
+        ? '"HTML/JS"'
+        : forcedLevel === "medium"
+          ? '"React/Tailwind"'
+          : forcedLevel === "advanced"
+            ? '"Next.js/API"'
+            : '"HTML/JS | React/Tailwind | Next.js/API"';
+
+    const tempInstruction =
+      forcedLevel === "easy"
+        ? '"vanilla-static"'
+        : forcedLevel === "medium"
+          ? '"react-static-tailwind"'
+          : forcedLevel === "advanced"
+            ? '"nextjs-fullstack"'
+            : '"vanilla-static | react-static-tailwind | nextjs-fullstack"';
+
     const prompt = `You are autonomously generating new project proposals for the Hive Mind team.
 
 CRITICAL DIRECTIVE:
@@ -85,8 +103,8 @@ Respond ONLY with a valid JSON array:
     "reasoning": "Why this idea fits this level",
     "acceptanceSignals": ["3-5 measurable outcomes"],
     "projectType": "web_app",
-    "preferredStack": "HTML/JS | React/Tailwind | Next.js/API",
-    "template": "vanilla-static | react-static-tailwind | nextjs-fullstack"
+    "preferredStack": ${stackInstruction},
+    "template": ${tempInstruction}
   },
   { ... },
   { ... }
@@ -101,15 +119,42 @@ Respond ONLY with a valid JSON array:
       ["refinement", "feedback-loop", "problem-solving"],
       3,
     );
+
+    // We must ensure the refined proposal still adheres to its level constraints
+    const forcedLevel = originalProposal.level || "medium";
+    const stackInstruction =
+      forcedLevel === "easy"
+        ? '"HTML/JS"'
+        : forcedLevel === "medium"
+          ? '"React/Tailwind"'
+          : forcedLevel === "advanced"
+            ? '"Next.js/API"'
+            : '"HTML/JS | React/Tailwind | Next.js/API"';
+
+    const tempInstruction =
+      forcedLevel === "easy"
+        ? '"vanilla-static"'
+        : forcedLevel === "medium"
+          ? '"react-static-tailwind"'
+          : forcedLevel === "advanced"
+            ? '"nextjs-fullstack"'
+            : '"vanilla-static | react-static-tailwind | nextjs-fullstack"';
+
     const prompt = `APEX has requested revisions to your proposal.
 
 ## Original Proposal
 Title: ${originalProposal.title}
 Description: ${originalProposal.description}
-Goal: ${originalProposal.goal}
+Level: ${forcedLevel.toUpperCase()}
 
 ## APEX Feedback
-${apexFeedback}\n\n${skills}
+${apexFeedback}
+
+CRITICAL DIRECTIVE:
+You must fix the proposal according to APEX feedback while STRICTLY adhering to the constraints of the **${forcedLevel.toUpperCase()}** level.
+If the level is EASY or MEDIUM, it MUST be a STATIC DESIGN/COMPONENT TEMPLATE with NO functional backend or logic.
+
+${skills}
 
 Refine this proposal to address the feedback. Make it meaningfully better, not just slightly reworded.
 
@@ -119,12 +164,18 @@ Respond ONLY with a JSON object:
   "description": "improved description",
   "problem": "clearer problem statement",
   "audience": "refined audience",
-  "complexity": "Small | Medium | Large",
-  "reasoning": "why this version is better",
-  "changesFromOriginal": "what you changed and why"
+  "level": "${forcedLevel.toLowerCase()}",
+  "reasoning": "why this version is better and follows the rules",
+  "changesFromOriginal": "what you changed and why",
+  "acceptanceSignals": ["3-5 measurable outcomes"],
+  "projectType": "web_app",
+  "preferredStack": ${stackInstruction},
+  "template": ${tempInstruction}
 }`;
 
-    this.print(`Refining proposal: "${originalProposal.title}"`);
+    this.print(
+      `Refining proposal: "${originalProposal.title}" (${forcedLevel})`,
+    );
     return await this.thinkJSON(prompt);
   }
 }

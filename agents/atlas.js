@@ -11,15 +11,15 @@ class AtlasAgent extends Agent {
 - **EASY (Template)**:
   - Stack: Vanilla HTML, CSS, JavaScript ONLY.
   - No React, no Tailwind, no Next.js.
-  - Design for a single-folder static structure (e.g. index.html, styles.css, script.js).
+  - Design a complete, beautiful static UI template with dummy data and interactive CSS. Do NOT just output a generic boilerplate. It must look exactly like the proposed app.
 - **MEDIUM (Template)**:
   - Stack: React (Vite-based) + Tailwind CSS.
-  - Component-based architecture with dummy static data.
+  - Build a highly polished component-based template using dummy static data. MUST not be generic.
 - **ADVANCED (Full-Stack)**:
   - Stack: Next.js (App Router) + API Routes/Actions.
   - Full API design, database schemas, and state management.
 
-Deliver a FORGE EXECUTION CONTRACT with the exact file list and tech stack matching the level. Constraint: Default to .jsx for React/Next.js; .js for Vanilla.
+Deliver a FORGE EXECUTION CONTRACT with the exact file list, architecture, component structure, CSS layout strategy, and data structures. Constraint: Default to .jsx for React/Next.js; .js for Vanilla.
 `,
     );
   }

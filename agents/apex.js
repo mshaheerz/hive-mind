@@ -46,6 +46,9 @@ You are the FINAL AUTHORITY on all decisions. You approve or reject:
 - Reject with "FUNCTIONAL OVERREACH" if an Easy/Medium tier tries to be a working application instead of a static design.
 - Score 1 on Stack Alignment and REJECT if a level uses the wrong tech.
 
+## Notes on Scoring Templates:
+- Do NOT penalize "value" or "scope" scores just because a project is a static template. A well-designed, strictly static UI template in the Easy/Medium tier is exactly what we want. Score it highly (8-10) if it matches the tier constraints perfectly!
+
 ## Communication Style
 - Strict, concise, and operational.
 - Reject with "STRICT STACK VIOLATION" or "LEVEL MISMATCH" if they violate these rules.
@@ -107,10 +110,12 @@ Review this proposal and respond with a JSON object in this exact format:
       (s) => s < 6,
     );
 
-    let decision;
-    if (overall >= 8 && !hasWeakCategory) decision = "APPROVED";
-    else if (overall < 6) decision = "REJECTED";
-    else decision = "REVISION_REQUESTED";
+    let decision = rawDecision.decision;
+    if (!["APPROVED", "REJECTED", "REVISION_REQUESTED"].includes(decision)) {
+      if (overall >= 8 && !hasWeakCategory) decision = "APPROVED";
+      else if (overall < 6) decision = "REJECTED";
+      else decision = "REVISION_REQUESTED";
+    }
 
     const feedback =
       decision === "APPROVED"

@@ -1,0 +1,34 @@
+{
+  "project": "api-status-page-template",
+  "stage": "approved",
+  "agent": "scout",
+  "runId": "1772705568409-scout-j4mqp",
+  "parentRunId": null,
+  "startedAt": "2026-03-05T10:12:48.409Z",
+  "provider": "groq",
+  "model": {
+    "id": "llama-3.3-70b-versatile",
+    "contextWindow": 128000,
+    "maxTokens": 4096,
+    "supportsImages": false,
+    "supportsReasoning": false
+  },
+  "statusSnapshot": {
+    "stage": "approved",
+    "proposedBy": "nova",
+    "level": "easy",
+    "approvedAt": "2026-03-05T10:12:37.959Z",
+    "preferredStack": "HTML/JS",
+    "template": "vanilla-static",
+    "updatedAt": "2026-03-05T10:12:37.959Z",
+    "stageAttempt": 1,
+    "lensVerdict": null,
+    "lensActionItems": [],
+    "blockedReason": null,
+    "escalationLevel": "none",
+    "lastHandoffRunId": null,
+    "stageOwner": "scout",
+    "lensIssueRepeats": {},
+    "workspaceFiles": []
+  }
+}

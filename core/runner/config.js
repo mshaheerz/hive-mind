@@ -76,7 +76,7 @@ const HIVE_FORCED_LEVEL = String(
 ).toLowerCase();
 
 /** Runner cycle interval in milliseconds (default: 5 minutes). */
-const CHECK_INTERVAL_MS = 5 * 60 * 1000;
+const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes for rapid dev cycles
 
 // ─── Stage ↔ Agent mapping ────────────────────────────────────────────────────
 

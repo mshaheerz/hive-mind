@@ -1,1 +1,41 @@
-[]
+[
+  {
+    "id": "api-status-page-template::research",
+    "projectName": "api-status-page-template",
+    "stage": "research",
+    "agent": "scout",
+    "dueAt": "2026-03-05T14:12:48.412Z",
+    "setAt": "2026-03-05T10:12:48.412Z",
+    "status": "complete",
+    "completedAt": "2026-03-05T10:12:50.418Z"
+  },
+  {
+    "id": "api-status-page-template::architecture",
+    "projectName": "api-status-page-template",
+    "stage": "architecture",
+    "agent": "atlas",
+    "dueAt": "2026-03-05T14:12:50.422Z",
+    "setAt": "2026-03-05T10:12:50.422Z",
+    "status": "complete",
+    "completedAt": "2026-03-05T10:12:53.056Z"
+  },
+  {
+    "id": "api-status-page-template::implementation",
+    "projectName": "api-status-page-template",
+    "stage": "implementation",
+    "agent": "forge",
+    "dueAt": "2026-03-05T14:12:53.059Z",
+    "setAt": "2026-03-05T10:12:53.059Z",
+    "status": "complete",
+    "completedAt": "2026-03-05T10:13:08.745Z"
+  },
+  {
+    "id": "api-status-page-template::review",
+    "projectName": "api-status-page-template",
+    "stage": "review",
+    "agent": "lens",
+    "dueAt": "2026-03-05T14:18:08.799Z",
+    "setAt": "2026-03-05T10:18:08.799Z",
+    "status": "active"
+  }
+]

@@ -23,7 +23,15 @@ Deliver: 1. Overview, 2. Key Findings (focused on the level's stack - if EASY/ME
       ["research", "web", "frontend", "api"],
       3,
     );
-    const prompt = `Research this for development:\nLevel: ${level.toUpperCase()}\nTopic: ${topic}\nContext: ${projectContext}\n${skills}\n\nValidate technical feasibility specifically for the ${level.toUpperCase()} stack. Provide findings, risks, and measurable acceptance criteria.`;
+    let stackReminder = "Next.js (App Router) + API Routes";
+    if (level === "easy")
+      stackReminder =
+        "Vanilla HTML, CSS, and plain JavaScript ONLY (No React, No Tailwind, NO backend)";
+    if (level === "medium")
+      stackReminder =
+        "React + Tailwind CSS ONLY (No backend, NO complex persistence)";
+
+    const prompt = `Research this for development:\nLevel: ${level.toUpperCase()}\nAllowed Stack: ${stackReminder}\nTopic: ${topic}\nContext: ${projectContext}\n${skills}\n\nValidate technical feasibility specifically for the ${level.toUpperCase()} stack (${stackReminder}). Provide findings, risks, and measurable acceptance criteria.`;
     this.print(`Researching (${level}): ${topic.slice(0, 50)}...`);
     return await this.think(prompt);
   }

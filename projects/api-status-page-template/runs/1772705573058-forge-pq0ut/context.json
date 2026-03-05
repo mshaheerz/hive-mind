@@ -1,0 +1,35 @@
+{
+  "project": "api-status-page-template",
+  "stage": "architecture",
+  "agent": "forge",
+  "runId": "1772705573058-forge-pq0ut",
+  "parentRunId": "1772705570421-atlas-4ax8o",
+  "startedAt": "2026-03-05T10:12:53.058Z",
+  "provider": "groq",
+  "model": {
+    "id": "openai/gpt-oss-120b",
+    "contextWindow": 128000,
+    "maxTokens": 4096,
+    "supportsImages": false,
+    "supportsReasoning": false
+  },
+  "statusSnapshot": {
+    "stage": "architecture",
+    "proposedBy": "nova",
+    "level": "easy",
+    "approvedAt": "2026-03-05T10:12:37.959Z",
+    "preferredStack": "HTML/JS",
+    "template": "vanilla-static",
+    "updatedAt": "2026-03-05T10:12:53.056Z",
+    "stageAttempt": 3,
+    "lensVerdict": null,
+    "lensActionItems": [],
+    "blockedReason": null,
+    "escalationLevel": "none",
+    "lastHandoffRunId": "1772705570421-atlas-4ax8o",
+    "stageOwner": "forge",
+    "lensIssueRepeats": {},
+    "workspaceFiles": [],
+    "transitionReason": "agent execution started"
+  }
+}

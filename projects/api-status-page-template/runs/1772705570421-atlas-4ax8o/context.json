@@ -1,0 +1,35 @@
+{
+  "project": "api-status-page-template",
+  "stage": "research",
+  "agent": "atlas",
+  "runId": "1772705570421-atlas-4ax8o",
+  "parentRunId": "1772705568409-scout-j4mqp",
+  "startedAt": "2026-03-05T10:12:50.421Z",
+  "provider": "groq",
+  "model": {
+    "id": "meta-llama/llama-4-scout-17b-16e-instruct",
+    "contextWindow": 128000,
+    "maxTokens": 4096,
+    "supportsImages": false,
+    "supportsReasoning": false
+  },
+  "statusSnapshot": {
+    "stage": "research",
+    "proposedBy": "nova",
+    "level": "easy",
+    "approvedAt": "2026-03-05T10:12:37.959Z",
+    "preferredStack": "HTML/JS",
+    "template": "vanilla-static",
+    "updatedAt": "2026-03-05T10:12:50.419Z",
+    "stageAttempt": 2,
+    "lensVerdict": null,
+    "lensActionItems": [],
+    "blockedReason": null,
+    "escalationLevel": "none",
+    "lastHandoffRunId": "1772705568409-scout-j4mqp",
+    "stageOwner": "atlas",
+    "lensIssueRepeats": {},
+    "workspaceFiles": [],
+    "transitionReason": "agent execution started"
+  }
+}

@@ -9,7 +9,7 @@ const fs = require("fs");
 const path = require("path");
 const { STATE_FILE, AGENT_SCHEDULE } = require("./config");
 
-const MIN_AGENT_CADENCE_MINUTES = 15;
+const MIN_AGENT_CADENCE_MINUTES = 1;
 const MAX_AGENT_CADENCE_MINUTES = 120;
 
 class AutonomousState {

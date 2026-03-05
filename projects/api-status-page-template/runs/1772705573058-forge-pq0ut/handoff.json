@@ -1,0 +1,15 @@
+{
+  "fromAgent": "system",
+  "toAgent": null,
+  "project": "api-status-page-template",
+  "stage": "architecture",
+  "runId": "1772705573058-forge-pq0ut",
+  "summary": "",
+  "artifacts": [],
+  "requiredActions": [],
+  "acceptanceChecks": [],
+  "modelInfo": {
+    "provider": "groq",
+    "model": "unknown"
+  }
+}
