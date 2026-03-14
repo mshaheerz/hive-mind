@@ -5,7 +5,7 @@ A self-organizing multi-agent AI team with provider routing (`openrouter`, `groq
 
 ---
 
-## 🧠 The Team
+## 🧠 The Teams
 
 | Agent     | Role                                                  |
 | --------- | ----------------------------------------------------- |
