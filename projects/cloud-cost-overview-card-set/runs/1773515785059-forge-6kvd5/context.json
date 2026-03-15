@@ -1,0 +1,35 @@
+{
+  "project": "cloud-cost-overview-card-set",
+  "stage": "architecture",
+  "agent": "forge",
+  "runId": "1773515785059-forge-6kvd5",
+  "parentRunId": "1773515784835-forge-32s4r",
+  "startedAt": "2026-03-14T19:16:25.060Z",
+  "provider": "groq",
+  "model": {
+    "id": "openai/gpt-oss-120b",
+    "contextWindow": 128000,
+    "maxTokens": 4096,
+    "supportsImages": false,
+    "supportsReasoning": false
+  },
+  "statusSnapshot": {
+    "stage": "architecture",
+    "proposedBy": "nova",
+    "level": "easy",
+    "approvedAt": "2026-03-14T18:46:19.408Z",
+    "preferredStack": "HTML/JS",
+    "template": "vanilla-static",
+    "updatedAt": "2026-03-14T19:16:24.836Z",
+    "stageAttempt": 74,
+    "lensVerdict": null,
+    "lensActionItems": [],
+    "blockedReason": null,
+    "escalationLevel": "none",
+    "lastHandoffRunId": "1773515784835-forge-32s4r",
+    "stageOwner": "forge",
+    "lensIssueRepeats": {},
+    "workspaceFiles": [],
+    "transitionReason": "agent execution started"
+  }
+}

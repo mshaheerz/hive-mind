@@ -1,0 +1,10 @@
+/* Page‑specific tweaks */
+
+/* Dashboard page */
+#dashboard-table th[data-sort] { min-width: 80px; }
+
+/* Settings page */
+#theme-toggle { width: auto; }
+
+/* About page – FAQ spacing */
+.accordion-item { border-radius: 4px; }

@@ -1,0 +1,59 @@
+{
+  "project": "team-retrospective-dashboard",
+  "stage": "review",
+  "agent": "pulse",
+  "runId": "1773515366467-pulse-9sas6",
+  "parentRunId": "1773515365198-lens-vd0tw",
+  "startedAt": "2026-03-14T19:09:26.467Z",
+  "provider": "groq",
+  "model": {
+    "id": "openai/gpt-oss-20b",
+    "contextWindow": 128000,
+    "maxTokens": 4096,
+    "supportsImages": false,
+    "supportsReasoning": false
+  },
+  "statusSnapshot": {
+    "stage": "review",
+    "proposedBy": "nova",
+    "level": "easy",
+    "approvedAt": "2026-03-14T18:46:17.349Z",
+    "preferredStack": "HTML/JS",
+    "template": "vanilla-static",
+    "updatedAt": "2026-03-14T19:09:26.466Z",
+    "stageAttempt": 6,
+    "lensVerdict": null,
+    "lensActionItems": [],
+    "blockedReason": null,
+    "escalationLevel": "none",
+    "lastHandoffRunId": "1773515365198-lens-vd0tw",
+    "stageOwner": "pulse",
+    "lensIssueRepeats": {},
+    "workspaceFiles": [
+      "index.html",
+      "pages/dashboard.html",
+      "pages/details.html",
+      "pages/settings.html",
+      "pages/about.html",
+      "components/nav.html",
+      "components/footer.html",
+      "components/tabs.html",
+      "components/modals.html",
+      "styles/variables.css",
+      "styles/global.css",
+      "styles/theme.css",
+      "scripts/main.js",
+      "scripts/tabs.js",
+      "scripts/modals.js",
+      "data/dummy-data.json",
+      "components/sidebar.html"
+    ],
+    "transitionReason": "agent execution started",
+    "workspaceCheck": {
+      "checked": 4,
+      "passed": 4,
+      "failed": 0,
+      "report": "Checked=4 Passed=4 Failed=0"
+    }
+  }
+}

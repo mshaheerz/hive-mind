@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Settings – MyApp</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../styles/global.css">
+  <link rel="stylesheet" href="../styles/theme.css">
+</head>
+<body class="light-theme">
+
+  <div id="nav-placeholder"></div>
+
+  <main class="container">
+
+    <section class="card">
+      <h1>Application Settings</h1>
+
+      <form id="settingsForm">
+
+        <fieldset class="settings-group">
+          <legend>General</legend>
+
+          <label class="switch">
+            <input type="checkbox" name="darkMode" id="darkModeToggle">
+            <span class="slider"></span>
+            Dark Mode
+          </label>
+
+          <label>
+            Language
+            <select name="language" required>
+              <option value="en">English</option>
+              <option value="es">Spanish</option>
+              <option value="de">German</option>
+            </select>
+          </label>
+        </fieldset>
+
+        <fieldset class="settings-group">
+          <legend>Notifications</legend>
+
+          <label class="switch">
+            <input type="checkbox" name="emailNotif" checked>
+            <span class="slider"></span>
+            Email Notifications
+          </label>
+
+          <label class="switch">
+            <input type="checkbox" name="pushNotif">
+            <span class="slider"></span>
+            Push Notifications
+          </label>
+        </fieldset>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Save Settings</button>
+          <button type="reset" class="btn btn-secondary">Reset</button>
+        </div>
+
+      </form>
+    </section>
+
+  </main>
+
+  <div id="footer-placeholder"></div>
+
+  <script src="../scripts/main.js" defer></script>
+</body>
+</html>

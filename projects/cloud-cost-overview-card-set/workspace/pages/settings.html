@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Settings – MyApp</title>
+  <link rel="stylesheet" href="../styles/reset.css">
+  <link rel="stylesheet" href="../styles/variables.css">
+  <link rel="stylesheet" href="../styles/layout.css">
+  <link rel="stylesheet" href="../styles/components.css">
+  <link rel="stylesheet" href="../styles/pages.css">
+  <link rel="stylesheet" href="../styles/utilities.css">
+</head>
+<body class="theme-light">
+  <div id="nav-placeholder"></div>
+
+  <main class="container">
+    <section class="page-header">
+      <h1>Settings</h1>
+      <p class="lead">Adjust your preferences and account details.</p>
+    </section>
+
+    <section class="settings-section">
+      <h2>Profile</h2>
+      <form id="profile-form" class="form">
+        <label class="field-label">Full Name
+          <input type="text" name="fullName" required class="input">
+        </label>
+        <label class="field-label">Email
+          <input type="email" name="email" required class="input">
+        </label>
+        <label class="field-label">Phone
+          <input type="tel" name="phone" class="input">
+        </label>
+        <button type="submit" class="btn btn-primary">Save Profile</button>
+      </form>
+    </section>
+
+    <section class="settings-section">
+      <h2>Preferences</h2>
+      <form id="preferences-form" class="form">
+        <label class="field-label">Dark Mode
+          <input type="checkbox" name="darkMode" id="dark-mode-toggle" class="toggle">
+        </label>
+        <label class="field-label">Notifications
+          <input type="checkbox" name="notifications" checked class="toggle">
+        </label>
+        <button type="submit" class="btn btn-primary">Save Preferences</button>
+      </form>
+    </section>
+
+    <section class="settings-section">
+      <h2>Security</h2>
+      <form id="security-form" class="form">
+        <label class="field-label">Current Password
+          <input type="password" name="currentPwd" required class="input">
+        </label>
+        <label class="field-label">New Password
+          <input type="password" name="newPwd" required class="input" minlength="6">
+        </label>
+        <label class="field-label">Confirm New Password
+          <input type="password" name="confirmPwd" required class="input" minlength="6">
+        </label>
+        <button type="submit" class="btn btn-primary">Update Password</button>
+      </form>
+    </section>
+  </main>
+
+  <div id="footer-placeholder"></div>
+  <div id="toast-container" class="toast-container"></div>
+
+  <script src="../scripts/utils.js"></script>
+  <script src="../scripts/components.js"></script>
+  <script src="../scripts/app.js"></script>
+</body>
+</html>

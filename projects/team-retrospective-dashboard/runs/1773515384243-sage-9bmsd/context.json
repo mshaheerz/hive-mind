@@ -1,0 +1,59 @@
+{
+  "project": "team-retrospective-dashboard",
+  "stage": "tests",
+  "agent": "sage",
+  "runId": "1773515384243-sage-9bmsd",
+  "parentRunId": "1773515366467-pulse-9sas6",
+  "startedAt": "2026-03-14T19:09:44.243Z",
+  "provider": "groq",
+  "model": {
+    "id": "moonshotai/kimi-k2-instruct",
+    "contextWindow": 128000,
+    "maxTokens": 4096,
+    "supportsImages": false,
+    "supportsReasoning": false
+  },
+  "statusSnapshot": {
+    "stage": "tests",
+    "proposedBy": "nova",
+    "level": "easy",
+    "approvedAt": "2026-03-14T18:46:17.349Z",
+    "preferredStack": "HTML/JS",
+    "template": "vanilla-static",
+    "updatedAt": "2026-03-14T19:09:29.215Z",
+    "stageAttempt": 7,
+    "lensVerdict": null,
+    "lensActionItems": [],
+    "blockedReason": null,
+    "escalationLevel": "none",
+    "lastHandoffRunId": "1773515366467-pulse-9sas6",
+    "stageOwner": "sage",
+    "lensIssueRepeats": {},
+    "workspaceFiles": [
+      "index.html",
+      "pages/dashboard.html",
+      "pages/details.html",
+      "pages/settings.html",
+      "pages/about.html",
+      "components/nav.html",
+      "components/footer.html",
+      "components/tabs.html",
+      "components/modals.html",
+      "styles/variables.css",
+      "styles/global.css",
+      "styles/theme.css",
+      "scripts/main.js",
+      "scripts/tabs.js",
+      "scripts/modals.js",
+      "data/dummy-data.json",
+      "components/sidebar.html"
+    ],
+    "transitionReason": "agent execution started",
+    "workspaceCheck": {
+      "checked": 4,
+      "passed": 4,
+      "failed": 0,
+      "report": "Checked=4 Passed=4 Failed=0"
+    }
+  }
+}

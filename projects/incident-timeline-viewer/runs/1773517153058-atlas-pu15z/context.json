@@ -1,0 +1,35 @@
+{
+  "project": "incident-timeline-viewer",
+  "stage": "research",
+  "agent": "atlas",
+  "runId": "1773517153058-atlas-pu15z",
+  "parentRunId": "1773517151143-scout-lgqhm",
+  "startedAt": "2026-03-14T19:39:13.058Z",
+  "provider": "groq",
+  "model": {
+    "id": "meta-llama/llama-4-scout-17b-16e-instruct",
+    "contextWindow": 128000,
+    "maxTokens": 4096,
+    "supportsImages": false,
+    "supportsReasoning": false
+  },
+  "statusSnapshot": {
+    "stage": "research",
+    "proposedBy": "nova",
+    "level": "easy",
+    "approvedAt": "2026-03-14T18:46:23.058Z",
+    "preferredStack": "HTML/JS",
+    "template": "vanilla-static",
+    "updatedAt": "2026-03-14T19:39:13.057Z",
+    "stageAttempt": 2,
+    "lensVerdict": null,
+    "lensActionItems": [],
+    "blockedReason": null,
+    "escalationLevel": "none",
+    "lastHandoffRunId": "1773517151143-scout-lgqhm",
+    "stageOwner": "atlas",
+    "lensIssueRepeats": {},
+    "workspaceFiles": [],
+    "transitionReason": "agent execution started"
+  }
+}

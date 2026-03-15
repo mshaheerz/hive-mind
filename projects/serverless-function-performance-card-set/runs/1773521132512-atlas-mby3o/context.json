@@ -1,0 +1,35 @@
+{
+  "project": "serverless-function-performance-card-set",
+  "stage": "research",
+  "agent": "atlas",
+  "runId": "1773521132512-atlas-mby3o",
+  "parentRunId": "1773521129851-scout-szcfd",
+  "startedAt": "2026-03-14T20:45:32.512Z",
+  "provider": "groq",
+  "model": {
+    "id": "meta-llama/llama-4-scout-17b-16e-instruct",
+    "contextWindow": 128000,
+    "maxTokens": 4096,
+    "supportsImages": false,
+    "supportsReasoning": false
+  },
+  "statusSnapshot": {
+    "stage": "research",
+    "proposedBy": "nova",
+    "level": "easy",
+    "approvedAt": "2026-03-14T20:45:05.887Z",
+    "preferredStack": "HTML/JS",
+    "template": "vanilla-static",
+    "updatedAt": "2026-03-14T20:45:32.510Z",
+    "stageAttempt": 2,
+    "lensVerdict": null,
+    "lensActionItems": [],
+    "blockedReason": null,
+    "escalationLevel": "none",
+    "lastHandoffRunId": "1773521129851-scout-szcfd",
+    "stageOwner": "atlas",
+    "lensIssueRepeats": {},
+    "workspaceFiles": [],
+    "transitionReason": "agent execution started"
+  }
+}

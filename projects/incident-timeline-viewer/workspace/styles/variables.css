@@ -1,0 +1,41 @@
+/* Color palette */
+:root {
+  --color-primary: #2c7be5;
+  --color-success: #00d97e;
+  --color-warning: #f6c23e;
+  --color-danger: #e63757;
+  --color-light: #f8f9fa;
+  --color-dark: #343a40;
+  --color-bg: var(--color-light);
+  --color-text: #212529;
+}
+
+/* Dark theme overrides */
+.theme-dark {
+  --color-bg: var(--color-dark);
+  --color-text: #f8f9fa;
+}
+
+/* Spacing */
+:root {
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 1rem;
+  --space-4: 1.5rem;
+  --space-5: 3rem;
+}
+
+/* Typography */
+:root {
+  --font-family: system-ui, sans-serif;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.25rem;
+  --font-size-sm: 0.875rem;
+  --line-height-base: 1.5;
+}
+
+/* Transitions */
+:root {
+  --transition-fast: 150ms ease;
+  --transition-medium: 300ms ease;
+}

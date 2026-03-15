@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings – Demo App</title>
+  <link rel="stylesheet" href="../styles/reset.css">
+  <link rel="stylesheet" href="../styles/variables.css">
+  <link rel="stylesheet" href="../styles/layout.css">
+  <link rel="stylesheet" href="../styles/components.css">
+  <link rel="stylesheet" href="../styles/pages.css">
+  <link rel="stylesheet" href="../styles/utilities.css">
+</head>
+<body class="theme-light">
+  <div id="nav"></div>
+
+  <main class="container">
+    <section class="mt-2">
+      <h1>Settings</h1>
+      <p class="lead">Adjust your preferences.</p>
+    </section>
+
+    <!-- Theme toggle -->
+    <section class="mt-3">
+      <h2>Appearance</h2>
+      <label class="flex align-center gap-1">
+        <input type="checkbox" id="theme-toggle">
+        <span>Dark mode</span>
+      </label>
+    </section>
+
+    <!-- Notification settings -->
+    <section class="mt-3">
+      <h2>Notifications</h2>
+      <form id="notif-form">
+        <label class="flex align-center gap-1 mb-1">
+          <input type="checkbox" name="email" checked>
+          Email notifications
+        </label>
+        <label class="flex align-center gap-1 mb-1">
+          <input type="checkbox" name="sms">
+          SMS notifications
+        </label>
+        <button class="btn btn-primary mt-1" type="submit">Save Settings</button>
+      </form>
+    </section>
+
+    <!-- Account settings -->
+    <section class="mt-3">
+      <h2>Account</h2>
+      <form id="account-form">
+        <label class="block mb-1">Username
+          <input type="text" class="input" name="username" value="alex123" required>
+        </label>
+        <label class="block mb-1">Email
+          <input type="email" class="input" name="email" value="alex@example.com" required>
+        </label>
+        <button class="btn btn-primary mt-1" type="submit">Update Account</button>
+      </form>
+    </section>
+  </main>
+
+  <div id="footer"></div>
+
+  <script src="../scripts/app.js"></script>
+  <script src="../scripts/components.js"></script>
+  <script src="../scripts/utils.js"></script>
+  <script>
+    // Theme toggle
+    const themeToggle = document.getElementById('theme-toggle');
+    const root = document.documentElement;
+    themeToggle.checked = root.classList.contains('theme-dark');
+    themeToggle.addEventListener('change', () => {
+      root.classList.toggle('theme-dark', themeToggle.checked);
+      root.classList.toggle('theme-light', !themeToggle.checked);
+    });
+
+    // Notification form
+    document.getElementById('notif-form').addEventListener('submit', e => {
+      e.preventDefault();
+      showToast('Notification preferences saved.', 'success');
+    });
+
+    // Account form validation
+    document.getElementById('account-form').addEventListener('submit', e => {
+      e.preventDefault();
+      const username = e.target.username.value.trim();
+      const email = e.target.email.value.trim();
+      if (!username || !email) {
+        showToast('All fields are required.', 'error');
+        return;
+      }
+      if (!validateEmail(email)) {
+        showToast('Invalid email address.', 'error');
+        return;
+      }
+      showToast('Account updated.', 'success');
+    });
+  </script>
+</body>
+</html>

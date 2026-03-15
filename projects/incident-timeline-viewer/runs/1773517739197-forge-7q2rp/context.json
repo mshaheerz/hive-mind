@@ -1,0 +1,35 @@
+{
+  "project": "incident-timeline-viewer",
+  "stage": "architecture",
+  "agent": "forge",
+  "runId": "1773517739197-forge-7q2rp",
+  "parentRunId": "1773517724060-forge-4l43k",
+  "startedAt": "2026-03-14T19:48:59.197Z",
+  "provider": "groq",
+  "model": {
+    "id": "openai/gpt-oss-120b",
+    "contextWindow": 128000,
+    "maxTokens": 4096,
+    "supportsImages": false,
+    "supportsReasoning": false
+  },
+  "statusSnapshot": {
+    "stage": "architecture",
+    "proposedBy": "nova",
+    "level": "easy",
+    "approvedAt": "2026-03-14T18:46:23.058Z",
+    "preferredStack": "HTML/JS",
+    "template": "vanilla-static",
+    "updatedAt": "2026-03-14T19:48:44.062Z",
+    "stageAttempt": 115,
+    "lensVerdict": null,
+    "lensActionItems": [],
+    "blockedReason": null,
+    "escalationLevel": "none",
+    "lastHandoffRunId": "1773517724060-forge-4l43k",
+    "stageOwner": "forge",
+    "lensIssueRepeats": {},
+    "workspaceFiles": [],
+    "transitionReason": "agent execution started"
+  }
+}

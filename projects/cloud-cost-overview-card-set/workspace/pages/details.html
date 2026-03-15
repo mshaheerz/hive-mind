@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Details – MyApp</title>
+  <link rel="stylesheet" href="../styles/reset.css">
+  <link rel="stylesheet" href="../styles/variables.css">
+  <link rel="stylesheet" href="../styles/layout.css">
+  <link rel="stylesheet" href="../styles/components.css">
+  <link rel="stylesheet" href="../styles/pages.css">
+  <link rel="stylesheet" href="../styles/utilities.css">
+</head>
+<body class="theme-light">
+  <div id="nav-placeholder"></div>
+
+  <main class="container">
+    <nav class="breadcrumb">
+      <a href="../index.html">Home</a> /
+      <a href="dashboard.html">Dashboard</a> /
+      <span>Details</span>
+    </nav>
+
+    <section class="detail-header">
+      <h1 id="detail-title">Item #001</h1>
+      <span class="badge badge-info" id="detail-status">Active</span>
+      <div class="detail-meta">
+        <p>Created: <span id="detail-created">2024-01-12</span></p>
+        <p>Owner: <span id="detail-owner">John Doe</span></p>
+      </div>
+      <div class="detail-actions">
+        <button class="btn btn-primary" id="edit-btn">Edit</button>
+        <button class="btn btn-danger" id="delete-btn">Delete</button>
+        <button class="btn btn-outline" id="export-btn">Export</button>
+      </div>
+    </section>
+
+    <section class="tabs" id="detail-tabs">
+      <ul class="tab-list">
+        <li data-tab="overview" class="active">Overview</li>
+        <li data-tab="history">History</li>
+        <li data-tab="config">Config</li>
+      </ul>
+      <div class="tab-panels">
+        <article data-panel="overview" class="active">
+          <p>This item is a placeholder for a real product. It contains basic information and can be edited.</p>
+        </article>
+        <article data-panel="history">
+          <ul class="list">
+            <li>2024‑02‑01 – Status changed to Pending</li>
+            <li>2024‑01‑20 – Owner updated</li>
+            <li>2024‑01‑12 – Created</li>
+          </ul>
+        </article>
+        <article data-panel="config">
+          <form id="config-form">
+            <label class="field-label">Enable Feature X
+              <input type="checkbox" name="featureX" checked class="toggle">
+            </label>
+            <label class="field-label">Max Users
+              <input type="number" name="maxUsers" value="100" min="1" class="input">
+            </label>
+            <button type="submit" class="btn btn-primary">Save Config</button>
+          </form>
+        </article>
+      </div>
+    </section>
+
+    <aside class="related-info">
+      <h3>Related Items</h3>
+      <ul id="related-list">
+        <!-- Filled by data.js -->
+      </ul>
+    </aside>
+  </main>
+
+  <div id="footer-placeholder"></div>
+  <div id="toast-container" class="toast-container"></div>
+
+  <script src="../scripts/utils.js"></script>
+  <script src="../scripts/data.js"></script>
+  <script src="../scripts/components.js"></script>
+  <script src="../scripts/app.js"></script>
+</body>
+</html>

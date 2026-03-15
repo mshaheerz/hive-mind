@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard – MyApp</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../styles/global.css">
+  <link rel="stylesheet" href="../styles/theme.css">
+</head>
+<body class="light-theme">
+
+  <div id="nav-placeholder"></div>
+
+  <main class="container">
+
+    <section class="card dashboard-header">
+      <h1>Data Dashboard</h1>
+      <div class="filter-bar">
+        <input type="text" id="dashboard-search" placeholder="Search items..." class="input-search">
+        <select id="status-filter">
+          <option value="">All statuses</option>
+          <option value="Open">Open</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Closed">Closed</option>
+        </select>
+      </div>
+    </section>
+
+    <section class="card">
+      <table class="data-table sortable" id="dashboard-table">
+        <thead>
+          <tr>
+            <th data-sort="id">ID</th>
+            <th data-sort="name">Name</th>
+            <th data-sort="type">Type</th>
+            <th data-sort="status">Status</th>
+            <th data-sort="date">Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Populated by JS -->
+        </tbody>
+      </table>
+      <div class="pagination">
+        <button class="btn btn-secondary" id="prev-page">Prev</button>
+        <span id="page-info">Page 1 of 1</span>
+        <button class="btn btn-secondary" id="next-page">Next</button>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="footer-placeholder"></div>
+
+  <script src="../scripts/main.js" defer></script>
+  <script src="../scripts/tabs.js" defer></script>
+</body>
+</html>

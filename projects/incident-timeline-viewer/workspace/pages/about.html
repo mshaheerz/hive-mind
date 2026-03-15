@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About – Demo App</title>
+  <link rel="stylesheet" href="../styles/reset.css">
+  <link rel="stylesheet" href="../styles/variables.css">
+  <link rel="stylesheet" href="../styles/layout.css">
+  <link rel="stylesheet" href="../styles/components.css">
+  <link rel="stylesheet" href="../styles/pages.css">
+  <link rel="stylesheet" href="../styles/utilities.css">
+</head>
+<body class="theme-light">
+  <div id="nav"></div>
+
+  <main class="container">
+    <section class="mt-2">
+      <h1>About This Demo</h1>
+      <p class="lead">A fully‑featured static multi‑page prototype built with vanilla HTML, CSS and JavaScript.</p>
+    </section>
+
+    <!-- Feature list -->
+    <section class="mt-3">
+      <h2>Features</h2>
+      <ul class="grid grid-2 gap-2">
+        <li class="card feature-card">
+          <h3>Responsive Design</h3>
+          <p>Works on mobile, tablet and desktop.</p>
+        </li>
+        <li class="card feature-card">
+          <h3>Interactive Tables</h3>
+          <p>Sorting, searching and bulk actions.</p>
+        </li>
+        <li class="card feature-card">
+          <h3>Modals & Toasts</h3>
+          <p>Reusable UI components.</p>
+        </li>
+        <li class="card feature-card">
+          <h3>Dark / Light Theme</h3>
+          <p>Toggleable color scheme.</p>
+        </li>
+      </ul>
+    </section>
+
+    <!-- FAQ Accordion -->
+    <section class="mt-3">
+      <h2>Frequently Asked Questions</h2>
+      <div class="accordion" id="faq-accordion">
+        <div class="accordion-item">
+          <button class="accordion-header" data-accordion>What is this project?</button>
+          <div class="accordion-body">
+            <p>It is a static prototype demonstrating a multi‑page layout with interactive widgets.</p>
+          </div>
+        </div>
+        <div class="accordion-item">
+          <button class="accordion-header" data-accordion>Can I use this code?</button>
+          <div class="accordion-body">
+            <p>Yes! Feel free to copy, modify and adapt it for your own projects.</p>
+          </div>
+        </div>
+        <div class="accordion-item">
+          <button class="accordion-header" data-accordion>Where is the data coming from?</button>
+          <div class="accordion-body">
+            <p>All data is hard‑coded in <code>data/dummy.js</code> and loaded client‑side.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Team / Credits -->
+    <section class="mt-3">
+      <h2>Team</h2>
+      <p>Developed by <strong>Alex Developer</strong> – Front‑end Engineer.</p>
+    </section>
+
+    <!-- Version -->
+    <section class="mt-3 mb-5">
+      <small>Version 1.0.0 – © 2026 Demo Corp.</small>
+    </section>
+  </main>
+
+  <div id="footer"></div>
+
+  <script src="../scripts/app.js"></script>
+  <script src="../scripts/components.js"></script>
+  <script src="../scripts/utils.js"></script>
+  <script>
+    // Initialise accordion
+    initAccordion(document.getElementById('faq-accordion'));
+  </script>
+</body>
+</html>

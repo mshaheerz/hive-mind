@@ -1,0 +1,11 @@
+# Node / npm artifacts (if any)
+node_modules/
+npm-debug.log
+
+# Build artefacts
+dist/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db

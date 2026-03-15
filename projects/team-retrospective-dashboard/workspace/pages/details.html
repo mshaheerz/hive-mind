@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Details – MyApp</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../styles/global.css">
+  <link rel="stylesheet" href="../styles/theme.css">
+</head>
+<body class="light-theme">
+
+  <div id="nav-placeholder"></div>
+
+  <main class="container">
+
+    <nav class="breadcrumb">
+      <a href="../index.html">Home</a> /
+      <a href="dashboard.html">Dashboard</a> /
+      <span>Item #42</span>
+    </nav>
+
+    <section class="card detail-header">
+      <h1>Item #42 – <span class="badge badge-info">Open</span></h1>
+      <p class="meta">Created on 2024‑02‑15 • Assigned to Alex</p>
+      <div class="detail-actions">
+        <button class="btn btn-primary" id="editBtn">Edit</button>
+        <button class="btn btn-danger" id="deleteBtn">Delete</button>
+        <button class="btn btn-secondary" id="exportBtn">Export</button>
+      </div>
+    </section>
+
+    <!-- Tabs -->
+    <section class="card" id="detail-tabs">
+      <!-- Tabs markup will be loaded from component -->
+    </section>
+
+    <!-- Related info side panel -->
+    <aside class="card related-panel">
+      <h2>Related Items</h2>
+      <ul id="related-list">
+        <!-- Populated by JS -->
+      </ul>
+    </aside>
+
+  </main>
+
+  <div id="footer-placeholder"></div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal" id="deleteModal" aria-hidden="true">
+    <div class="modal-content">
+      <button class="modal-close" data-close="deleteModal">&times;</button>
+      <h2>Confirm Delete</h2>
+      <p>Are you sure you want to delete this item? This action cannot be undone.</p>
+      <button class="btn btn-danger" id="confirmDelete">Delete</button>
+      <button class="btn btn-secondary" data-close="deleteModal">Cancel</button>
+    </div>
+  </div>
+
+  <script src="../scripts/main.js" defer></script>
+  <script src="../scripts/modals.js" defer></script>
+  <script src="../scripts/tabs.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>About – MyApp</title>
+  <link rel="stylesheet" href="../styles/reset.css">
+  <link rel="stylesheet" href="../styles/variables.css">
+  <link rel="stylesheet" href="../styles/layout.css">
+  <link rel="stylesheet" href="../styles/components.css">
+  <link rel="stylesheet" href="../styles/pages.css">
+  <link rel="stylesheet" href="../styles/utilities.css">
+</head>
+<body class="theme-light">
+  <div id="nav-placeholder"></div>
+
+  <main class="container">
+    <section class="page-header">
+      <h1>About MyApp</h1>
+      <p class="lead">A demo multi‑page static application built with vanilla HTML, CSS and JavaScript.</p>
+    </section>
+
+    <section class="features">
+      <h2>Key Features</h2>
+      <ul class="feature-list">
+        <li><svg class="icon" aria-hidden="true"><use href="#icon-dashboard"></use></svg> Interactive Dashboard</li>
+        <li><svg class="icon" aria-hidden="true"><use href="#icon-settings"></use></svg> Customizable Settings</li>
+        <li><svg class="icon" aria-hidden="true"><use href="#icon-security"></use></svg> Secure Forms</li>
+        <li><svg class="icon" aria-hidden="true"><use href="#icon-support"></use></svg> Responsive Design</li>
+      </ul>
+    </section>
+
+    <section class="faq">
+      <h2>Frequently Asked Questions</h2>
+      <div class="accordion" id="faq-accordion">
+        <div class="accordion-item">
+          <button class="accordion-header">What is MyApp?</button>
+          <div class="accordion-body">
+            <p>MyApp is a sample static web app used to demonstrate a full‑featured multi‑page layout without any backend.</p>
+          </div>
+        </div>
+        <div class="accordion-item">
+          <button class="accordion-header">How can I customize it?</button>
+          <div class="accordion-body">
+            <p>All styles are defined in CSS custom properties. Edit the files under <code>styles/</code> to change colors, spacing, or typography.</p>
+          </div>
+        </div>
+        <div class="accordion-item">
+          <button class="accordion-header">Is any data persisted?</button>
+          <div class="accordion-body">
+            <p>Data is stored in memory only. No server calls are made. Feel free to replace the dummy data in <code>data/dummy.js</code> with your own JSON.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="team">
+      <h2>Our Team</h2>
+      <div class="team-grid">
+        <article class="card team-card">
+          <img src="https://i.pravatar.cc/150?img=1" alt="Alice" class="team-photo">
+          <h3>Alice Johnson</h3>
+          <p>Lead Designer</p>
+        </article>
+        <article class="card team-card">
+          <img src="https://i.pravatar.cc/150?img=2" alt="Bob" class="team-photo">
+          <h3>Bob Smith</h3>
+          <p>Front‑End Engineer</p>
+        </article>
+        <article class="card team-card">
+          <img src="https://i.pravatar.cc/150?img=3" alt="Carol" class="team-photo">
+          <h3>Carol Lee</h3>
+          <p>Product Manager</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="changelog">
+      <h2>Version History</h2>
+      <ul class="list">
+        <li><strong>v1.0.0</strong> – Initial release with dashboard, settings, and about pages.</li>
+      </ul>
+    </section>
+  </main>
+
+  <div id="footer-placeholder"></div>
+  <div id="toast-container" class="toast-container"></div>
+
+  <svg style="display:none;">
+    <symbol id="icon-dashboard" viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></symbol>
+    <symbol id="icon-settings" viewBox="0 0 24 24"><path d="M19.14 12.94a7.5 7.5 0 0 0 .06-1 7.5 7.5 0 0 0-.06-1l2.03-1.58a.5.5 0 0 0 .12-.63l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.07 7.07 0 0 0-1.73-1l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54a7.07 7.07 0 0 0-1.73 1l-2.39-.96a.5.5 0 0 0-.6.22l-1.92 3.32a.5.5 0 0 0 .12.63l2.03 1.58c-.04.33-.06.66-.06 1s.02.67.06 1l-2.03 1.58a.5.5 0 0 0-.12.63l1.92 3.32c.14.24.44.33.68.22l2.39-.96c.53.4 1.12.73 1.73 1l.36 2.54c.04.27.27.46.5.46h3.84c.27 0 .5-.19.5-.46l.36-2.54c.61-.27 1.2-.6 1.73-1l2.39.96c.24.1.54.02.68-.22l1.92-3.32a.5.5 0 0 0-.12-.63l-2.03-1.58zM12 15.5a3.5 3.5 0 1 1 .001-7.001A3.5 3.5 0 0 1 12 15.5z"/></symbol>
+    <symbol id="icon-security" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></symbol>
+    <symbol id="icon-support" viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-7 17.5V22l3-1a10 10 0 1 0 4-19z"/></symbol>
+  </svg>
+
+  <script src="../scripts/utils.js"></script>
+  <script src="../scripts/components.js"></script>
+  <script src="../scripts/app.js"></script>
+</body>
+</html>

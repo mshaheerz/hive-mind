@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Home – MyApp</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="styles/global.css">
+  <link rel="stylesheet" href="styles/theme.css">
+</head>
+<body class="light-theme">
+
+  <!-- Navigation -->
+  <div id="nav-placeholder"></div>
+
+  <!-- Main Content -->
+  <main class="container">
+
+    <!-- Hero / Summary -->
+    <section class="hero">
+      <h1>Welcome back, Alex!</h1>
+      <p class="lead">Here’s a quick overview of your activity.</p>
+      <button class="btn btn-primary" id="openQuickModal">Create New Item</button>
+    </section>
+
+    <!-- Stat Cards -->
+    <section class="grid stats-grid">
+      <article class="card stat-card">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zM11 6h2v6h-2V6zm0 8h2v2h-2v-2z"/></svg>
+        <div>
+          <h3>24</h3>
+          <p>New Orders</p>
+        </div>
+      </article>
+      <article class="card stat-card">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm4 0h12v-2H7v2zm0-4h12v-2H7v2zm0-6v2h12V7H7z"/></svg>
+        <div>
+          <h3>128</h3>
+          <p>Active Users</p>
+        </div>
+      </article>
+      <article class="card stat-card">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14l4-4h12c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
+        <div>
+          <h3>5</h3>
+          <p>Pending Tasks</p>
+        </div>
+      </article>
+    </section>
+
+    <!-- Recent Activity -->
+    <section class="card activity-card">
+      <header class="card-header">
+        <h2>Recent Activity</h2>
+        <input type="text" id="activity-search" placeholder="Search activity..." class="input-search">
+      </header>
+      <table class="data-table" id="activity-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Item</th>
+            <th>Status</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Rows will be injected by JS -->
+        </tbody>
+      </table>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <div id="footer-placeholder"></div>
+
+  <!-- Modal (quick create) -->
+  <div class="modal" id="quickModal" aria-hidden="true">
+    <div class="modal-content">
+      <button class="modal-close" data-close="quickModal">&times;</button>
+      <h2>Create New Item</h2>
+      <form id="quickForm">
+        <label>
+          Name
+          <input type="text" name="name" required>
+        </label>
+        <label>
+          Type
+          <select name="type" required>
+            <option value="">Select…</option>
+            <option>Task</option>
+            <option>Bug</option>
+            <option>Feature</option>
+          </select>
+        </label>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="scripts/main.js" defer></script>
+  <script src="scripts/modals.js" defer></script>
+</body>
+</html>

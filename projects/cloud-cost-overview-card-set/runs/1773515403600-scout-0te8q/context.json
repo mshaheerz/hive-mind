@@ -1,0 +1,34 @@
+{
+  "project": "cloud-cost-overview-card-set",
+  "stage": "approved",
+  "agent": "scout",
+  "runId": "1773515403600-scout-0te8q",
+  "parentRunId": null,
+  "startedAt": "2026-03-14T19:10:03.600Z",
+  "provider": "groq",
+  "model": {
+    "id": "llama-3.3-70b-versatile",
+    "contextWindow": 128000,
+    "maxTokens": 4096,
+    "supportsImages": false,
+    "supportsReasoning": false
+  },
+  "statusSnapshot": {
+    "stage": "approved",
+    "proposedBy": "nova",
+    "level": "easy",
+    "approvedAt": "2026-03-14T18:46:19.408Z",
+    "preferredStack": "HTML/JS",
+    "template": "vanilla-static",
+    "updatedAt": "2026-03-14T18:46:19.408Z",
+    "stageAttempt": 1,
+    "lensVerdict": null,
+    "lensActionItems": [],
+    "blockedReason": null,
+    "escalationLevel": "none",
+    "lastHandoffRunId": null,
+    "stageOwner": "scout",
+    "lensIssueRepeats": {},
+    "workspaceFiles": []
+  }
+}

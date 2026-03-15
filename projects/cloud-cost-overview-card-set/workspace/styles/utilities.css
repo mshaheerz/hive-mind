@@ -1,0 +1,9 @@
+/* Utility classes */
+.mt-1 { margin-top: var(--space-xs); }
+.mt-2 { margin-top: var(--space-sm); }
+.mt-3 { margin-top: var(--space-md); }
+.mb-1 { margin-bottom: var(--space-xs); }
+.mb-2 { margin-bottom: var(--space-sm); }
+.text-center { text-align: center; }
+.text-muted { color: var(--color-muted); }
+.hidden { display: none; }

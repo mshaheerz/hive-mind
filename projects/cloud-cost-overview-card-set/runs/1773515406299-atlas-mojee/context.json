@@ -1,0 +1,35 @@
+{
+  "project": "cloud-cost-overview-card-set",
+  "stage": "research",
+  "agent": "atlas",
+  "runId": "1773515406299-atlas-mojee",
+  "parentRunId": "1773515403600-scout-0te8q",
+  "startedAt": "2026-03-14T19:10:06.299Z",
+  "provider": "groq",
+  "model": {
+    "id": "meta-llama/llama-4-scout-17b-16e-instruct",
+    "contextWindow": 128000,
+    "maxTokens": 4096,
+    "supportsImages": false,
+    "supportsReasoning": false
+  },
+  "statusSnapshot": {
+    "stage": "research",
+    "proposedBy": "nova",
+    "level": "easy",
+    "approvedAt": "2026-03-14T18:46:19.408Z",
+    "preferredStack": "HTML/JS",
+    "template": "vanilla-static",
+    "updatedAt": "2026-03-14T19:10:06.297Z",
+    "stageAttempt": 2,
+    "lensVerdict": null,
+    "lensActionItems": [],
+    "blockedReason": null,
+    "escalationLevel": "none",
+    "lastHandoffRunId": "1773515403600-scout-0te8q",
+    "stageOwner": "atlas",
+    "lensIssueRepeats": {},
+    "workspaceFiles": [],
+    "transitionReason": "agent execution started"
+  }
+}

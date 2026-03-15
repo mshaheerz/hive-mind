@@ -1,0 +1,23 @@
+/* Layout utilities */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-lg);
+}
+.grid {
+  display: grid;
+  gap: var(--space-lg);
+}
+.flex {
+  display: flex;
+  gap: var(--space-md);
+}
+.flex-center {
+  align-items: center;
+  justify-content: center;
+}
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

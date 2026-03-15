@@ -1,1 +1,241 @@
-[]
+[
+  {
+    "id": "team-retrospective-dashboard::research",
+    "projectName": "team-retrospective-dashboard",
+    "stage": "research",
+    "agent": "scout",
+    "dueAt": "2026-03-14T22:46:23.065Z",
+    "setAt": "2026-03-14T18:46:23.065Z",
+    "status": "complete",
+    "completedAt": "2026-03-14T18:46:24.969Z"
+  },
+  {
+    "id": "team-retrospective-dashboard::architecture",
+    "projectName": "team-retrospective-dashboard",
+    "stage": "architecture",
+    "agent": "atlas",
+    "dueAt": "2026-03-14T22:46:24.973Z",
+    "setAt": "2026-03-14T18:46:24.973Z",
+    "status": "complete",
+    "completedAt": "2026-03-14T18:46:27.325Z"
+  },
+  {
+    "id": "team-retrospective-dashboard::implementation",
+    "projectName": "team-retrospective-dashboard",
+    "stage": "implementation",
+    "agent": "forge",
+    "dueAt": "2026-03-14T22:46:27.329Z",
+    "setAt": "2026-03-14T18:46:27.329Z",
+    "status": "complete",
+    "completedAt": "2026-03-14T18:46:56.038Z"
+  },
+  {
+    "id": "team-retrospective-dashboard::review",
+    "projectName": "team-retrospective-dashboard",
+    "stage": "review",
+    "agent": "lens",
+    "dueAt": "2026-03-14T23:09:25.216Z",
+    "setAt": "2026-03-14T19:09:25.216Z",
+    "status": "complete",
+    "completedAt": "2026-03-14T19:09:26.465Z"
+  },
+  {
+    "id": "team-retrospective-dashboard::tests",
+    "projectName": "team-retrospective-dashboard",
+    "stage": "tests",
+    "agent": "pulse",
+    "dueAt": "2026-03-14T23:09:26.469Z",
+    "setAt": "2026-03-14T19:09:26.469Z",
+    "status": "complete",
+    "completedAt": "2026-03-14T19:09:29.215Z"
+  },
+  {
+    "id": "team-retrospective-dashboard::docs",
+    "projectName": "team-retrospective-dashboard",
+    "stage": "docs",
+    "agent": "sage",
+    "dueAt": "2026-03-14T23:09:44.245Z",
+    "setAt": "2026-03-14T19:09:44.245Z",
+    "status": "complete",
+    "completedAt": "2026-03-14T19:09:47.501Z"
+  },
+  {
+    "id": "team-retrospective-dashboard::launch",
+    "projectName": "team-retrospective-dashboard",
+    "stage": "launch",
+    "agent": "echo",
+    "dueAt": "2026-03-14T23:09:47.504Z",
+    "setAt": "2026-03-14T19:09:47.504Z",
+    "status": "complete",
+    "completedAt": "2026-03-14T19:09:48.563Z"
+  },
+  {
+    "id": "cloud-cost-overview-card-set::research",
+    "projectName": "cloud-cost-overview-card-set",
+    "stage": "research",
+    "agent": "scout",
+    "dueAt": "2026-03-14T23:10:03.602Z",
+    "setAt": "2026-03-14T19:10:03.602Z",
+    "status": "complete",
+    "completedAt": "2026-03-14T19:10:06.296Z"
+  },
+  {
+    "id": "cloud-cost-overview-card-set::architecture",
+    "projectName": "cloud-cost-overview-card-set",
+    "stage": "architecture",
+    "agent": "atlas",
+    "dueAt": "2026-03-14T23:10:06.301Z",
+    "setAt": "2026-03-14T19:10:06.301Z",
+    "status": "complete",
+    "completedAt": "2026-03-14T19:10:09.047Z"
+  },
+  {
+    "id": "cloud-cost-overview-card-set::implementation",
+    "projectName": "cloud-cost-overview-card-set",
+    "stage": "implementation",
+    "agent": "forge",
+    "dueAt": "2026-03-14T23:27:40.255Z",
+    "setAt": "2026-03-14T19:27:40.255Z",
+    "status": "complete",
+    "completedAt": "2026-03-14T19:29:00.736Z"
+  },
+  {
+    "id": "cloud-cost-overview-card-set::review",
+    "projectName": "cloud-cost-overview-card-set",
+    "stage": "review",
+    "agent": "lens",
+    "dueAt": "2026-03-14T23:38:15.638Z",
+    "setAt": "2026-03-14T19:38:15.638Z",
+    "status": "complete",
+    "completedAt": "2026-03-14T19:38:31.688Z"
+  },
+  {
+    "id": "cloud-cost-overview-card-set::tests",
+    "projectName": "cloud-cost-overview-card-set",
+    "stage": "tests",
+    "agent": "pulse",
+    "dueAt": "2026-03-14T23:38:46.716Z",
+    "setAt": "2026-03-14T19:38:46.716Z",
+    "status": "complete",
+    "completedAt": "2026-03-14T19:38:49.605Z"
+  },
+  {
+    "id": "cloud-cost-overview-card-set::docs",
+    "projectName": "cloud-cost-overview-card-set",
+    "stage": "docs",
+    "agent": "sage",
+    "dueAt": "2026-03-14T23:38:49.608Z",
+    "setAt": "2026-03-14T19:38:49.608Z",
+    "status": "complete",
+    "completedAt": "2026-03-14T19:38:54.985Z"
+  },
+  {
+    "id": "cloud-cost-overview-card-set::launch",
+    "projectName": "cloud-cost-overview-card-set",
+    "stage": "launch",
+    "agent": "echo",
+    "dueAt": "2026-03-14T23:38:54.989Z",
+    "setAt": "2026-03-14T19:38:54.989Z",
+    "status": "complete",
+    "completedAt": "2026-03-14T19:38:56.090Z"
+  },
+  {
+    "id": "incident-timeline-viewer::research",
+    "projectName": "incident-timeline-viewer",
+    "stage": "research",
+    "agent": "scout",
+    "dueAt": "2026-03-14T23:39:11.145Z",
+    "setAt": "2026-03-14T19:39:11.145Z",
+    "status": "complete",
+    "completedAt": "2026-03-14T19:39:13.056Z"
+  },
+  {
+    "id": "incident-timeline-viewer::architecture",
+    "projectName": "incident-timeline-viewer",
+    "stage": "architecture",
+    "agent": "atlas",
+    "dueAt": "2026-03-14T23:39:13.060Z",
+    "setAt": "2026-03-14T19:39:13.060Z",
+    "status": "complete",
+    "completedAt": "2026-03-14T19:39:15.694Z"
+  },
+  {
+    "id": "incident-timeline-viewer::implementation",
+    "projectName": "incident-timeline-viewer",
+    "stage": "implementation",
+    "agent": "forge",
+    "dueAt": "2026-03-14T23:58:44.217Z",
+    "setAt": "2026-03-14T19:58:44.217Z",
+    "status": "complete",
+    "completedAt": "2026-03-14T19:59:51.533Z"
+  },
+  {
+    "id": "incident-timeline-viewer::review",
+    "projectName": "incident-timeline-viewer",
+    "stage": "review",
+    "agent": "lens",
+    "dueAt": "2026-03-15T00:09:00.757Z",
+    "setAt": "2026-03-14T20:09:00.757Z",
+    "status": "complete",
+    "completedAt": "2026-03-14T20:09:16.167Z"
+  },
+  {
+    "id": "incident-timeline-viewer::tests",
+    "projectName": "incident-timeline-viewer",
+    "stage": "tests",
+    "agent": "pulse",
+    "dueAt": "2026-03-15T00:09:31.203Z",
+    "setAt": "2026-03-14T20:09:31.203Z",
+    "status": "complete",
+    "completedAt": "2026-03-14T20:09:34.255Z"
+  },
+  {
+    "id": "incident-timeline-viewer::docs",
+    "projectName": "incident-timeline-viewer",
+    "stage": "docs",
+    "agent": "sage",
+    "dueAt": "2026-03-15T00:09:34.259Z",
+    "setAt": "2026-03-14T20:09:34.259Z",
+    "status": "complete",
+    "completedAt": "2026-03-14T20:09:39.608Z"
+  },
+  {
+    "id": "incident-timeline-viewer::launch",
+    "projectName": "incident-timeline-viewer",
+    "stage": "launch",
+    "agent": "echo",
+    "dueAt": "2026-03-15T00:09:39.611Z",
+    "setAt": "2026-03-14T20:09:39.611Z",
+    "status": "complete",
+    "completedAt": "2026-03-14T20:09:40.710Z"
+  },
+  {
+    "id": "serverless-function-performance-card-set::research",
+    "projectName": "serverless-function-performance-card-set",
+    "stage": "research",
+    "agent": "scout",
+    "dueAt": "2026-03-15T00:45:29.853Z",
+    "setAt": "2026-03-14T20:45:29.853Z",
+    "status": "complete",
+    "completedAt": "2026-03-14T20:45:32.510Z"
+  },
+  {
+    "id": "serverless-function-performance-card-set::architecture",
+    "projectName": "serverless-function-performance-card-set",
+    "stage": "architecture",
+    "agent": "atlas",
+    "dueAt": "2026-03-15T00:45:32.513Z",
+    "setAt": "2026-03-14T20:45:32.513Z",
+    "status": "complete",
+    "completedAt": "2026-03-14T20:45:35.480Z"
+  },
+  {
+    "id": "serverless-function-performance-card-set::implementation",
+    "projectName": "serverless-function-performance-card-set",
+    "stage": "implementation",
+    "agent": "forge",
+    "dueAt": "2026-03-15T01:31:17.976Z",
+    "setAt": "2026-03-14T21:31:17.976Z",
+    "status": "active"
+  }
+]

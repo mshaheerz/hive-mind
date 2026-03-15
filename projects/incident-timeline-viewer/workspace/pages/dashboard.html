@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard – Demo App</title>
+  <link rel="stylesheet" href="../styles/reset.css">
+  <link rel="stylesheet" href="../styles/variables.css">
+  <link rel="stylesheet" href="../styles/layout.css">
+  <link rel="stylesheet" href="../styles/components.css">
+  <link rel="stylesheet" href="../styles/pages.css">
+  <link rel="stylesheet" href="../styles/utilities.css">
+</head>
+<body class="theme-light">
+  <div id="nav"></div>
+
+  <main class="container">
+    <section class="mt-2">
+      <h1>Data Dashboard</h1>
+      <p class="lead">Explore and manage your items.</p>
+    </section>
+
+    <!-- Filter bar -->
+    <section class="filter-bar flex flex-wrap gap-2 mt-2">
+      <input type="text" id="search-input" class="input" placeholder="Search…">
+      <select id="status-filter" class="input">
+        <option value="">All Statuses</option>
+        <option value="open">Open</option>
+        <option value="closed">Closed</option>
+        <option value="pending">Pending</option>
+      </select>
+      <button class="btn btn-primary" id="clear-filters">Clear</button>
+    </section>
+
+    <!-- Bulk actions -->
+    <section class="mt-2">
+      <button class="btn btn-secondary" id="bulk-delete">Delete Selected</button>
+    </section>
+
+    <!-- Data table -->
+    <section class="mt-2">
+      <table class="data-table" id="dashboard-table">
+        <thead>
+          <tr>
+            <th><input type="checkbox" id="select-all"></th>
+            <th data-sort="id">ID</th>
+            <th data-sort="title">Title</th>
+            <th data-sort="status">Status</th>
+            <th data-sort="date">Date</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <!-- Pagination (static) -->
+    <section class="flex justify-end mt-2">
+      <button class="btn btn-outline" disabled>« Prev</button>
+      <button class="btn btn-outline">Next »</button>
+    </section>
+  </main>
+
+  <div id="footer"></div>
+
+  <script src="../scripts/app.js"></script>
+  <script src="../scripts/components.js"></script>
+  <script src="../scripts/data.js"></script>
+  <script src="../scripts/utils.js"></script>
+  <script>
+    const tableBody = document.querySelector('#dashboard-table tbody');
+
+    function renderRows(data) {
+      tableBody.innerHTML = '';
+      data.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><input type="checkbox" class="row-check" data-id="${item.id}"></td>
+          <td data-col="id">${item.id}</td>
+          <td data-col="title">${item.title}</td>
+          <td data-col="status"><span class="badge badge-${item.status}">${item.status}</span></td>
+          <td data-col="date">${item.date}</td>
+        `;
+        tableBody.appendChild(tr);
+      });
+    }
+
+    // Initial render
+    renderRows(window.DUMMY_DATA);
+
+    // Search / filter
+    document.getElementById('search-input').addEventListener('input', e => {
+      const term = e.target.value.toLowerCase();
+      const filtered = window.DUMMY_DATA.filter(i => i.title.toLowerCase().includes(term));
+      renderRows(filtered);
+    });
+    document.getElementById('status-filter').addEventListener('change', e => {
+      const status = e.target.value;
+      const filtered = status ? window.DUMMY_DATA.filter(i => i.status === status) : window.DUMMY_DATA;
+      renderRows(filtered);
+    });
+    document.getElementById('clear-filters').addEventListener('click', () => {
+      document.getElementById('search-input').value = '';
+      document.getElementById('status-filter').value = '';
+      renderRows(window.DUMMY_DATA);
+    });
+
+    // Bulk delete (demo)
+    document.getElementById('bulk-delete').addEventListener('click', () => {
+      const checked = [...document.querySelectorAll('.row-check:checked')].map(cb => parseInt(cb.dataset.id));
+      if (!checked.length) {
+        showToast('No rows selected.', 'error');
+        return;
+      }
+      showToast(`Deleted ${checked.length} item(s).`, 'success');
+    });
+
+    // Select‑all checkbox
+    document.getElementById('select-all').addEventListener('change', e => {
+      const checked = e.target.checked;
+      document.querySelectorAll('.row-check').forEach(cb => cb.checked = checked);
+    });
+
+    // Initialise sortable table
+    initSortableTable(document.getElementById('dashboard-table'));
+  </script>
+</body>
+</html>

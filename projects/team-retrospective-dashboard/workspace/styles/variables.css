@@ -1,0 +1,29 @@
+/* Color palette */
+:root {
+  --color-primary: #0066ff;
+  --color-primary-dark: #004ecc;
+  --color-success: #28a745;
+  --color-danger: #dc3545;
+  --color-warning: #ffc107;
+  --color-bg-light: #f9fafb;
+  --color-bg-dark: #212529;
+  --color-text-light: #212529;
+  --color-text-dark: #f8f9fa;
+  --color-card-bg: #ffffff;
+  --color-card-bg-dark: #2c2f33;
+}
+
+/* Spacing & typography */
+:root {
+  --space-xxs: 0.25rem;
+  --space-xs: 0.5rem;
+  --space-sm: 1rem;
+  --space-md: 1.5rem;
+  --space-lg: 2rem;
+  --space-xl: 3rem;
+
+  --font-base: 1rem;
+  --font-lg: 1.125rem;
+  --font-xl: 1.5rem;
+  --font-xxl: 2rem;
+}

@@ -1,0 +1,36 @@
+/* Page‑specific tweaks */
+
+/* Index page */
+#activity-table .badge {
+  font-size: 0.75rem;
+}
+
+/* Dashboard page */
+.pagination {
+  display: flex;
+  justify-content: center;
+  margin: var(--space-md) 0;
+}
+.pagination button {
+  margin: 0 var(--space-xxs);
+}
+
+/* Settings page */
+.form {
+  display: grid;
+  gap: var(--space-sm);
+  max-width: 500px;
+}
+
+/* About page */
+.feature-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+.feature-list li {
+  flex: 1 1 200px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}

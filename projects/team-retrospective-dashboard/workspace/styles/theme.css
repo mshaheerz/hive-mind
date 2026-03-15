@@ -1,0 +1,17 @@
+/* Light theme (default) */
+:root {
+  --color-bg: var(--color-bg-light);
+  --color-text: var(--color-text-light);
+}
+
+/* Dark theme */
+[data-theme="dark"] {
+  --color-bg: var(--color-bg-dark);
+  --color-text: var(--color-text-dark);
+}
+
+/* Apply */
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
